@@ -100,6 +100,11 @@ class URL(object):
             return NotImplemented
         return not self.__eq__(other)
 
+    def __hash__(self):
+        # I *think* URLs are immutable (enough) to make them useful as dict
+        # keys.
+        return hash(str(self))
+
     query = property(
         lambda self: [y is None and x or '='.join((x,y))
             for (x,y) in self._querylist]

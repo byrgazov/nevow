@@ -362,7 +362,7 @@ class Tag(object):
             return self
 
         for name in self.specials:
-            if kw.has_key(name):
+            if name in kw:
                 setattr(self, name, kw[name])
                 del kw[name]
 

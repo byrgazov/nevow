@@ -163,7 +163,7 @@ class JSGenerationTestCase(TestCase, _ConsoleJSTestMixin):
                               'hello from the test module',
                               ''])
 
-        result = getProcessOutput(self.javascriptInterpreter, ('-f', scriptfname))
+        result = getProcessOutput(self.javascriptInterpreter, (scriptfname,))
         result.addCallback(gotResult)
         return result
 
