@@ -1149,7 +1149,11 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         if self.cssModuleRoot is None:
             self.cssModuleRoot = location.child(self.clientID).child('cssmodule')
 
-        self._requestIDCounter = itertools.count().__next__
+        try:
+            self._requestIDCounter = itertools.count().__next__
+        except AttributeError:
+            # py2 compatibility
+            self._requestIDCounter = itertools.count().next
 
         self._messageDeliverer = ReliableMessageDelivery(
             self,
@@ -1160,7 +1164,11 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
             connectionMade=self._connectionMade)
         self._remoteCalls = {}
         self._localObjects = {}
-        self._localObjectIDCounter = itertools.count().__next__
+        try:
+            self._localObjectIDCounter = itertools.count().next
+        except AttributeError:
+            # py2 compatibilty
+            self._localObjectIDCounter = itertools.count().__next__
 
         self.addLocalObject(self)
 

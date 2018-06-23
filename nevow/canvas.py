@@ -11,7 +11,11 @@ from nevow.flat import flatten
 from nevow.stan import Proto, Tag
 from itertools import count
 
-cn = count().__next__
+try:
+    cn = count().__next__
+excpet AttributeError:
+    cn = count().next
+
 cookie = lambda: str(cn())
 
 _hookup = {}

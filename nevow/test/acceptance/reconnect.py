@@ -52,7 +52,12 @@ _widget_plugin.ElementRenderingLivePage = ReconnectableElementRenderingLivePage
 
 import itertools
 
-counter = itertools.count().__next__
+try:
+    counter = itertools.count().__next__
+except AttributeError:
+    # py2 compatibility
+    counter = itertools.count().next
+
 
 class ReconnectableElement(LiveElement):
     """
