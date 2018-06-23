@@ -557,6 +557,8 @@ class PatternTag(object):
             return p
         return next(self.patterner)
 
+    next = __next__
+
 
 def makeForwarder(name):
     return lambda self, *args, **kw: getattr(next(self), name)(*args, **kw)
