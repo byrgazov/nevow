@@ -811,6 +811,7 @@ class FourOhFour:
 
     def __bool__(self):
         return False
+    __nonzero__ = __bool__
 
 
 # Not found singleton

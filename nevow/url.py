@@ -7,8 +7,13 @@ URL parsing, construction and rendering.
 """
 
 import weakref
-import urllib.parse
-import urllib.request, urllib.parse, urllib.error
+try:
+	from urllib.parse import unquote, unquote_plus, quote, urlsplit
+except ImportError:
+	# python2 compatibility
+	from urllib import unquote, unquote_plus, quote
+	from urlparse import urlsplit
+
 
 from zope.interface import implements
 
@@ -22,9 +27,9 @@ from nevow.context import WovenContext
 def _uqf(query):
     for x in query.split('&'):
         if '=' in x:
-            yield tuple( [urllib.parse.unquote_plus(s) for s in x.split('=', 1)] )
+            yield tuple( [unquote_plus(s) for s in x.split('=', 1)] )
         elif x:
-            yield (urllib.parse.unquote_plus(x), None)
+            yield (unquote_plus(x), None)
 unquerify = lambda query: list(_uqf(query))
 
 
@@ -80,7 +85,7 @@ class URL(object):
                     # It is this particular set in order to match that used by
                     # nevow.flat.flatstan.StringSerializer, so that url.path
                     # will give something which is contained by flatten(url).
-                    urllib.parse.quote(seg, safe="-_.!*'()") for seg in self._qpathlist])
+                    quote(seg, safe="-_.!*'()") for seg in self._qpathlist])
         doc = """
         The path portion of the URL.
         """
@@ -129,11 +134,11 @@ class URL(object):
     ## class methods used to build URL objects ##
 
     def fromString(klass, st):
-        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(st)
+        scheme, netloc, path, query, fragment = urlsplit(st)
         u = klass(
             scheme, netloc,
-            [urllib.parse.unquote(seg) for seg in path.split('/')[1:]],
-            unquerify(query), urllib.parse.unquote(fragment))
+            [unquote(seg) for seg in path.split('/')[1:]],
+            unquerify(query), unquote(fragment))
         return u
     fromString = classmethod(fromString)
 
@@ -164,7 +169,7 @@ class URL(object):
     def pathList(self, unquote=False, copy=True):
         result = self._qpathlist
         if unquote:
-            result = list(map(urllib.parse.unquote, result))
+            result = list(map(unquote, result))
         if copy:
             result = result[:]
         return result
@@ -246,7 +251,7 @@ class URL(object):
         Return a path which is the URL where a browser would presumably
         take you if you clicked on a link with an 'href' as given.
         """
-        scheme, netloc, path, query, fragment = urllib.parse.urlsplit(href)
+        scheme, netloc, path, query, fragment = urlsplit(href)
 
         if (scheme, netloc, path, query, fragment) == ('', '', '', '', ''):
             return self

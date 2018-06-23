@@ -1,3 +1,4 @@
+from __future__ import print_statement, division, absolute_import
 
 from time import time
 

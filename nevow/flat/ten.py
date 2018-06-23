@@ -7,6 +7,7 @@ import types
 import warnings
 from zope.interface import declarations, interface
 
+from twisted.python import compat
 import twisted.python.components as tpc
 
 from nevow import inevow
@@ -81,9 +82,9 @@ def iterflatten(stan, ctx, writer, shouldYieldItem=None):
     while rest:
         gen = rest.pop()
         for item in gen:
-            if isinstance(item, str):
+            if isinstance(item, bytes):
                 straccum.append(item)
-            elif isinstance(item, str):
+            elif isinstance(item, compat.unicode):
                 straccum.append(item.encode('utf8'))
             elif isinstance(item, (list, types.GeneratorType)):
                 # stop iterating this generator and put it back on the stack
