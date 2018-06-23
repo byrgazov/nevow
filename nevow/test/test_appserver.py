@@ -7,7 +7,7 @@ Tests for L{nevow.appserver}.
 
 from zope.interface import implements
 
-from io import StringIO
+from io import BytesIO
 from shlex import split
 
 from twisted.trial.unittest import TestCase
@@ -172,7 +172,7 @@ class TestSiteAndRequest(testutil.TestCase):
         r = appserver.NevowRequest(channel, True)
         r.method = b'POST'
         r.path = b'/'
-        r.content = StringIO(b'foo=bar')
+        r.content = BytesIO(b'foo=bar')
         self.successResultOf(r.process())
         self.assertEqual(r.fields[b'foo'].value, b'bar')
 
@@ -184,7 +184,7 @@ class FakeTransport(protocol.FileWrapper):
     disconnecting = False
     disconnect_done = False
     def __init__(self, addr, peerAddr):
-        self.data = StringIO()
+        self.data = BytesIO()
         protocol.FileWrapper.__init__(self, self.data)
         self.addr = addr
         self.peerAddr = peerAddr
@@ -203,7 +203,7 @@ class Logging(testutil.TestCase):
         self.site = appserver.NevowSite(Res1())
         self.site.startFactory()
         self.addCleanup(self.site.stopFactory)
-        self.site.logFile = StringIO()
+        self.site.logFile = BytesIO()
 
 
     def renderResource(self, path):

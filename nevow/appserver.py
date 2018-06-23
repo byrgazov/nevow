@@ -9,7 +9,11 @@ A web application server built using twisted.web
 import cgi
 import warnings
 from collections import MutableMapping
-from urllib.parse import unquote
+try:
+	from urllib.parse import unquote
+except ImportError:
+	# python2 compatibility
+	from urlparse import unquote
 
 from zope.interface import implements, classImplements
 

@@ -300,7 +300,7 @@ def _collectPackageBelow(baseDir, extension):
             path = os.path.join(root, dir, '__init__.' + extension)
             if not os.path.exists(path):
                 path = EMPTY
-            mapping[str(name, 'ascii')] = path
+            mapping[name.encode("ascii")] = path
             _revMap[os.path.join(root, dir)] = name + '.'
 
         for fn in filenames:
@@ -315,7 +315,7 @@ def _collectPackageBelow(baseDir, extension):
 
             name = stem + fn[:-(len(extension) + 1)]
             path = os.path.join(root, fn)
-            mapping[str(name, 'ascii')] = path
+            mapping[name.encode('ascii')] = path
     return mapping
 
 
@@ -1326,7 +1326,7 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
 
     def callRemote(self, methodName, *args):
         requestID = 's2c%i' % (self._requestIDCounter(),)
-        message = ('call', (str(methodName, 'ascii'), requestID, args))
+        message = ('call', (methodName.encode('ascii'), requestID, args))
         resultD = defer.Deferred()
         self._remoteCalls[requestID] = resultD
         self.addMessage(message)
@@ -1803,7 +1803,7 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         return self.page.callRemote(
             "Nevow.Athena.callByAthenaID",
             self._athenaID,
-            str(methodName, 'ascii'),
+            methodName.encode('ascii'),
             varargs)
 
 

@@ -5,8 +5,12 @@
 
 # system imports
 import os
-import urllib.request, urllib.parse, urllib.error
 import stat
+try:
+	from urllib.parse import quote, unquote
+except ImportError:
+	# python2 compatibility
+	from urllib import quote, unquote
 
 # twisted imports
 from nevow import inevow
@@ -49,7 +53,7 @@ class DirectoryLister(rend.Page):
         files = []; dirs = []
 
         for path in directory:
-            url = urllib.parse.quote(path, '/')
+            url = quote(path, '/')
             if os.path.isdir(os.path.join(self.path, path)):
                 url = url + '/'
                 dirs.append({
@@ -80,7 +84,7 @@ class DirectoryLister(rend.Page):
 
     def data_header(self, context, data):
         request = context.locate(inevow.IRequest)
-        return "Directory listing for %s" % urllib.parse.unquote(request.uri)
+        return "Directory listing for %s" % unquote(request.uri)
 
     def render_tableLink(self, context, data):
         return tags.a(href=data['link'])[data['linktext']]

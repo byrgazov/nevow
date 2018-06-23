@@ -3,7 +3,12 @@
 
 
 
-import urllib.request, urllib.parse, urllib.error, warnings
+import warnings
+
+try:
+	from urllib.parse import quote
+except ImportError:
+	from urllib import quote
 
 from twisted.python import log, failure
 
@@ -155,7 +160,7 @@ def StringSerializer(original, context):
     if context.inURL:
         # The magic string "-_.!*'()" also appears in url.py.  Thinking about
         # changing this?  Change that, too.
-        return urllib.parse.quote(original, safe="-_.!*'()")
+        return quote(original, safe="-_.!*'()")
     ## quote it
     if context.inJS:
         original = _jsSingleQuoteQuote(original)

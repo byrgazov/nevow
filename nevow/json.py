@@ -248,8 +248,8 @@ _translation.update({
     ord('\r'): r'\r',
     # The next two are sneaky, see
     # http://timelessrepo.com/json-isnt-a-javascript-subset
-    ord('\u2028'): '\\u2028',
-    ord('\u2029'): '\\u2029',
+    ord(u'\u2028'): '\\u2028',
+    ord(u'\u2029'): '\\u2029',
     })
 
 def stringEncode(s):
