@@ -7,6 +7,7 @@ from zope.interface import implements
 from twisted.internet import defer, error, reactor
 from twisted.python import log, failure, context
 from twisted.python.util import sibpath
+from twisted.python import compat
 from twisted import plugin
 
 from nevow import inevow, plugins, flat, _flat
@@ -1652,7 +1653,8 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         C{self.page}, add this object to the page and fill the I{athena:id}
         slot with this object's Athena identifier.
         """
-        assert isinstance(self.jsClass, str), "jsClass must be a unicode string"
+        assert isinstance(self.jsClass, compat.unicode
+            ), "jsClass must be a unicode string"
 
         if self.page is None:
             raise OrphanedFragment(self)

@@ -248,5 +248,13 @@ def parse(fl, ignoreDocType=False, ignoreComment=False):
     return s.document
 
 def parseString(t, ignoreDocType=False, ignoreComment=False):
+    """returns stan from an XML literal in a string.
+
+    We accept utf-8 encoded byte strings, too.
+    """
     from io import StringIO
+
+    if isinstance(t, bytes):
+	t = t.decode("utf-8")
+
     return parse(StringIO(t), ignoreDocType, ignoreComment)

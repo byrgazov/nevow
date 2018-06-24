@@ -21,6 +21,7 @@ code. See nevow.stan.Tag for details, and nevow.tags for tag
 prototypes for all of the XHTML element types.
 """
 
+from twisted.python import compat
 
 from zope.interface import implements
 
@@ -664,8 +665,8 @@ invisible = Proto('')
 
 class Entity(object):
     def __init__(self, name, num, description):
-        self.name = name
-        self.num = num
+        self.name = compat.unicode(name)
+        self.num = compat.unicode(num)
         self.description = description
 
     def __repr__(self):

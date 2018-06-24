@@ -11,6 +11,7 @@ from zope.interface import implements
 
 from twisted.trial.unittest import TestCase
 from twisted.internet.defer import Deferred, succeed
+from twisted.python import compat
 
 from nevow.inevow import IRequest, IQ, IRenderable, IData
 from nevow._flat import FlattenerError, UnsupportedType, UnfilledSlot
@@ -102,10 +103,10 @@ class FlattenMixin:
     """
     def assertStringEqual(self, value, expected):
         """
-        Assert that the given value is a C{str} instance and that it equals the
-        expected value.
+        Assert that the given value is a c{bytes} instance and that
+        it equals the expected value.
         """
-        self.assertTrue(isinstance(value, str))
+        self.assertTrue(isinstance(value, compat.unicode))
         self.assertEqual(value, expected)
 
 
@@ -599,28 +600,28 @@ class FlattenTests(TestCase, FlattenMixin):
         link = URL.fromString("http://foo/fu?bar=baz&bar=baz#quux%2f")
         self.assertStringEqual(
             self.flatten(link),
-            "http://foo/fu?bar=baz&bar=baz#quux%2F")
+            u"http://foo/fu?bar=baz&bar=baz#quux%2F")
         self.assertStringEqual(
             self.flatten(div[link]),
-            '<div>http://foo/fu?bar=baz&amp;bar=baz#quux%2F</div>')
+            u'<div>http://foo/fu?bar=baz&amp;bar=baz#quux%2F</div>')
         self.assertStringEqual(
             self.flatten(div(foo=link)),
-            '<div foo="http://foo/fu?bar=baz&amp;bar=baz#quux%2F"></div>')
+            u'<div foo="http://foo/fu?bar=baz&amp;bar=baz#quux%2F"></div>')
         self.assertStringEqual(
             self.flatten(div[div(foo=link)]),
-            '<div><div foo="http://foo/fu?bar=baz&amp;bar=baz#quux%2F"></div>'
-            '</div>')
+            u'<div><div foo="http://foo/fu?bar=baz&amp;bar=baz#quux%2F"></div>'
+            u'</div>')
 
         link = URL.fromString("http://foo/fu?%2f=%7f")
         self.assertStringEqual(
             self.flatten(link),
-            "http://foo/fu?%2F=%7F")
+            u"http://foo/fu?%2F=%7F")
         self.assertStringEqual(
             self.flatten(div[link]),
-            '<div>http://foo/fu?%2F=%7F</div>')
+            u'<div>http://foo/fu?%2F=%7F</div>')
         self.assertStringEqual(
             self.flatten(div(foo=link)),
-            '<div foo="http://foo/fu?%2F=%7F"></div>')
+            u'<div foo="http://foo/fu?%2F=%7F"></div>')
 
 
     def test_unfilledSlot(self):
@@ -935,8 +936,8 @@ class FlattenTests(TestCase, FlattenMixin):
             # There are probably some frames above this, but I don't care what
             # they are.
             exc._traceback[-2:],
-            [(HERE, 927, 'render', 'broken()'),
-             (HERE, 920, 'broken', 'raise RuntimeError("foo")')])
+            [(HERE, 928, 'render', 'broken()'),
+             (HERE, 921, 'broken', 'raise RuntimeError("foo")')])
 
 
 
@@ -971,13 +972,13 @@ class FlattenerErrorTests(TestCase):
         """
         self.assertEqual(
             str(FlattenerError(
-                    RuntimeError("reason"), ['abc\N{SNOWMAN}xyz'], [])),
+                    RuntimeError("reason"), [u'abc\N{SNOWMAN}xyz'], [])),
             "Exception while flattening:\n"
             "  u'abc\\u2603xyz'\n" # Codepoint for SNOWMAN
             "RuntimeError: reason\n")
         self.assertEqual(
             str(FlattenerError(
-                    RuntimeError("reason"), ['01234567\N{SNOWMAN}9' * 10],
+                    RuntimeError("reason"), [u'01234567\N{SNOWMAN}9' * 10],
                     [])),
             "Exception while flattening:\n"
             "  u'01234567\\u2603901234567\\u26039<...>01234567\\u2603901234567"

@@ -253,7 +253,11 @@ _translation.update({
     })
 
 def stringEncode(s):
-    return s.translate(_translation).encode('utf-8')
+    res = s.translate(_translation)
+    if isinstance(res, unicode):
+        return res.encode('utf-8')
+    else:
+        return res
 
 
 def _serialize(obj, w, seen):
@@ -266,7 +270,7 @@ def _serialize(obj, w, seen):
             w('false')
     elif isinstance(obj, (int, float)):
         w(str(obj))
-    elif isinstance(obj, str):
+    elif isinstance(obj, (bytes, unicode)):
         w('"')
         w(stringEncode(obj))
         w('"')

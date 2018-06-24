@@ -209,7 +209,10 @@ def render(translator=None):
         children = ctx.tag.children
         ctx.tag.clear()
         for child in children:
-            if isinstance(child, str):
+            # The bytes in the following is for py2 *exclusively*.  In py3,
+            # bytes in here won't match strings (raise a warning if bytes
+            # are encountered here?)
+            if isinstance(child, (compat.unicode, bytes)):
                 child = translator(child)
             ctx.tag[child]
         return ctx.tag

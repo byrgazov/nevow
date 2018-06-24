@@ -10,7 +10,7 @@ def deferredRender(res, req):
                 tag=req)))
 
     def done(result):
-        if isinstance(result, str):
+        if isinstance(result, (unicode, bytes)):
             req.write(result)
         return req
     d.addCallback(done)

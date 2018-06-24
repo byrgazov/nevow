@@ -189,7 +189,7 @@ class CompressingResourceWrapper(object):
         ctx.remember(req, IRequest)
 
         def _cbDoneRendering(html):
-            if isinstance(html, str):
+            if isinstance(html, (str, bytes)):
                 req.write(html)
                 req.finishRequest(True)
                 return errorMarker
