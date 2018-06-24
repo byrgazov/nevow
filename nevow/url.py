@@ -17,6 +17,7 @@ except ImportError:
 
 from zope.interface import implements
 
+from twisted.python import compat
 from twisted.web.util import redirectTo
 
 from nevow import inevow, flat
@@ -518,7 +519,7 @@ def URLSerializer(original, context):
     IRI standard (RFC 3987).
     """
     def _maybeEncode(s):
-        if isinstance(s, str):
+        if isinstance(s, compat.unicode):
             s = s.encode('utf-8')
         return s
     urlContext = WovenContext(parent=context, precompile=context.precompile, inURL=True)

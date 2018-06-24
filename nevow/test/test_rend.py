@@ -38,8 +38,9 @@ def deferredRender(res, request=None):
                 tag=request)))
 
     def done(result):
-        if isinstance(result, str):
+        if isinstance(result, (unicode, bytes)):
             request.write(result)
+
         request.d.callback(request.accumulator)
         return result
     d.addCallback(done)

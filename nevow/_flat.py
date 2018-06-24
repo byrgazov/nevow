@@ -20,6 +20,7 @@ from types import GeneratorType
 from traceback import extract_tb, format_list
 
 from twisted.internet.defer import Deferred
+from twisted.python import compat
 
 from nevow.inevow import IRenderable, IRenderer, IRendererFactory, IData
 from nevow.inevow import IRequest
@@ -61,14 +62,14 @@ class FlattenerError(Exception):
         @return: A string representation of C{obj}.
         @rtype: L{str}
         """
-        if isinstance(obj, str):
-            # It's somewhat unlikely that there will ever be a str in the roots
-            # list.  However, something like a MemoryError during a str.replace
+        if isinstance(obj, (bytes, compat.unicode)):
+            # It's somewhat unlikely that there will ever be a bytes in the roots
+            # list.  However, something like a MemoryError during a bytes.replace
             # call (eg, replacing " with &quot;) could possibly cause this.
             # Likewise, UTF-8 encoding a unicode string to a byte string might
             # fail like this.
             if len(obj) > 40:
-                if isinstance(obj, str):
+                if isinstance(obj, bytes):
                     prefix = 1
                 else:
                     prefix = 2
@@ -146,14 +147,18 @@ def escapedData(data, inAttribute, inXML):
         quoted for use as an XML text node or as the value of an XML tag value.
 
     @rtype: C{str}
-    @return: The quoted form of C{data}.
+    @return: The quoted form of C{data} as a native string.
     """
     if inXML or inAttribute:
-        data = data.replace('&', '&amp;'
-            ).replace('<', '&lt;'
-            ).replace('>', '&gt;')
+        data = data.replace(u'&', u'&amp;'
+            ).replace(u'<', u'&lt;'
+            ).replace(u'>', u'&gt;')
     if inAttribute:
-        data = data.replace('"', '&quot;')
+        data = data.replace(u'"', u'&quot;')
+
+    if not isinstance(data, compat.unicode):
+        data = compat.unicode(data)
+
     return data
 
 
@@ -224,7 +229,7 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
     @return: An iterator which yields C{str}, L{Deferred}, and more iterators
         of the same type.
     """
-    if isinstance(root, str):
+    if isinstance(root, compat.unicode):
         root = root.encode('utf-8')
     elif isinstance(root, WovenContext):
         # WovenContext is supported via the getFlattener case, but that is a
@@ -237,18 +242,18 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
         root = root.tag
 
     if isinstance(root, raw):
-        root = str(root)
+        root = compat.unicode(root)
         if inAttribute:
             root = root.replace('"', '&quot;')
         write(root)
     elif isinstance(root, Proto):
-        root = str(root)
+        root = compat.unicode(root)
         if root:
             if root in allowSingleton:
-                write('<' + root + ' />')
+                write(u'<' + root + u' />')
             else:
-                write('<' + root + '></' + root + '>')
-    elif isinstance(root, str):
+                write(u'<' + root + '></' + root + '>')
+    elif isinstance(root, (compat.unicode, bytes)):
         write(escapedData(root, inAttribute, inXML))
     elif isinstance(root, slot):
         slotValue = _getSlotValue(root.name, slotData)
@@ -267,27 +272,27 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
                                    slotData, renderFactory,
                                    False, True)
                 else:
-                    write('<')
-                    if isinstance(root.tagName, str):
-                        tagName = root.tagName.encode('ascii')
+                    write(u'<')
+                    if isinstance(root.tagName, bytes):
+                        tagName = root.tagName.decode('utf-8')
                     else:
-                        tagName = str(root.tagName)
+                        tagName = compat.unicode(root.tagName)
                     write(tagName)
                     for k, v in sorted(root.attributes.items()):
-                        if isinstance(k, str):
-                            k = k.encode('ascii')
-                        write(" " + k + "=\"")
+                        if isinstance(k, bytes):
+                            k = k.decode('utf-8')
+                        write(u" " + k + "=\"")
                         yield _flatten(request, write, v, slotData,
                                        renderFactory, True, True)
-                        write("\"")
+                        write(u"\"")
                     if root.children or tagName not in allowSingleton:
-                        write('>')
+                        write(u'>')
                         yield _flatten(request, write, root.children,
                                        slotData, renderFactory,
                                        False, True)
-                        write('</' + tagName + '>')
+                        write(u'</' + tagName + '>')
                     else:
-                        write(' />')
+                        write(u' />')
             else:
                 if isinstance(root.render, directive):
                     rendererName = root.render.name
@@ -300,18 +305,18 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
                                None, inXML)
             slotData.pop()
     elif isinstance(root, URL):
-        write(escapedData(str(root), inAttribute, inXML))
+        write(escapedData(compat.unicode(root), inAttribute, inXML))
     elif isinstance(root, (tuple, list, GeneratorType)):
         for element in root:
             yield _flatten(request, write, element, slotData, renderFactory,
                            inAttribute, inXML)
     elif isinstance(root, Entity):
-        write('&#')
+        write(u'&#')
         write(root.num)
-        write(';')
+        write(u';')
     elif isinstance(root, xml):
-        if isinstance(root.content, str):
-            write(root.content.encode('utf-8'))
+        if isinstance(root.content, bytes):
+            write(root.content.decode('utf-8'))
         else:
             write(root.content)
     elif isinstance(root, Deferred):
@@ -340,10 +345,10 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
                                            lambda ign: None)
                 def cbFlattened(result):
                     synchronous.append(None)
-                    return (result, (str(s) for s in results))
+                    return (result, (compat.unicode(s) for s in results))
                 flattened.addCallback(cbFlattened)
                 if synchronous:
-                    write(''.join(map(str, results)))
+                    write(u''.join(map(str, results)))
                 else:
                     yield flattened
             else:
@@ -416,11 +421,11 @@ def flatten(request, write, root, inAttribute, inXML):
             stack.pop()
             roots = []
             for generator in stack:
-                roots.append(generator.gi_frame.f_locals['root'])
+                roots.append(generator.gi_frame.f_locals.get('root', ''))
             roots.append(frame.f_locals['root'])
             raise FlattenerError(e, roots, extract_tb(exc_info()[2]))
         else:
-            if type(element) is str:
+            if isinstance(element, (bytes, compat.unicode)):
                 write(element)
             elif isinstance(element, Deferred):
                 def cbx(xxx_todo_changeme):

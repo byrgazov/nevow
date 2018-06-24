@@ -7,6 +7,8 @@ trees.
 
 import types
 
+from twisted.python import compat
+
 
 __by_number = {}
 
@@ -19,7 +21,7 @@ def makeEntity(xxx_todo_changeme):
 
 
 def getEntity(num):
-    if isinstance(num, str):
+    if isinstance(num, (compat.unicode, bytes)):
         num = ord(num)
     return __by_number[num]
 

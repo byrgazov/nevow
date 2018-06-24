@@ -26,6 +26,7 @@ except ImportError:
     from twisted.protocols import http
 
 from twisted.python import log
+from twisted.python import compat
 from twisted.internet import defer
 
 from nevow import context
@@ -297,7 +298,7 @@ class NevowRequest(tpc.Componentized, server.Request):
         if self._lostConnection:
             # No response can be sent at this point.
             pass
-        elif isinstance(html, str):
+        elif isinstance(html, (compat.unicode, bytes)):
             self.write(html)
             self.finishRequest(  True )
         elif html is errorMarker:
