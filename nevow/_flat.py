@@ -229,9 +229,7 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
     @return: An iterator which yields C{str}, L{Deferred}, and more iterators
         of the same type.
     """
-    if isinstance(root, compat.unicode):
-        root = root.encode('utf-8')
-    elif isinstance(root, WovenContext):
+    if isinstance(root, WovenContext):
         # WovenContext is supported via the getFlattener case, but that is a
         # very slow case.  Checking here is an optimization.  It also lets us
         # avoid the deprecation warning which would be emitted whenever a

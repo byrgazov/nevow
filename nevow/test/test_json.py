@@ -5,6 +5,8 @@
 Tests for L{nevow.json}.
 """
 
+from twisted.python import compat
+
 from zope.interface import implements
 
 from nevow.inevow import IAthenaTransportable
@@ -42,9 +44,9 @@ TEST_STRINGLIKE_OBJECTS = [
     'string with \\"escaped embedded\\" quotes',
     "string with \\'escaped embedded\\' single-quotes",
     "string with backslashes\\\\",
-    "string with trailing accented vowels: \xe1\xe9\xed\xf3\xfa\xfd\xff",
+    u"string with trailing accented vowels: \xe1\xe9\xed\xf3\xfa\xfd\xff",
     "string with trailing control characters: \f\b\n\t\r",
-    'string with high codepoint characters: \u0111\u2222\u3333\u4444\uffff',
+    u'string with high codepoint characters: \u0111\u2222\u3333\u4444\uffff',
     'string with very high codepoint characters: \U00011111\U00022222\U00033333\U00044444\U000fffff',
     ]
 
@@ -106,14 +108,14 @@ class JavascriptObjectNotationTestCase(unittest.TestCase):
         self.assertEqual(None, json.parse(b'undefined'))
 
 
-    def testStringlikeRountrip(self):
+    def testStringlikeRoundtrip(self):
         for struct in TEST_STRINGLIKE_OBJECTS:
-            bytes = json.serialize(struct)
-            unstruct = json.parse(bytes)
+            serialised = json.serialize(struct)
+            deserialised = json.parse(serialised)
             failMsg = "Failed to roundtrip %r: %r (through %r)" % (
-                    struct, unstruct, bytes)
-            self.assertEqual(unstruct, struct, failMsg)
-            self.assertTrue(isinstance(unstruct, str), failMsg)
+                    struct, deserialised, serialised)
+            self.assertEqual(deserialised, struct, failMsg)
+            self.assertTrue(isinstance(deserialised, compat.unicode), failMsg)
 
 
     def test_lineTerminators(self):
@@ -127,10 +129,10 @@ class JavascriptObjectNotationTestCase(unittest.TestCase):
         handle them properly.
         """
         # These are the four line terminators currently in Unicode.
-        self.assertEqual('"\\r"', json.serialize("\r"))
-        self.assertEqual('"\\n"', json.serialize("\n"))
-        self.assertEqual('"\\u2028"', json.serialize("\u2028"))
-        self.assertEqual('"\\u2029"', json.serialize("\u2029"))
+        self.assertEqual(u'"\\r"', json.serialize("\r"))
+        self.assertEqual(u'"\\n"', json.serialize("\n"))
+        self.assertEqual(u'"\\u2028"', json.serialize(u"\u2028"))
+        self.assertEqual(u'"\\u2029"', json.serialize(u"\u2029"))
 
 
     def testScientificNotation(self):
@@ -141,7 +143,7 @@ class JavascriptObjectNotationTestCase(unittest.TestCase):
     def testHexEscapedCodepoints(self):
         self.assertEqual(
             json.parse('"\\xe1\\xe9\\xed\\xf3\\xfa\\xfd"'),
-            "\xe1\xe9\xed\xf3\xfa\xfd")
+            u"\u00e1\u00e9\u00ed\u00f3\u00fa\u00fd")
 
     def testEscapedControls(self):
         self.assertEqual(
