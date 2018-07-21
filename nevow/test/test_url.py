@@ -5,7 +5,13 @@
 Tests for L{nevow.url}.
 """
 
-import urllib.parse, urllib.request, urllib.parse, urllib.error
+try:
+	from urllib.parse import quote, urlsplit
+except ImportError:
+	# python2 compatibility
+	from urllib import unquote, unquote_plus, quote
+	from urlparse import urlsplit
+
 
 from nevow import context, url, inevow, util, loaders
 from nevow import tags
@@ -536,11 +542,11 @@ class Serialization(TestCase):
         u = url.URL(scheme, loc, path, query, fragment)
         s = flatten(url.URL(scheme, loc, path, query, fragment))
 
-        parsedScheme, parsedLoc, parsedPath, parsedQuery, parsedFragment = urllib.parse.urlsplit(s)
+        parsedScheme, parsedLoc, parsedPath, parsedQuery, parsedFragment = urlsplit(s)
 
         self.assertEqual(scheme, parsedScheme)
         self.assertEqual(loc, parsedLoc)
-        self.assertEqual('/' + '/'.join([urllib.parse.quote(p,safe='') for p in path]), parsedPath)
+        self.assertEqual('/' + '/'.join([quote(p,safe='') for p in path]), parsedPath)
         self.assertEqual(query, url.unquerify(parsedQuery))
         self.assertEqual(fragment, parsedFragment)
 
@@ -572,7 +578,7 @@ class Serialization(TestCase):
             (r'/foo/', '%2Ffoo%2F'),
             (r'c:\foo\bar bar', 'c%3A%5Cfoo%5Cbar%20bar'),
             (r'&<>', '%26%3C%3E'),
-            ('!"\N{POUND SIGN}$%^&*()_+'.encode('utf-8'), '!%22%C2%A3%24%25%5E%26*()_%2B'),
+            (u'!"\N{POUND SIGN}$%^&*()_+'.encode('utf-8'), '!%22%C2%A3%24%25%5E%26*()_%2B'),
             )
         for test, result in tests:
             u = url.URL.fromString(base).child(test)
@@ -632,8 +638,8 @@ class Serialization(TestCase):
         L{URLSerializer} should provide basic IRI (RFC 3987) support by
         encoding Unicode to UTF-8 before percent-encoding.
         """
-        iri = 'http://localhost/expos\xe9?doppelg\xe4nger=Bryan O\u2019Sullivan#r\xe9sum\xe9'
-        uri = 'http://localhost/expos%C3%A9?doppelg%C3%A4nger=Bryan%20O%E2%80%99Sullivan#r%C3%A9sum%C3%A9'
+        iri = u'http://localhost/expos\xe9?doppelg\xe4nger=Bryan O\u2019Sullivan#r\xe9sum\xe9'
+        uri = b'http://localhost/expos%C3%A9?doppelg%C3%A4nger=Bryan%20O%E2%80%99Sullivan#r%C3%A9sum%C3%A9'
         self.assertEqual(flatten(url.URL.fromString(iri)), uri)
 
 
