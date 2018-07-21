@@ -640,5 +640,5 @@ class URLRedirectAdapter:
             # It might also be relative so resolve it against the current URL
             # and flatten it again.
             u = flat.flatten(URL.fromContext(ctx).click(u), ctx)
-            return redirectTo(u, inevow.IRequest(ctx))
+            return redirectTo(bytes(u), inevow.IRequest(ctx))
         return flat.flattenFactory(self.original, ctx, bits.append, flattened)
