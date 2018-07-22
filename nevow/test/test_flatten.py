@@ -9,22 +9,22 @@ from nevow.testutil import TestCase
 
 class TestSerialization(TestCase):
     def test_someTypes(self):
-        self.assertEqual(ten.flatten(1), '1')
-        self.assertEqual(ten.flatten([1,2,3]), '123')
+        self.assertEqual(ten.flatten(1), u'1')
+        self.assertEqual(ten.flatten([1,2,3]), u'123')
 
     def test_nestedTags(self):
         self.assertEqual(
             ten.flatten(
                 tags.html(hi='there')[
                     tags.body[ 42 ]]),
-            '<html hi="there"><body>42</body></html>')
+            u'<html hi="there"><body>42</body></html>')
 
     def test_dynamic(self):
         self.assertEqual(
             ten.flatten(
                 tags.html[
                     tags.body(render=lambda c, d: 'body!')]),
-            '<html>body!</html>')
+            u'<html>body!</html>')
 
     def test_reallyDynamic(self):
         self.assertEqual(
@@ -32,19 +32,20 @@ class TestSerialization(TestCase):
                 tags.html[
                     lambda c, d: tags.body[
                         lambda c, d: 'stuff']]),
-            '<html><body>stuff</body></html>')
+            u'<html><body>stuff</body></html>')
 
     def test_serializeString(self):
-        self.assertEqual(ten.flatten('one'), 'one')
+        self.assertEqual(ten.flatten('one'), u'one')
         self.assertEqual(type(ten.flatten('<>')), tags.raw)
-        self.assertEqual(ten.flatten('<abc&&>123'), '&lt;abc&amp;&amp;&gt;123')
-        self.assertEqual(ten.flatten(tags.xml('<>&')), '<>&')
-        self.assertEqual(ten.flatten(tags.xml('\xc2\xa3')), '\xc3\x82\xc2\xa3')
+        self.assertEqual(ten.flatten('<abc&&>123'), u'&lt;abc&amp;&amp;&gt;123')
+        self.assertEqual(ten.flatten(tags.xml('<>&')), u'<>&')
+        self.assertEqual(ten.flatten(tags.xml(u'\xc2\xa3')).encode('utf-8'), 
+            b'\xc3\x82\xc2\xa3')
         
     def test_flattenTwice(self):
         """Test that flattening a string twice does not encode it twice.
         """
-        self.assertEqual(ten.flatten(ten.flatten('&')), '&amp;')
+        self.assertEqual(ten.flatten(ten.flatten('&')), u'&amp;')
 
 
 class TestPrecompile(TestCase):
@@ -90,10 +91,10 @@ u = unicodedata.lookup('QUARTER NOTE')
 class TestUnicode(TestCase):
     
     def test_it(self):
-        self.assertEqual(ten.flatten(u), u.encode('utf8'))
+        self.assertEqual(ten.flatten(u).encode('utf-8'), u.encode('utf8'))
 
     def test_unescaped(self):
-        self.assertEqual(ten.flatten(tags.xml('<<<%s>>>' % u)), ('<<<%s>>>' % u).encode('utf8'))
+        self.assertEqual(ten.flatten(tags.xml('<<<%s>>>' % u)).encode("utf-8"), (b'<<<%s>>>' % u).encode('utf8'))
     
 class Registration(TestCase):
     def testBadRegister(self):
