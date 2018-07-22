@@ -4,6 +4,8 @@
 from xml.sax import make_parser, handler
 import xml as pyxml
 
+from twisted.python import compat
+
 from nevow.stan import xml, Tag, directive, slot
 import nevow
 
@@ -250,11 +252,14 @@ def parse(fl, ignoreDocType=False, ignoreComment=False):
 def parseString(t, ignoreDocType=False, ignoreComment=False):
     """returns stan from an XML literal in a string.
 
-    We accept utf-8 encoded byte strings, too.
+    t should be a byte string with the correct charset declaration.
+    To make things easy, we accept unicode strings, too, and encode them
+    as utf-8; you should therefore not declare any charsets in such
+    literals.
     """
-    from io import StringIO
+    from io import BytesIO
 
-    if isinstance(t, bytes):
-    	t = t.decode("utf-8")
+    if isinstance(t, compat.unicode):
+    	t = t.encode("utf-8")
 
-    return parse(StringIO(t), ignoreDocType, ignoreComment)
+    return parse(BytesIO(t), ignoreDocType, ignoreComment)

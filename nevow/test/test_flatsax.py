@@ -154,7 +154,7 @@ div.logo {
 
     def test_unicodeComment(self):
         xml = '<!-- \xc2\xa3 --><html></html>'
-        self.assertEqual(xml, flatten(parseString(xml)))
+        self.assertEqual(xml, flatten(parseString(xml)).encode("utf-8"))
 
     def test_xmlAttr(self):
         xml = '<html xml:lang="en"></html>'
