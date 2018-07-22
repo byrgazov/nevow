@@ -13,6 +13,7 @@ from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse, Allow
 from twisted.cred.portal import Portal, IRealm
 from twisted.cred.credentials import IUsernamePassword, IAnonymous
 from twisted.internet import address
+from twisted.python import compat
 from twisted.trial.unittest import TestCase
 from twisted.web.http_headers import Headers
 
@@ -87,10 +88,10 @@ class FakeHTTPRequest(appserver.NevowRequest):
         appserver.NevowRequest.__init__(self, *args, **kw)
         self._pchn = self.channel
         self._cookieCache = {}
-        from io import StringIO
-        self.content = StringIO()
+        from io import BytesIO
+        self.content = BytesIO()
         self.requestHeaders.setRawHeaders(b'host', [b'fake.com'])
-        self.written = StringIO()
+        self.written = BytesIO()
 
     def followRedirect(self):
         [L] = self.responseHeaders.getRawHeaders('location')
@@ -115,8 +116,10 @@ class FakeHTTPRequest(appserver.NevowRequest):
         return R
 
     def write(self, data):
-        self.written.write(data)
         appserver.NevowRequest.write(self, data)
+        if isinstance(data, compat.unicode):
+            data = data.encode("utf-8")
+        self.written.write(data)
 
     def addCookie(self, k, v, *args,**kw):
         appserver.NevowRequest.addCookie(self,k,v,*args,**kw)

@@ -1,3 +1,5 @@
+from twisted.python import compat
+
 from zope.interface import implements
 
 from nevow import inevow
