@@ -86,7 +86,7 @@ class CalculatorElement(LiveElement):
     """
     docFactory = xmlfile(sibling('calculator.html').path, 'CalculatorPattern')
 
-    jsClass = "CalculatorDemo.Calculator"
+    jsClass = u"CalculatorDemo.Calculator"
 
     validSymbols = '0123456789/*-=+.C'
 

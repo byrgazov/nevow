@@ -3,22 +3,22 @@ from nevow.livetrial import testcase
 
 
 class SetNodeContent(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.SetNodeContent'
+    jsClass = u'Divmod.Runtime.Tests.SetNodeContent'
 
 
 
 class AppendNodeContent(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.AppendNodeContent'
+    jsClass = u'Divmod.Runtime.Tests.AppendNodeContent'
 
 
 
 class AppendNodeContentScripts(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.AppendNodeContentScripts'
+    jsClass = u'Divmod.Runtime.Tests.AppendNodeContentScripts'
 
 
 
 class ElementSize(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.ElementSize'
+    jsClass = u'Divmod.Runtime.Tests.ElementSize'
 
 
     def getWidgetDocument(self):
@@ -33,7 +33,7 @@ class ElementSize(testcase.TestCase):
 
 
 class ElementsByTagNameShallow(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.ElementsByTagNameShallow'
+    jsClass = u'Divmod.Runtime.Tests.ElementsByTagNameShallow'
 
     def getWidgetDocument(self):
         """
@@ -46,12 +46,12 @@ class ElementsByTagNameShallow(testcase.TestCase):
 
 
 class PageSize(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.PageSize'
+    jsClass = u'Divmod.Runtime.Tests.PageSize'
 
 
 
 class TraversalOrdering(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.TraversalOrdering'
+    jsClass = u'Divmod.Runtime.Tests.TraversalOrdering'
 
     def getWidgetDocument(self):
         """
@@ -69,12 +69,12 @@ class TraversalOrdering(testcase.TestCase):
 
 
 class FindInRootNode(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.FindInRootNode'
+    jsClass = u'Divmod.Runtime.Tests.FindInRootNode'
 
 
 
 class Standalone(testcase.TestCase):
-    jsClass = 'Divmod.Runtime.Tests.Standalone'
+    jsClass = u'Divmod.Runtime.Tests.Standalone'
 
 
 
@@ -82,7 +82,7 @@ class ElementPosition(testcase.TestCase):
     """
     Tests for the element position-getting methods
     """
-    jsClass = 'Divmod.Runtime.Tests.ElementPosition'
+    jsClass = u'Divmod.Runtime.Tests.ElementPosition'
 
 
 
@@ -90,4 +90,4 @@ class LoadScript(testcase.TestCase):
     """
     Tests for C{Divmod.Runtime.Platform.loadScript}.
     """
-    jsClass = 'Divmod.Runtime.Tests.LoadScript'
+    jsClass = u'Divmod.Runtime.Tests.LoadScript'

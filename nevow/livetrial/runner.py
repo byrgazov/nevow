@@ -5,7 +5,7 @@ from nevow import athena, loaders, tags, rend, url, static, util
 staticData = filepath.FilePath(__file__).parent().child('static')
 
 class TestSuiteFragment(athena.LiveFragment):
-    jsClass = 'Nevow.Athena.Test.TestSuite'
+    jsClass = u'Nevow.Athena.Test.TestSuite'
     docFactory = loaders.stan(tags.invisible(render=tags.directive('tests')))
 
     def __init__(self, suite):
@@ -43,7 +43,7 @@ class TestSuiteFragment(athena.LiveFragment):
 
 
 class TestRunner(TestSuiteFragment):
-    jsClass = 'Nevow.Athena.Test.TestRunner'
+    jsClass = u'Nevow.Athena.Test.TestRunner'
     docFactory = loaders.stan(
         tags.div(_class='test-runner', render=tags.directive('liveFragment'))[
             tags.form(action='#')[

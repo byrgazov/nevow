@@ -50,7 +50,7 @@ class LivePageError(Exception):
     """
     Base exception for LivePage errors.
     """
-    jsClass = 'Divmod.Error'
+    jsClass = u'Divmod.Error'
 
 
 
@@ -59,7 +59,7 @@ class NoSuchMethod(LivePageError):
     Raised when an attempt is made to invoke a method which is not defined or
     exposed.
     """
-    jsClass = 'Nevow.Athena.NoSuchMethod'
+    jsClass = u'Nevow.Athena.NoSuchMethod'
 
     def __init__(self, objectID, methodName):
         self.objectID = objectID
@@ -1008,7 +1008,7 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
     @ivar _localObjectIDCounter: A callable that will return a new
         locally-unique object ID each time it is called.
     """
-    jsClass = 'Nevow.Athena.PageWidget'
+    jsClass = u'Nevow.Athena.PageWidget'
     cssModule = None
 
     factory = LivePageFactory()
@@ -1600,7 +1600,7 @@ def rewriteAthenaIds(root):
 
 
 class _LiveMixin(_HasJSClass, _HasCSSModule):
-    jsClass = 'Nevow.Athena.Widget'
+    jsClass = u'Nevow.Athena.Widget'
     cssModule = None
 
     preprocessors = [rewriteEventHandlerNodes, rewriteAthenaIds]
@@ -2019,7 +2019,7 @@ class IntrospectionFragment(LiveFragment):
     the state of a live page.
     """
 
-    jsClass = 'Nevow.Athena.IntrospectionWidget'
+    jsClass = u'Nevow.Athena.IntrospectionWidget'
 
     docFactory = loaders.stan(
         tags.span(render=tags.directive('liveFragment'))[

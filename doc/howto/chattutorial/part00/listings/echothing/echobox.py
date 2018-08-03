@@ -5,7 +5,7 @@ from nevow.loaders import xmlfile
 class EchoElement(LiveElement):
 
     docFactory = xmlfile(sibpath(__file__, 'template.html'))
-    jsClass = 'EchoThing.EchoWidget'
+    jsClass = u'EchoThing.EchoWidget'
 
     def say(self, message):
         self.callRemote('addText', message)

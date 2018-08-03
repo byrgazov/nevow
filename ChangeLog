@@ -1,3 +1,8 @@
+2018-07-22
+
+	* jsClass now must be a unicode string; code that should keep running
+	  in python2 needs to be changed.
+
 2006-06-12  Glyph Lefkowitz <glyph@divmod.com>
 
 	* Nevow 0.9.0: see NEWS.txt for details.

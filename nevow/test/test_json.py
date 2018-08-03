@@ -274,7 +274,7 @@ class JavascriptObjectNotationTestCase(unittest.TestCase):
             implements(IAthenaTransportable)
 
             def __init__(self, jsClass, initialArgs):
-                self.jsClass = jsClass
+                self.jsClass = compat.unicode(jsClass)
                 self.getInitialArguments = lambda: initialArgs
 
         self.assertEqual(

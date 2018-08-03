@@ -31,7 +31,7 @@ class Benchmark(athena.LivePage):
             yield top
 
 class InitializationBenchmark(athena.LiveFragment):
-    jsClass = 'Nevow.Benchmarks.InitializationBenchmark'
+    jsClass = u'Nevow.Benchmarks.InitializationBenchmark'
 
     docFactory = loaders.stan(
         tags.div(render=tags.directive('liveFragment'))[

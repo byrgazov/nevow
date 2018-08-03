@@ -1580,7 +1580,7 @@ class LivePageTests(unittest.TestCase, CSSModuleTestMixin):
         L{LivePage.render_liveglue} should include modules that the
         L{LivePage}'s jsClass depends on.
         """
-        self.page.jsClass = 'PythonTestSupport.Dependor.PageTest'
+        self.page.jsClass = u'PythonTestSupport.Dependor.PageTest'
         freq = FakeRequest()
         self.page._becomeLive(url.URL.fromRequest(freq))
         ctx = WovenContext(tag=tags.div())
@@ -1925,7 +1925,7 @@ class WidgetSubcommandTests(unittest.TestCase):
         particular LiveElement properly renders that element.
         """
         element = DummyLiveElement()
-        element.jsClass = 'Dummy.ClassName'
+        element.jsClass = u'Dummy.ClassName'
         element.docFactory = stan('the element')
         page = ElementRenderingLivePage(element)
         renderDeferred = renderLivePage(page)
@@ -1975,7 +1975,7 @@ class WidgetSubcommandTests(unittest.TestCase):
         w = WidgetPluginRoot(DummyLiveElement)
         page1, seg = w.locateChild(None, [''])
         page1.element.docFactory = stan('the element')
-        page1.element.jsClass = 'Dummy.ClassName'
+        page1.element.jsClass = u'Dummy.ClassName'
         def cbCheckPageByClientID(result):
             req = FakeRequest()
             ctx = WovenContext()

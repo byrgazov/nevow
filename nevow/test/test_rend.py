@@ -931,7 +931,8 @@ class TestStandardRenderers(unittest.TestCase):
 
         ctx.remember('\xc2\xa3'.decode('utf-8'), inevow.IData)
         tag = p(render=rend.data)
-        self.assertEqual(flat.flatten(tag, ctx), '<p>\xc2\xa3</p>')
+        self.assertEqual(flat.flatten(tag, ctx).encode('utf-8'), 
+        	b'<p>\xc2\xa3</p>')
 
         ctx.remember([1,2,3,4,5], inevow.IData)
         tag = p(render=rend.data)

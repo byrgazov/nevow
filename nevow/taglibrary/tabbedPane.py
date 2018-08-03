@@ -24,7 +24,7 @@ class tabbedPaneGlue:
 
 
 class TabbedPaneFragment(athena.LiveFragment):
-    jsClass = 'Nevow.TagLibrary.TabbedPane.TabbedPane'
+    jsClass = u'Nevow.TagLibrary.TabbedPane.TabbedPane'
     cssModule = 'Nevow.TagLibrary.TabbedPane'
 
     docFactory = loaders.xmlstr("""

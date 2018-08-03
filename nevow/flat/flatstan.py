@@ -10,6 +10,7 @@ try:
 except ImportError:
 	from urllib import quote
 
+from twisted.python import compat
 from twisted.python import log, failure
 
 from nevow import util
@@ -160,7 +161,9 @@ def StringSerializer(original, context):
     if context.inURL:
         # The magic string "-_.!*'()" also appears in url.py.  Thinking about
         # changing this?  Change that, too.
-        return quote(original, safe="-_.!*'()")
+        if isinstance(original, compat.unicode):
+            original = original.encode("utf-8")
+        return quote(original, safe="-_.!*'()").decode("ascii")
     ## quote it
     if context.inJS:
         original = _jsSingleQuoteQuote(original)

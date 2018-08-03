@@ -22,7 +22,7 @@ def tabbedPaneFragment():
 
 
 class TabbedPaneFetcher(athena.LiveElement):
-    jsClass = 'Nevow.Test.TestTabbedPane.TabbedPaneFetcher'
+    jsClass = u'Nevow.Test.TestTabbedPane.TabbedPaneFetcher'
     docFactory = loaders.xmlstr("""
 <div xmlns:athena="http://divmod.org/ns/athena/0.7"
   xmlns:nevow="http://nevow.com/ns/nevow/0.1"

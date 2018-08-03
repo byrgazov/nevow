@@ -7,7 +7,7 @@ from twisted.python import log, util
 from nevow import athena, loaders, static
 
 class Clock(athena.LiveFragment):
-    jsClass = "WidgetDemo.Clock"
+    jsClass = u"WidgetDemo.Clock"
 
     docFactory = loaders.xmlstr('''\
 <div xmlns:nevow="http://nevow.com/ns/nevow/0.1"
