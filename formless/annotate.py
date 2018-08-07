@@ -150,6 +150,7 @@ class String(Typed):
     newlines or tabs.
 
     strip: remove leading and trailing whitespace.
+    encoding: encoding to use if constructed with a byte string (default utf-8)
     """
 
     requiredFailMessage = 'Please enter a string.'
@@ -157,14 +158,12 @@ class String(Typed):
     strip = False
 
     def __init__(self, *args, **kwargs):
-        try:
-            self.strip = kwargs['strip']
-            del kwargs['strip']
-        except KeyError:
-            pass
+        self.strip = kwargs.pop('strip', False)
+        self.encoding = kwargs.pop('encoding', "utf-8")
         Typed.__init__(self, *args, **kwargs)
 
     def coerce(self, val, configurable):
+        val = util.nativeString(val, self.encoding)
         if self.strip:
             val = val.strip()
         return val

@@ -2,6 +2,8 @@
 
 	* jsClass now must be a unicode string; code that should keep running
 	  in python2 needs to be changed.
+	* formless Strings now take an encoding to use if constructed with a
+	  byte string.
 
 2006-06-12  Glyph Lefkowitz <glyph@divmod.com>
 

@@ -3,6 +3,8 @@
 
 import inspect, os.path
 
+from twisted.python import compat
+
 class UnexposedMethodError(Exception):
     """
     Raised on any attempt to get a method which has not been exposed.
@@ -229,3 +231,25 @@ class CachedFile(object):
             self._mtime = currentTime
 
         return self._cachedObj
+
+
+def nativeString(s, encoding="utf-8"):
+    """
+    Convert C{bytes} or C{unicode} to the native C{str} type, using encoding
+    if conversion is necessary.
+
+    This is in the spirit of t.p.compat.nativeString, except we don't 
+    insist on ASCII.
+
+    @raise UnicodeError: The input string is not encodable/decodable.
+    @raise TypeError: The input is neither C{bytes} nor C{unicode}.
+    """
+    if not isinstance(s, (bytes, unicode)):
+        raise TypeError("%r is neither bytes nor unicode" % s)
+    if compat._PY3:
+        if isinstance(s, bytes):
+            return s.decode(encoding)
+    else:
+        if isinstance(s, unicode):
+            return s.encode(encoding)
+    return s
