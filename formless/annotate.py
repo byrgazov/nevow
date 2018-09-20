@@ -619,7 +619,7 @@ class GroupBinding(Binding):
 
 
 def _sorter(x, y):
-    return cmp(x.id, y.id)
+    return (x.id > y.id) - (x.id < y.id)
 
 
 class _Marker(object):
@@ -811,10 +811,10 @@ class MetaTypedInterface(InterfaceClass):
                 )
         for attacher in actionAttachers:
             attacher.attachActionBindings(possibleActions)
-        methods.sort(_sorter)
-        properties.sort(_sorter)
+        sorted(methods, key=_sorter)
+        sorted(properties, key=_sorter)
         cls.__spec__ = spec = methods + properties
-        spec.sort(_sorter)
+        sorted(spec, key=_sorter)
         cls.name = name
 
         # because attributes "label" and "description" would become Properties,
