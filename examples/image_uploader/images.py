@@ -1,4 +1,4 @@
-from zope.interface import implements, Interface
+from zope.interface import implementer, Interface
 
 from axiom import store, item
 from axiom.attributes import text, bytes
@@ -12,8 +12,9 @@ class Image(item.Item):
     image = bytes()
     hash = text()
 
+
+@implementer(IImages)
 class Application(item.Item, item.InstallableMixin):
-    implements(IImages)
 
     name = text()
 
@@ -26,6 +27,7 @@ class Application(item.Item, item.InstallableMixin):
 
     def getOne(self, hash):
         return self.store.findUnique(Image, Image.hash==hash)
+
 
 def initialize():
    s = store.Store('imagination.axiom')

@@ -1,4 +1,3 @@
-from zope.interface import implements
 
 from twisted.trial import unittest
 from io import StringIO

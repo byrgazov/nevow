@@ -22,7 +22,7 @@ from io import StringIO
 import random
 import warnings
 
-from zope.interface import implements, providedBy
+from zope.interface import implementer, providedBy
 
 import twisted.python.components as tpc
 from twisted.python.reflect import qual, accumulateClassList
@@ -52,9 +52,8 @@ def _getPreprocessors(inst):
     return preprocessors
 
 
-
+@implementer(inevow.IRendererFactory)
 class RenderFactory(object):
-    implements(inevow.IRendererFactory)
 
     def renderer(self, context, name):
         """Return a renderer with the given name.
@@ -88,8 +87,8 @@ class RenderFactory(object):
     render_data = lambda self, context, data_: data(context, data_)
 
 
+@implementer(inevow.IMacroFactory)
 class MacroFactory(object):
-    implements(inevow.IMacroFactory)
 
     def macro(self, ctx, name):
         """Return a macro with the given name.
@@ -118,8 +117,8 @@ class DataNotFoundError(Exception):
     """
 
 
+@implementer(inevow.IContainer)
 class DataFactory(object):
-    implements(inevow.IContainer)
 
     def child(self, context, n):
         args = []
@@ -177,6 +176,7 @@ class FreeformChildMixin:
         return inevow.IHand(inevow.ISession(ctx), None)
 
 
+@implementer(iformless.IConfigurable)
 class ConfigurableMixin(object):
     """
     A sane L{IConfigurable} implementation for L{Fragment} and L{Page}. 
@@ -193,7 +193,6 @@ class ConfigurableMixin(object):
             assert isinstance(argName, str)
             assert isinstance(anotherArg, int)
     """
-    implements(iformless.IConfigurable)
 
     def getBindingNames(self, ctx):
         """Expose bind_* methods and attributes on this class.
@@ -258,12 +257,12 @@ class ConfigurableMixin(object):
                                   bindingName).addCallback(_callback)
 
 
+@implementer(iformless.IConfigurableFactory)
 class ConfigurableFactory:
     """Locates configurables by looking for methods that start with
     configurable_ and end with the name of the configurable. The method
     should take a single arg (other than self) - the current context.
     """
-    implements(iformless.IConfigurableFactory)
 
     def locateConfigurable(self, context, name):
         """formless.webform.renderForms calls locateConfigurable on the IConfigurableFactory
@@ -363,6 +362,7 @@ def originalFactory(ctx):
     return ctx.tag
 
 
+@implementer(inevow.IRenderer, inevow.IGettable)
 class Fragment(DataFactory, RenderFactory, MacroFactory, ConfigurableMixin):
     """
     This class is deprecated because it relies on context objects
@@ -370,7 +370,6 @@ class Fragment(DataFactory, RenderFactory, MacroFactory, ConfigurableMixin):
 
     @see: L{Element}
     """
-    implements(inevow.IRenderer, inevow.IGettable)
 
     docFactory = None
     original = None
@@ -512,12 +511,11 @@ class ChildLookupMixin(FreeformChildMixin):
         self.children[name] = child
 
 
+@implementer(inevow.IResource)
 class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
     """A page is the main Nevow resource and renders a document loaded
     via the document factory (docFactory).
     """
-
-    implements(inevow.IResource)
 
     buffered = False
 
@@ -783,10 +781,10 @@ def data(context, data):
     return context.tag.clear()[data]
 
 
+@implementer(inevow.IResource)
 class FourOhFour:
     """A simple 404 (not found) page.
     """
-    implements(inevow.IResource)
 
     notFound = "<html><head><title>Page Not Found</title></head><body>Sorry, but I couldn't find the object you requested.</body></html>"
     original = None

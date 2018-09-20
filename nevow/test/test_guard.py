@@ -7,7 +7,7 @@ Tests for L{nevow.guard}.
 
 import gc
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse, AllowAnonymousAccess, ANONYMOUS
 from twisted.cred.portal import Portal, IRealm
@@ -186,8 +186,8 @@ class SillyAnonymous(SillyPage):
         return 'No'
 
 
+@implementer(IRealm)
 class SillyRealm:
-    implements(IRealm)
 
     def __init__(self, anonymousAvatarFactory=SillyAnonymous,
                  authenticatedAvatarFactory=SillyAvatar):
@@ -254,13 +254,15 @@ class GetLoggedInAvatar(rend.Page):
         assert r is self
         return r.__class__.__name__
 
+
 class GetLoggedInAnonymous(rend.Page):
     def child_(self, ctx): return self
     def renderHTTP(self, ctx):
         raise RuntimeError("We weren't supposed to get here.")
 
+
+@implementer(IRealm)
 class GetLoggedInRealm:
-    implements(IRealm)
 
     def requestAvatar(self, avatarId, mind, *interfaces):
         if avatarId == ANONYMOUS:
@@ -549,8 +551,8 @@ class GuardTestFuncs:
             def renderHTTP(self, ctx):
                 return 'Anonymous %s' % self.original
 
+        @implementer(IRealm)
         class TrailingSlashRealm:
-            implements(IRealm)
 
             def __init__(self, path):
                 self.path = path
@@ -594,8 +596,8 @@ class GuardTestFuncs:
             def renderHTTP(self, ctx):
                 return 'Anonymous %s' % self.original
 
+        @implementer(IRealm)
         class TrailingSlashRealm:
-            implements(IRealm)
 
             def __init__(self, path):
                 self.path = path

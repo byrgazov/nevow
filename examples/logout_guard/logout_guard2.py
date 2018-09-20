@@ -7,7 +7,7 @@ with an example of remembering values within the session.
 #
 
 import random
-from zope.interface import implements, Interface
+from zope.interface import implementer, Interface
 
 from nevow import guard
 from nevow import rend
@@ -16,11 +16,14 @@ from nevow import tags as T
 from nevow import url
 from nevow.inevow import ISession
 
+
 class IValueHistory(Interface):
     pass
 
+
 class ISessionValue(Interface):
     pass
+
 
 class MyRootResource(rend.Page):
     """Some resource."""
@@ -68,9 +71,10 @@ class Mind:
         self.request = request
         self.credentials = credentials
 
+
+@implementer(IRealm)
 class MyRealm:
-    implements(IRealm)
-    
+
     def requestAvatar(self, avatar_id, mind, *interfaces):
         if IResource in interfaces:
             return (

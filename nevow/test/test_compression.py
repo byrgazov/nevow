@@ -4,7 +4,7 @@ Tests for on-the-fly content compression encoding.
 from io import StringIO
 from gzip import GzipFile
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.trial.unittest import TestCase
 from twisted.internet.defer import succeed
@@ -16,7 +16,6 @@ from nevow.appserver import errorMarker
 from nevow.rend import NotFound
 from nevow.compression import CompressingResourceWrapper, CompressingRequestWrapper
 from nevow.compression import parseAcceptEncoding, _ProxyDescriptor
-
 
 
 class HeaderTests(TestCase):
@@ -212,7 +211,7 @@ class RequestWrapperTests(TestCase):
         self.assertTrue(self.request.finished)
 
 
-
+@implementer(IResource)
 class TestResource(object):
     """
     L{IResource} implementation for testing.
@@ -223,7 +222,6 @@ class TestResource(object):
     @type segments: C{list}
     @ivar html: The data to return from C{renderHTTP}.
     """
-    implements(IResource)
 
     lastRequest = None
 
@@ -250,12 +248,11 @@ class TestResource(object):
         return self.html
 
 
-
+@implementer(IResource)
 class TestChildlessResource(object):
     """
     L{IResource} implementation with no children.
     """
-    implements(IResource)
 
     def locateChild(self, ctx, segments):
         """
@@ -264,12 +261,11 @@ class TestChildlessResource(object):
         return NotFound
 
 
-
+@implementer(IResource)
 class TestDeferredResource(object):
     """
     L{IResource} implementation with children.
     """
-    implements(IResource)
 
     def locateChild(self, ctx, segments):
         """
@@ -281,25 +277,23 @@ class TestDeferredResource(object):
         return succeed(type(self)()), []
 
 
-
 class TestResourceWrapper(CompressingResourceWrapper):
     """
     Subclass for testing purposes, just to create a new type.
     """
 
 
+@implementer(IResource)
 class TestBrokenResource(object):
     """
     L{IResource} implementation that returns garbage from C{locateChild}.
     """
-    implements(IResource)
 
     def locateChild(self, ctx, segments):
         """
         Return some garbage.
         """
         return 42
-
 
 
 class ResourceWrapper(TestCase):

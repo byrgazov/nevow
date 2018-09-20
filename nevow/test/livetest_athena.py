@@ -5,7 +5,7 @@
 Browser integration tests for Athena.
 """
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 
@@ -168,17 +168,16 @@ class AsyncExceptionFromClient(testcase.TestCase):
             raise f
 
 
+@implementer(IAthenaTransportable)
 class CustomTransportable(object):
     """
     A simple transportable object used to verify customization is possible.
     """
-    implements(IAthenaTransportable)
 
     jsClass = 'Nevow.Athena.Tests.CustomTransportable'
 
     def getInitialArguments(self):
         return ("Hello", 5, "world")
-
 
 
 class ServerToClientArgumentSerialization(testcase.TestCase):

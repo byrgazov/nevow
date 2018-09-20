@@ -38,10 +38,10 @@ over a very simple root resource:
 
 .. code-block:: python
 
-    from zope.interface import implements
+    from zope.interface import implementer
 
+    @implementer(inevow.IResource)
     class SimpleRoot(object):
-        implements(inevow.IResource)
 
         def locateChild(self, ctx, segments):
             return self, ()
@@ -80,10 +80,10 @@ serves up objects for child directories and files:
 
 .. code-block:: python
 
-    from zope.interface import implements
+    from zope.interface import implementer
 
+    @implementer(inevow.IResource)
     class Directory(object):
-        implements(inevow.IResource)
 
         def __init__(self, directory):
             self.directory = directory

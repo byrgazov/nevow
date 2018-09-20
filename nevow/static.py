@@ -12,7 +12,7 @@ import traceback
 import warnings
 StringIO = cStringIO
 del cStringIO
-from zope.interface import implements
+from zope.interface import implementer
 
 try:
     from twisted.web.resource import NoResource, ForbiddenResource
@@ -38,11 +38,12 @@ dangerousPathError = NoResource("Invalid request URL.")
 def isDangerous(path):
     return path == '..' or '/' in path or os.sep in path
 
+
+@implementer(inevow.IResource)
 class Data:
     """
     This is a static, in-memory resource.
     """
-    implements(inevow.IResource)
 
     def __init__(self, data, type, expires=None):
         self.data = data
@@ -153,6 +154,8 @@ def getTypeAndEncoding(filename, types, encodings, defaultType):
     type = types.get(ext, defaultType)
     return type, enc
 
+
+@implementer(inevow.IResource)
 class File:
     """
     File is a resource that represents a plain non-interpreted file
@@ -171,7 +174,6 @@ class File:
     return the contents of /tmp/foo/bar.html .
     """
 
-    implements(inevow.IResource)
 
     contentTypes = loadMimeTypes()
 
@@ -413,8 +415,9 @@ threadable.synchronize(FileTransfer)
    Inspired by Apache's mod_asis
 """
 
+
+@implementer(inevow.IResource)
 class ASISProcessor:
-    implements(inevow.IResource)
     
     def __init__(self, path, registry=None):
         self.path = path

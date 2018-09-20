@@ -1,6 +1,7 @@
-from zope.interface import implements, Interface
+from zope.interface import implementer, Interface
 
 from axiom import store, item, attributes
+
 
 class Book(item.Item):
     typeName = 'book'
@@ -9,12 +10,14 @@ class Book(item.Item):
     title = attributes.text()
     description = attributes.text()
 
+
 class ILibrary(Interface):
     pass
 
+
+@implementer(ILibrary)
 class Library(item.Item, item.InstallableMixin):
-    implements(ILibrary)
-    
+
     typeName = 'library'
     schemaVersion = 1
 

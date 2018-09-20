@@ -1,4 +1,4 @@
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.python.components import registerAdapter
 
@@ -27,9 +27,10 @@ class ITreeEdit(annotate.TypedInterface):
                        description=annotate.String()):
         pass
     addChild = annotate.autocallable(addChild)
- 
+
+
+@implementer(ITreeEdit)
 class TreeRenderer(rend.Page):
-    implements(ITreeEdit)
     addSlash = True
     docFactory = loaders.htmlstr("""
 <html>

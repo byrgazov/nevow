@@ -1,7 +1,7 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-from zope.interface import implements, Interface
+from zope.interface import implementer, Interface
 
 from twisted.internet import defer
 from twisted.trial import unittest
@@ -606,18 +606,22 @@ class TestConfigurableMixin(unittest.TestCase):
         result = FormPage().postForm(ctx, 'test1', {'foo': ['hello, world!']})
         return self.assertFailure(result, annotate.ValidateError)
 
+
 class IThing(formless.TypedInterface):
     foo = formless.String()
 
-class Thing:
-    implements(IThing)
 
+@implementer(IThing)
+class Thing:
+    pass
+
+
+@implementer(IThing)
 class TestLocateConfigurable(unittest.TestCase):
 
     def test_onSelf(self):
 
         class Page(rend.Page):
-            implements(IThing)
             docFactory = loaders.stan(html[freeform.renderForms()])
 
         page = Page()
@@ -656,8 +660,9 @@ class TestDeferredDefaultValue(unittest.TestCase):
         from nevow import util
         deferred = util.Deferred()
         deferred.callback('the default value')
+
+        @implementer(IDeferredProperty)
         class Implementation(object):
-            implements(IDeferredProperty)
             d = deferred
 
         return deferredRender(rend.Page(Implementation(), docFactory=loaders.stan(html[freeform.renderForms('original')]))).addCallback(
@@ -879,11 +884,12 @@ class TestLocateChild(unittest.TestCase):
 
     def test_freeformChildMixin_nonTrue(self):
         """Configurables that have c.__nonzero__()==False are accepted."""
+        @implementer(iformless.IConfigurable)
         class SimpleConf(object):
-            implements(iformless.IConfigurable)
             # mock mock
             def postForm(self, ctx, bindingName, args):
                 return 'SimpleConf OK'
+
         class FormPage(rend.Page):
             addSlash = True
             def configurable_(self, ctx):
@@ -891,6 +897,7 @@ class TestLocateChild(unittest.TestCase):
         page = FormPage()
 
         D = getResource(page, '/foo')
+
         def x1(r):
             self.assertTrue(isinstance(r.tag, rend.FourOhFour))
         D.addCallback(x1)
