@@ -31,7 +31,7 @@ class Basic(TestCase):
         number at which the tag was seen in that file.
         """
         fName = self.mktemp()
-        fObj = file(fName, 'w')
+        fObj = open(fName, 'w')
         fObj.write(
             '<html>\n'
             '  <head>\n'
@@ -70,7 +70,7 @@ class Basic(TestCase):
         number at which the tag was seen in that file.
         """
         fName = self.mktemp()
-        fObj = file(fName, 'w')
+        fObj = open(fName, 'w')
         fObj.write(
             '<html xmlns:nevow="http://nevow.com/ns/nevow/0.1">\n'
             '    <nevow:attr name="foo" />\n'
@@ -89,7 +89,7 @@ class Basic(TestCase):
         C{lineNumber}, and C{columnNumber} attributes as L{Tag} instances do.
         """
         fName = self.mktemp()
-        fObj = file(fName, 'w')
+        fObj = open(fName, 'w')
         fObj.write(
             '<html xmlns:nevow="http://nevow.com/ns/nevow/0.1">\n'
             '    <nevow:slot name="foo" />\n'

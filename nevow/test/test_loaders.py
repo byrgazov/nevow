@@ -73,7 +73,7 @@ class TestDocFactories(unittest.TestCase):
     def test_htmlfile(self):
         doc = '<ul id="nav"><li>a</li><li>b</li><li>c</li></ul>'
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(doc)
         f.close()
         df = loaders.htmlfile(temp)
@@ -87,7 +87,7 @@ class TestDocFactories(unittest.TestCase):
     def test_htmlfile_slots(self):
         doc = '<nevow:slot name="foo">Hi there</nevow:slot>'
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(doc)
         f.close()
         df = loaders.htmlfile(temp)
@@ -117,7 +117,7 @@ class TestDocFactories(unittest.TestCase):
     def test_xmlfile(self):
         doc = '<ul id="nav"><li>a</li><li>b</li><li>c</li></ul>'
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(doc)
         f.close()
         df = loaders.xmlfile(temp)
@@ -130,7 +130,7 @@ class TestDocFactories(unittest.TestCase):
         preprocessors it is given.
         """
         xmlFile = self.mktemp()
-        f = file(xmlFile, 'w')
+        f = open(xmlFile, 'w')
         f.write('<div><span>Hello</span><span>world</span></div>')
         f.close()
         factory = loaders.xmlfile(xmlFile)
@@ -214,7 +214,7 @@ class TestDocFactoriesCache(unittest.TestCase):
 
     def test_htmlfile(self):
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(self.doc)
         f.close()
 
@@ -236,7 +236,7 @@ class TestDocFactoriesCache(unittest.TestCase):
 
     def test_htmlfileReload(self):
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(self.doc)
         f.close()
 
@@ -290,7 +290,7 @@ class TestDocFactoriesCache(unittest.TestCase):
     def test_xmlfile(self):
 
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(self.nsdoc)
         f.close()
 
@@ -311,7 +311,7 @@ class TestDocFactoriesCache(unittest.TestCase):
     def test_xmlfileReload(self):
 
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(self.nsdoc)
         f.close()
 
@@ -328,7 +328,7 @@ class TestDocFactoriesCache(unittest.TestCase):
         temp = self.mktemp()
 
         # Write some content
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write('<p>foo</p>')
         f.close()
 
@@ -342,7 +342,7 @@ class TestDocFactoriesCache(unittest.TestCase):
 
         # Write the file with different content and make sure the
         # timestamp changes
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write('<p>bar</p>')
         f.close()
         os.utime(temp, (os.path.getatime(temp), os.path.getmtime(temp)+5))
@@ -372,7 +372,7 @@ class TestContext(unittest.TestCase):
 
     def test_xmlfile(self):
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write('<p>hello</p>')
         f.close()
         self._withAndWithout(loaders.xmlfile(temp))
@@ -387,7 +387,7 @@ class TestContext(unittest.TestCase):
 
     def test_htmlfile(self):
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write('<p>hello</p>')
         f.close()
         self._withAndWithout(loaders.htmlfile(temp))

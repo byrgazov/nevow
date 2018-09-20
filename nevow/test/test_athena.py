@@ -165,7 +165,7 @@ the end
         Write L{testModuleImpl} to a file.
         """
         self.testModuleFilename = self.mktemp()
-        testModule = file(self.testModuleFilename, 'w')
+        testModule = open(self.testModuleFilename, 'w')
         testModule.write(self.testModuleImpl)
         testModule.close()
 
@@ -190,7 +190,7 @@ the end
         Create a complicated network of module dependencies.
         """
         emptyModulePath = self.mktemp()
-        file(emptyModulePath, 'w').close()
+        open(emptyModulePath, 'w').close()
         modules = {
             'testmodule': self.testModuleFilename,
             'Another': self.mktemp(),
@@ -199,11 +199,11 @@ the end
             'SecondaryDependency': emptyModulePath,
             'ExampleDependency': emptyModulePath}
 
-        anotherModule = file(modules['Another'], 'w')
+        anotherModule = open(modules['Another'], 'w')
         anotherModule.write('// import SecondaryDependency\n')
         anotherModule.close()
 
-        exampleModule = file(modules['ExampleModule'], 'w')
+        exampleModule = open(modules['ExampleModule'], 'w')
         exampleModule.write('// import ExampleDependency\n')
         exampleModule.close()
 
@@ -255,11 +255,11 @@ the end
         name when CR LF newlines are used in a JavaScript source file.
         """
         fooModuleFilename = self.mktemp()
-        fooModule = file(fooModuleFilename, 'wb')
+        fooModule = open(fooModuleFilename, 'wb')
         fooModule.write('// import Bar\r\n')
         fooModule.close()
         barModuleFilename = self.mktemp()
-        barModule = file(barModuleFilename, 'wb')
+        barModule = open(barModuleFilename, 'wb')
         barModule.close()
 
         modules = {
@@ -276,7 +276,7 @@ the end
         L{athena.AthenaModule} should cache module dependencies.
         """
         testModuleFilename = self.mktemp()
-        testModule = file(testModuleFilename, 'w')
+        testModule = open(testModuleFilename, 'w')
         testModule.write('')
         testModule.close()
 
@@ -307,8 +307,8 @@ the end
         dependencies.
         """
         modules = {'Foo': self.mktemp(), 'Foo.Bar': self.mktemp()}
-        file(modules['Foo'], 'wb').close()
-        file(modules['Foo.Bar'], 'wb').close()
+        open(modules['Foo'], 'wb').close()
+        open(modules['Foo.Bar'], 'wb').close()
         foo = self.moduleClass.getOrCreate('Foo', modules)
         bar = self.moduleClass.getOrCreate('Foo.Bar', modules)
         self.assertIn(foo, bar.allDependencies())
@@ -379,7 +379,7 @@ class MemoizationTests(unittest.TestCase):
         @rtype: C{str}
         """
         fname = self.mktemp()
-        fObj = file(fname, 'w')
+        fObj = open(fname, 'w')
         fObj.write(s)
         fObj.close()
         return fname
@@ -473,7 +473,7 @@ class _AutoPackageTestMixin:
 
         def childPath(*a):
             path = os.path.join(packageDir, *a)
-            file(path, 'w').close()
+            open(path, 'w').close()
             return path
 
         expected = {

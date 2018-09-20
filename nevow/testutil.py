@@ -458,7 +458,7 @@ class JavaScriptTestCase(TrialTestCase):
 
     def _writeToTemp(self, contents):
         fname = self.mktemp()
-        fd = file(fname, 'w')
+        fd = open(fname, 'w')
         try:
             fd.write(contents)
         finally:
@@ -591,7 +591,7 @@ class CSSModuleTestMixin:
         """
         def makeModule(contents=None):
             fname = self.mktemp()
-            f = file(fname, 'w')
+            f = open(fname, 'w')
             if contents is not None:
                 f.write(contents)
             f.close()

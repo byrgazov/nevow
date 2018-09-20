@@ -36,11 +36,11 @@ class FSPasteBinService(service.Service):
         return os.path.join(self._dir, name)
 
     def _loadPastingData(self, oid):
-        f = file(self._makeFilename(str(oid)), 'rb')
+        f = open(self._makeFilename(str(oid)), 'rb')
         return pickle.load(f)
 
     def _savePastingData(self, oid, data):
-        f = file(self._makeFilename(str(oid)), 'wb')
+        f = open(self._makeFilename(str(oid)), 'wb')
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
     def getPasting(self, oid):
@@ -69,7 +69,7 @@ class FSPasteBinService(service.Service):
     def startService(self):
         log.msg('Loading index')
         try:
-            f = file(self._makeFilename('index'), 'rb')
+            f = open(self._makeFilename('index'), 'rb')
             d = pickle.load(f)
             self._index = d['index']
             self._nextOid = d['nextOid']
@@ -80,7 +80,7 @@ class FSPasteBinService(service.Service):
     def stopService(self):
         log.msg('Storing index')
         d = {'index':self._index, 'nextOid':self._nextOid}
-        f = file(self._makeFilename('index'), 'wb')
+        f = open(self._makeFilename('index'), 'wb')
         pickle.dump(d, f, pickle.HIGHEST_PROTOCOL)
 
 
