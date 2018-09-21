@@ -37,7 +37,10 @@ from nevow import inevow, url, stan
 
 
 def _sessionCookie():
-    return md5("%s_%s" % (str(random.random()) , str(time.time()))).hexdigest()
+    return \
+        md5(b"%r_%r" % (
+            str(random.random()),
+            str(time.time()))).hexdigest()
 
 
 @implementer(inevow.ISession, inevow.IGuardSession)
