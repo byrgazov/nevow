@@ -268,7 +268,11 @@ def _serialize(obj, w, seen):
         w(str(obj))
     elif isinstance(obj, str):
         w('"')
-        w(stringEncode(obj))
+        w(obj)
+        w('"')
+    elif isinstance(obj, bytes):
+        w('"')
+        w(obj.decode('utf-8'))
         w('"')
     elif isinstance(obj, type(None)):
         w('null')

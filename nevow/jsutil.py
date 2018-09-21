@@ -112,5 +112,6 @@ def generateTestScript(fname, after={}, dependencies=None):
             js.extend(after[m.name])
 
     js.append(open(fname).read())
+    clean_js = [i.decode('utf-8') if isinstance(i, bytes) else i for i in js]
 
-    return '\n'.join(js)
+    return '\n'.join(clean_js)

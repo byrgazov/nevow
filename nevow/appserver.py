@@ -162,9 +162,14 @@ def processingFailed(reason, request, ctx):
         log.err()
         log.err("Original exception:", isErr=1)
         log.err(reason)
-        request.write("<html><head><title>Internal Server Error</title></head>")
-        request.write("<body><h1>Internal Server Error</h1>An error occurred rendering the requested page. Additionally, an error occurred rendering the error page.</body></html>")
-        request.finishRequest( False )
+        request.write(
+            b"<html><head><title>Internal Server Error</title></head>")
+        request.write(
+            b"<body><h1>Internal Server Error</h1>"
+            b"An error occurred rendering the requested page. "
+            b"Additionally, an error occurred rendering the error page."
+            b"</body></html>")
+        request.finishRequest(False)
 
     return errorMarker
 
@@ -228,13 +233,16 @@ class NevowRequest(server.Request):
         self.site = self.channel.site
 
         # set various default headers
-        self.setHeader('server', server.version)
-        self.setHeader('date', server.http.datetimeToString())
-        self.setHeader('content-type', "text/html; charset=UTF-8")
+        self.setHeader(b'server', server.version)
+        self.setHeader(b'date', server.http.datetimeToString())
+        self.setHeader(b'content-type', b"text/html; charset=UTF-8")
 
         # Resource Identification
         self.prepath = []
-        self.postpath = list(map(unquote, self.path[1:].split('/')))
+        p = self.path[1:].decode('utf-8') if \
+            isinstance(self.path, bytes) else self.path
+        raw_p = list(map(unquote, p.split('/')))
+        self.postpath = list(i.encode('ascii') for i in raw_p)
         self.sitepath = []
 
         self.deferred = defer.Deferred()
@@ -292,9 +300,12 @@ class NevowRequest(server.Request):
         if self._lostConnection:
             # No response can be sent at this point.
             pass
-        elif isinstance(html, str):
+        elif isinstance(html, bytes):
             self.write(html)
-            self.finishRequest(  True )
+            self.finishRequest(True)
+        elif isinstance(html, str):
+            self.write(html.encode('ascii'))
+            self.finishRequest(True)
         elif html is errorMarker:
             ## Error webpage has already been rendered and finish called
             pass

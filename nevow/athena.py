@@ -1246,7 +1246,7 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
 
         neverEverCache(request)
         if request.args.get(ATHENA_RECONNECT):
-            return json.serialize(self.clientID.decode("ascii"))
+            return json.serialize(self.clientID)
         return rend.Page.renderHTTP(self, ctx)
 
 
@@ -1396,10 +1396,10 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         """
         return [
             ("Divmod.bootstrap",
-             [flat.flatten(self.transportRoot, ctx).decode("ascii"),
+             [flat.flatten(self.transportRoot, ctx),
               self.TRANSPORT_CLIENT_IDLE_TIMEOUT]),
             ("Nevow.Athena.bootstrap",
-             [self.jsClass, self.clientID.decode('ascii')])]
+             [self.jsClass, self.clientID])]
 
 
     def _bootstrapCall(self, methodName, args):
@@ -1524,11 +1524,11 @@ def _rewriteEventHandlerToAttribute(tag):
         for i in range(len(tag.children) - 1, -1, -1):
             if isinstance(tag.children[i], stan.Tag) and tag.children[i].tagName == 'athena:handler':
                 info = tag.children.pop(i)
-                name = info.attributes['event'].encode('ascii')
+                name = info.attributes['event']
                 handler = info.attributes['handler']
                 extraAttributes[name] = _handlerFormat % {
-                    'handler': json.serialize(handler.decode('ascii')),
-                    'event': json.serialize(name.decode('ascii'))}
+                    'handler': json.serialize(handler),
+                    'event': json.serialize(name)}
                 tag(**extraAttributes)
     return tag
 
@@ -1712,15 +1712,16 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
             {'children': children,
              'requiredModules': requiredModules,
              'requiredCSSModules': requiredCSSModules},
-            self._flatten, tags.div(xmlns="http://www.w3.org/1999/xhtml")[self]).decode('utf-8')
+            self._flatten,
+            tags.div(xmlns="http://www.w3.org/1999/xhtml")[self])
 
         del children[0]
 
         self._structuredCache = {
-            'requiredModules': [(name, flat.flatten(url).decode('utf-8'))
-                                 for (name, url) in requiredModules],
-            'requiredCSSModules': [flat.flatten(url).decode('utf-8')
-                                    for url in requiredCSSModules],
+            'requiredModules': [(name, flat.flatten(url))
+                                for (name, url) in requiredModules],
+            'requiredCSSModules': [flat.flatten(url)
+                                   for url in requiredCSSModules],
             'class': self.jsClass,
             'id': self._athenaID,
             'initArguments': tuple(self.getInitialArguments()),

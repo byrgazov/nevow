@@ -1,5 +1,6 @@
 
 import os
+import binascii
 
 from xml.dom.minidom import parseString
 
@@ -856,7 +857,7 @@ class Transport(unittest.TestCase):
     of an existing request.
     """
 
-    theMessage = "Immediately Send This Message"
+    theMessage = b"Immediately Send This Message"
 
     connectTimeout = 1
     transportlessTimeout = 2
@@ -922,9 +923,11 @@ class Transport(unittest.TestCase):
         once when an output channel becomes available.
         """
         self.rdm.addMessage(self.theMessage)
-        self.rdm.addMessage(self.theMessage.encode('hex'))
+        self.rdm.addMessage(binascii.hexlify(self.theMessage))
         self.rdm.addOutput(mappend(self.transport))
-        self.assertEqual(self.transport, [[(0, self.theMessage), (1, self.theMessage.encode('hex'))]])
+        self.assertEqual(self.transport,
+                         [[(0, self.theMessage),
+                           (1, binascii.hexlify(self.theMessage))]])
 
 
     def testMultipleQueuedOutputs(self):
@@ -945,7 +948,7 @@ class Transport(unittest.TestCase):
         Test that outputs added while there are unacknowledged messages result
         in re-transmits of those messages.
         """
-        secondMessage = self.theMessage + '-2'
+        secondMessage = self.theMessage + b'-2'
         secondTransport = []
         thirdTransport = []
         fourthTransport = []
@@ -1169,25 +1172,25 @@ class Transport(unittest.TestCase):
         self.rdm.basketCaseReceived(
             None,
             [-1, [[0, self.theMessage],
-                  [1, self.theMessage + "-1"],
-                  [2, self.theMessage + "-2"]]])
+                  [1, self.theMessage + b"-1"],
+                  [2, self.theMessage + b"-2"]]])
         self.assertEqual(
             self.outgoingMessages,
             [(None, self.theMessage),
-             (None, self.theMessage + "-1"),
-             (None, self.theMessage + "-2")])
+             (None, self.theMessage + b"-1"),
+             (None, self.theMessage + b"-2")])
         self.outgoingMessages = []
 
         self.rdm.basketCaseReceived(
             None,
-            [-1, [[1, self.theMessage + "-1"]]])
+            [-1, [[1, self.theMessage + b"-1"]]])
         self.assertEqual(
             self.outgoingMessages,
             [])
 
         self.rdm.basketCaseReceived(
             None,
-            [-1, [[2, self.theMessage + "-2"]]])
+            [-1, [[2, self.theMessage + b"-2"]]])
         self.assertEqual(
             self.outgoingMessages,
             [])

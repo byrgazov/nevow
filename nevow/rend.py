@@ -153,6 +153,8 @@ class FreeformChildMixin:
         bindingName = None
 
         name = segments[0]
+        if isinstance(name, bytes):
+            name = name.decode('utf-8')
         if name.startswith('freeform_post!'):
             configurableName, bindingName = name.split('!')[1:3]
         elif name.startswith('freeform-action-post!'):

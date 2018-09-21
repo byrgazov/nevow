@@ -7,7 +7,7 @@ Tests for L{nevow.appserver}.
 
 from zope.interface import implementer
 
-from io import StringIO
+from io import StringIO, BytesIO
 from shlex import split
 
 from twisted.trial.unittest import TestCase
@@ -171,7 +171,7 @@ class TestSiteAndRequest(testutil.TestCase):
         r = appserver.NevowRequest(channel, True)
         r.method = b'POST'
         r.path = b'/'
-        r.content = StringIO(b'foo=bar')
+        r.content = BytesIO(b'foo=bar')
         self.successResultOf(r.process())
         self.assertEqual(r.fields[b'foo'].value, b'bar')
 
@@ -207,6 +207,8 @@ class Logging(testutil.TestCase):
 
     def renderResource(self, path):
         """@todo: share me"""
+        if isinstance(path, bytes):
+            path = path.decode('utf-8')
         proto = self.site.buildProtocol(
             address.IPv4Address('TCP', 'fakeaddress', 42))
         transport = FakeTransport(
@@ -216,7 +218,7 @@ class Logging(testutil.TestCase):
         proto.dataReceived('\r\n'.join(['GET %s HTTP/1.0' % path,
                                         'ReFeReR: fakerefer',
                                         'uSeR-AgEnt: fakeagent',
-                                        '', '']))
+                                        '', '']).encode('ascii'))
         assert transport.disconnecting
         return proto
 
@@ -234,7 +236,7 @@ class Logging(testutil.TestCase):
 
     def test_oldStyle(self):
         self.setSiteTime('faketime')
-        proto = self.renderResource('/foo')
+        proto = self.renderResource(b'/foo')
         logLines = proto.site.logFile.getvalue().splitlines()
         self.assertEqual(len(logLines), 1)
         self.assertEqual(
@@ -258,12 +260,12 @@ class Logging(testutil.TestCase):
 
         myLog = FakeLogger()
         self.site.remember(myLog, inevow.ILogger)
-        proto = self.renderResource('/foo')
+        proto = self.renderResource(b'/foo')
         logLines = proto.site.logFile.getvalue().splitlines()
         self.assertEqual(len(logLines), 0)
         self.assertEqual(myLog.logged,
                           [
-            ('fakeLog', 'fakeaddress2', 'GET', '/foo', 'HTTP/1.0', 200, 6),
+            ('fakeLog', 'fakeaddress2', b'GET', b'/foo', b'HTTP/1.0', 200, 6),
             ])
 
 

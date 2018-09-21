@@ -225,7 +225,9 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
         of the same type.
     """
     if isinstance(root, str):
-        root = root.encode('utf-8')
+        root = root
+    elif isinstance(root, bytes):
+        root = root.decode('utf-8')
     elif isinstance(root, WovenContext):
         # WovenContext is supported via the getFlattener case, but that is a
         # very slow case.  Checking here is an optimization.  It also lets us
@@ -269,13 +271,15 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
                 else:
                     write('<')
                     if isinstance(root.tagName, str):
-                        tagName = root.tagName.encode('ascii')
+                        tagName = root.tagName
+                    elif isinstance(root.tagName, bytes):
+                        tagName = root.tagName.decode('utf-8')
                     else:
                         tagName = str(root.tagName)
                     write(tagName)
                     for k, v in sorted(root.attributes.items()):
-                        if isinstance(k, str):
-                            k = k.encode('ascii')
+                        if isinstance(k, bytes):
+                            k = k.decode('utf-8')
                         write(" " + k + "=\"")
                         yield _flatten(request, write, v, slotData,
                                        renderFactory, True, True)
@@ -310,8 +314,8 @@ def _flatten(request, write, root, slotData, renderFactory, inAttribute, inXML):
         write(root.num)
         write(';')
     elif isinstance(root, xml):
-        if isinstance(root.content, str):
-            write(root.content.encode('utf-8'))
+        if isinstance(root.content, bytes):
+            write(root.content.decode('utf-8'))
         else:
             write(root.content)
     elif isinstance(root, Deferred):
@@ -409,7 +413,10 @@ def flatten(request, write, root, inAttribute, inXML):
             # In Python 2.5, after an exception, a generator's gi_frame is
             # None.
             frame = stack[-1].gi_frame
-            element = next(stack[-1])
+            last_stack = stack[-1]
+            if isinstance(last_stack, bytes):
+                last_stack = last_stack.decode('utf-8')
+            element = next(last_stack)
         except StopIteration:
             stack.pop()
         except Exception as e:
@@ -420,8 +427,10 @@ def flatten(request, write, root, inAttribute, inXML):
             roots.append(frame.f_locals['root'])
             raise FlattenerError(e, roots, extract_tb(exc_info()[2]))
         else:
-            if type(element) is str:
+            if type(element) is bytes:
                 write(element)
+            elif type(element) is str:
+                write(element.encode('ascii'))
             elif isinstance(element, Deferred):
                 def cbx(xxx_todo_changeme):
                     (original, toFlatten) = xxx_todo_changeme

@@ -508,8 +508,8 @@ def URLSerializer(original, context):
     IRI standard (RFC 3987).
     """
     def _maybeEncode(s):
-        if isinstance(s, str):
-            s = s.encode('utf-8')
+        if isinstance(s, bytes):
+            s = s.decode('utf-8')
         return s
     urlContext = WovenContext(parent=context, precompile=context.precompile, inURL=True)
     if original.scheme:
