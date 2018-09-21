@@ -176,7 +176,7 @@ class AthenaModule(object):
     def _extractImports(self, fileObj):
         s = fileObj.read()
         for m in self._importExpression.finditer(s):
-            yield self.getOrCreate(m.group(1).decode('ascii'), self.mapping)
+            yield self.getOrCreate(m.group(1), self.mapping)
 
 
 
@@ -296,7 +296,7 @@ def _collectPackageBelow(baseDir, extension):
             path = os.path.join(root, dir, '__init__.' + extension)
             if not os.path.exists(path):
                 path = EMPTY
-            mapping[str(name, 'ascii')] = path
+            mapping[name] = path
             _revMap[os.path.join(root, dir)] = name + '.'
 
         for fn in filenames:
@@ -311,7 +311,7 @@ def _collectPackageBelow(baseDir, extension):
 
             name = stem + fn[:-(len(extension) + 1)]
             path = os.path.join(root, fn)
-            mapping[str(name, 'ascii')] = path
+            mapping[name] = path
     return mapping
 
 

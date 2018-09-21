@@ -256,7 +256,7 @@ the end
         """
         fooModuleFilename = self.mktemp()
         fooModule = open(fooModuleFilename, 'wb')
-        fooModule.write('// import Bar\r\n')
+        fooModule.write(b'// import Bar\r\n')
         fooModule.close()
         barModuleFilename = self.mktemp()
         barModule = open(barModuleFilename, 'wb')
