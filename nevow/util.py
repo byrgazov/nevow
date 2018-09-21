@@ -177,7 +177,7 @@ def _namedAnyWithBuiltinTranslation(name):
     elif name == 'builtins.instancemethod':
         name='types.MethodType'
     elif name == 'builtins.NoneType':
-        name='types.NoneType'
+        return type(None)
     elif name == 'builtins.generator':
         name='types.GeneratorType'
     return namedAny(name)
