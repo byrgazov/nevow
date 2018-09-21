@@ -1,5 +1,5 @@
 
-import os, sets
+import os
 
 from xml.dom.minidom import parseString
 
@@ -53,10 +53,10 @@ class MappingResourceTests(unittest.TestCase):
         C{resourceFactory} method products when supplied a valid key.
         """
         m = athena.MappingResource({'name': 'value'})
-        m.resourceFactory = sets.Set
+        m.resourceFactory = set
         resource, segments = m.locateChild(None, ('name',))
         self.assertEqual(segments, [])
-        self.assertEqual(resource, sets.Set('value'))
+        self.assertEqual(resource, set('value'))
 
 
 
