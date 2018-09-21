@@ -249,11 +249,11 @@ nevow.flat.flatstan.ListSerializer  itertools.chain
 nevow.flat.flatstan.ListSerializer  itertools.count
 nevow.flat.flatstan.ListSerializer  itertools.cycle
 nevow.flat.flatstan.ListSerializer  itertools.dropwhile
-nevow.flat.flatstan.ListSerializer  itertools.ifilter
-nevow.flat.flatstan.ListSerializer  itertools.ifilterfalse
-nevow.flat.flatstan.ListSerializer  itertools.imap
+nevow.flat.flatstan.ListSerializer  builtins.filter
+nevow.flat.flatstan.ListSerializer  itertools.filterfalse
+nevow.flat.flatstan.ListSerializer  builtins.map
 nevow.flat.flatstan.ListSerializer  itertools.islice
-nevow.flat.flatstan.ListSerializer  itertools.izip
+nevow.flat.flatstan.ListSerializer  builtins.zip
 nevow.flat.flatstan.ListSerializer  itertools.repeat
 nevow.flat.flatstan.ListSerializer  itertools.starmap
 nevow.flat.flatstan.ListSerializer  itertools.takewhile
