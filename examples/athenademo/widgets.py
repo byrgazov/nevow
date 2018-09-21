@@ -80,7 +80,7 @@ class WidgetPage(athena.LivePage):
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
-                ch = static.File(file(p))
+                ch = static.File(open(p))
         return ch
 
     def render_clock(self, ctx, data):
