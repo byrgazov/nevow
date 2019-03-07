@@ -13,7 +13,7 @@ from itertools import count
 
 try:
     cn = count().__next__
-excpet AttributeError:
+except AttributeError:
     cn = count().next
 
 cookie = lambda: str(cn())

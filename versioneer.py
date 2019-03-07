@@ -276,7 +276,6 @@ https://creativecommons.org/publicdomain/zero/1.0/ .
 
 """
 
-from __future__ import print_statement, division, absolute_import
 
 try:
     import configparser
