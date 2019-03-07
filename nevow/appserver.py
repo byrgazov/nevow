@@ -238,6 +238,7 @@ class NevowRequest(tpc.Componentized): #; , server.Request):
         self.setHeader('server', server.version)
         self.setHeader('date', server.http.datetimeToString())
         self.setHeader('content-type', "text/html; charset=UTF-8")
+        self.setHeader("X-Frame-Options", "SAMEORIGIN")
 
         # Resource Identification
         self.prepath = []
