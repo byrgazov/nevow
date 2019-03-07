@@ -1,6 +1,6 @@
 from io import StringIO
 import time
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.python import htmlizer
 from twisted.web import static
@@ -106,10 +106,8 @@ class BasePage(rend.Page):
         tag[loaders.htmlfile(templateDir='templates', template=self.contentTemplateFile)]
         return tag
     
-
+@implementer(IAddPasting)
 class RootPage(BasePage):
-    implements(IAddPasting)
-
     addSlash = True
 
     def __init__(self, pastebin):
@@ -132,9 +130,9 @@ class RootPage(BasePage):
         request.setComponent(iformless.IRedirectAfterPost, '/'+str(oid))
         
 
+@implementer(IEditPasting)
 class Pasting(BasePage):
 
-    implements(IEditPasting)
     contentTemplateFile = 'pasting.html'
 
     def __init__(self, pastebin, pastingOid, version=-1):

@@ -1,6 +1,6 @@
 from twisted.python import compat
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from nevow import inevow
 
@@ -25,10 +25,9 @@ def languagesFactory(ctx):
     langs.sort(lambda a,b: cmp(b[0], a[0]))
     return [lang for quality, lang in langs]
 
-    
-class I18NConfig(object):
-    implements(inevow.II18NConfig)
 
+@implementer(inevow.II18NConfig)
+class I18NConfig(object):
     def __init__(self,
                  domain=None,
                  localeDir=None,

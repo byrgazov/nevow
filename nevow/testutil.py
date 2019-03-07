@@ -7,7 +7,7 @@ import warnings
 
 from subprocess import PIPE, Popen
 
-from zope.interface import implements
+from zope.interface import implementer
 
 try:
     import subunit
@@ -37,9 +37,8 @@ class FakeChannel:
 class FakeSite:
     pass
 
-
+@implementer(inevow.ISession)
 class FakeSession(Componentized):
-    implements(inevow.ISession)
     def __init__(self, avatar):
         Componentized.__init__(self)
         self.avatar = avatar
@@ -50,7 +49,7 @@ class FakeSession(Componentized):
 
 fs = FakeSession(None)
 
-
+@implementer(inevow.IRequest)
 class FakeRequest(Componentized):
     """
     Implementation of L{inevow.IRequest} which is convenient to use in unit
@@ -69,7 +68,6 @@ class FakeRequest(Componentized):
 
     @ivar _appRootURL: C{None} or the object passed to L{rememberRootURL}.
     """
-    implements(inevow.IRequest)
 
     fields = None
     failure = None
@@ -330,7 +328,7 @@ if not hasattr(TrialTestCase, 'mktemp'):
         return tempfile.mktemp()
     TestCase.mktemp = mktemp
 
-
+@implementer(iformless.IFormDefaults)
 class AccumulatingFakeRequest(FakeRequest):
     """
     I am a fake IRequest that is also a stub implementation of
@@ -339,7 +337,6 @@ class AccumulatingFakeRequest(FakeRequest):
     This class is named I{accumulating} for historical reasons only.  You
     probably want to ignore this and use L{FakeRequest} instead.
     """
-    implements(iformless.IFormDefaults)
 
     def __init__(self, *a, **kw):
         FakeRequest.__init__(self, *a, **kw)

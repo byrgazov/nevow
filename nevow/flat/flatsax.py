@@ -260,6 +260,6 @@ def parseString(t, ignoreDocType=False, ignoreComment=False):
     from io import BytesIO
 
     if isinstance(t, compat.unicode):
-	t = t.encode("utf-8")
+        t = t.encode("utf-8")
 
     return parse(BytesIO(t), ignoreDocType, ignoreComment)

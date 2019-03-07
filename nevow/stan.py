@@ -23,7 +23,7 @@ prototypes for all of the XHTML element types.
 
 from twisted.python import compat
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from nevow import inevow
 
@@ -201,7 +201,7 @@ class _PrecompiledSlot(object):
             self.inJSSingleQuoteString)
 
 
-
+@implementer(inevow.IQ)
 class Tag(object):
     """
     Tag instances represent XML tags with a tag name, attributes, and
@@ -225,7 +225,6 @@ class Tag(object):
         the XML file from which it was parsed.  If it was not parsed from an
         XML file, C{None}.
     """
-    implements(inevow.IQ)
 
     specials = ['data', 'render', 'remember', 'pattern', 'key', 'macro']
 
@@ -494,7 +493,6 @@ class Tag(object):
             while True:
                 yield self.clone()
         return PatternTag(forever())
-
 
 class UnsetClass:
     def __bool__(self):

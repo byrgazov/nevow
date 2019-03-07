@@ -15,7 +15,7 @@ except ImportError:
 	from urlparse import urlsplit
 
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.python import compat
 from twisted.web.util import redirectTo
@@ -571,7 +571,6 @@ def URLOverlaySerializer(original, context):
 
 
 class URLGenerator:
-    #implements(IURLGenerator)
 
     def __init__(self):
         self._objmap = weakref.WeakKeyDictionary()
@@ -596,7 +595,7 @@ class URLGenerator:
         self.__dict__ = state
         self._objmap = weakref.WeakKeyDictionary()
 
-
+@implementer(inevow.IResource)
 class URLRedirectAdapter:
     """
     Adapter for URL and URLOverlay instances that results in an HTTP
@@ -621,7 +620,7 @@ class URLRedirectAdapter:
             # Redirect to the URL of this resource
             return url.URL.fromContext(ctx)
     """
-    implements(inevow.IResource)
+
 
     def __init__(self, original):
         self.original = original

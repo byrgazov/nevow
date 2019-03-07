@@ -526,7 +526,7 @@ Nevow.Athena.Test.TestResult.methods(
  * Report the results of a number of test runs using a document in this page.
  * (This is the de-facto definition of IReporter for now).
  *
- * @implements: IReporter
+ * @implement: IReporter
  *
  * @ivar successCountNode: A DOM node which will be manipulated to reflect the
  * number of tests which have succeeded.

@@ -13,10 +13,8 @@ from formless import webform
 class IMyForm(annotate.TypedInterface):
     foo = annotate.Integer()
 
-
+implementer(IMyForm)
 class FormPage(rend.Page):
-    implements(IMyForm)
-
     addSlash = True
 
     child_webform_css = webform.defaultCSS
