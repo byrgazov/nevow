@@ -1,8 +1,6 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-
-
 from zope.interface import implementer
 
 from twisted.python import components

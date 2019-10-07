@@ -41,7 +41,7 @@ class TestSerialization(TestCase):
         self.assertEqual(ten.flatten(tags.xml('<>&')), u'<>&')
         self.assertEqual(ten.flatten(tags.xml(u'\xc2\xa3')).encode('utf-8'),
             b'\xc3\x82\xc2\xa3')
-        
+
     def test_flattenTwice(self):
         """Test that flattening a string twice does not encode it twice.
         """
@@ -89,13 +89,13 @@ u = unicodedata.lookup('QUARTER NOTE')
 
 
 class TestUnicode(TestCase):
-    
+
     def test_it(self):
         self.assertEqual(ten.flatten(u).encode('utf-8'), u.encode('utf8'))
 
     def test_unescaped(self):
         self.assertEqual(ten.flatten(tags.xml('<<<%s>>>' % u)).encode("utf-8"), (b'<<<%s>>>' % u).encode('utf8'))
-    
+
 class Registration(TestCase):
     def testBadRegister(self):
         try:

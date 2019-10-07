@@ -21,7 +21,7 @@ def languagesFactory(ctx):
                     pass
         langs.append((quality, lang))
         if '-' in lang:
-            langs.append((quality, lang.split('-')[0])) 
+            langs.append((quality, lang.split('-')[0]))
     langs.sort(lambda a,b: cmp(b[0], a[0]))
     return [lang for quality, lang in langs]
 
@@ -34,7 +34,7 @@ class I18NConfig(object):
                  ):
         self.domain = domain
         self.localeDir = localeDir
-        
+
 class PlaceHolder(object):
     def __init__(self, translator, *args, **kwargs):
         self.translator = translator
@@ -95,7 +95,7 @@ def flattenL10n(placeHolder, ctx):
         s = s % mod
     return s
 
-    
+
 class Translator(object):
     """
     A gettext-like Translator for Nevow.
@@ -179,7 +179,7 @@ class Translator(object):
         kw.update(kwargs)
         return PlaceHolder(self.translator, *args, **kw)
 
-        
+
 _ = Translator()
 
 ungettext = Translator(gettextFunction='ungettext')

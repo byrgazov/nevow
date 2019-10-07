@@ -1,8 +1,6 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-
-
 import warnings
 
 try:
@@ -10,6 +8,7 @@ try:
 except ImportError:
 	from urllib import quote
 
+from twisted.python import compat
 from twisted.python import log, failure
 
 from nevow import util
@@ -41,7 +40,7 @@ def TagSerializer(original, context, contextIsMine=False):
     """
 #    print "TagSerializer:",original, "ContextIsMine",contextIsMine, "Context:",context
     visible = bool(original.tagName)
-    
+
     if visible and context.isAttrib:
         raise RuntimeError("Tried to render tag '%s' in an tag attribute context." % (original.tagName))
 
@@ -67,7 +66,7 @@ def TagSerializer(original, context, contextIsMine=False):
         ## point, since the render function here could change
         ## the actual parentage hierarchy.
         nestedcontext = WovenContext(precompile=context.precompile, isAttrib=context.isAttrib)
-        
+
         # If necessary, remember the MacroFactory onto the new context chain.
         macroFactory = IMacroFactory(context, None)
         if macroFactory is not None:
@@ -90,14 +89,14 @@ def TagSerializer(original, context, contextIsMine=False):
             ### We must clone our tag before passing to a render function
             original = original.clone(deep=False)
         context = WovenContext(context, original)
-        
+
     if original.data is not Unset:
         newdata = convertToData(original.data, context)
         if isinstance(newdata, util.Deferred):
             yield newdata.addCallback(lambda newdata: _datacallback(newdata, context))
         else:
             _datacallback(newdata, context)
-            
+
     if original.render:
         ## If we have a render function we want to render what it returns,
         ## not our tag
@@ -130,7 +129,7 @@ def TagSerializer(original, context, contextIsMine=False):
     else:
         yield '>'
         for child in original.children:
-            yield serialize(child, context)        
+            yield serialize(child, context)
         yield '</%s>' % original.tagName
 
 
@@ -160,7 +159,9 @@ def StringSerializer(original, context):
     if context.inURL:
         # The magic string "-_.!*'()" also appears in url.py.  Thinking about
         # changing this?  Change that, too.
-        return quote(original, safe="-_.!*'()")
+        if isinstance(original, compat.unicode):
+            original = original.encode("utf-8")
+        return quote(original, safe="-_.!*'()").decode("ascii")
     ## quote it
     if context.inJS:
         original = _jsSingleQuoteQuote(original)

@@ -148,7 +148,7 @@ class GroupBase(object):
     y = 0
     def move(self, x, y):
         """Move the pen to the given point.
-    
+
         (0, 0) is in the center of the canvas.
         """
         self.x = x
@@ -156,7 +156,7 @@ class GroupBase(object):
         self.call('move', x, y)
 
     def pen(self, width=None, rgb=None, alpha=None):
-        """Change the current pen attributes. 
+        """Change the current pen attributes.
 
         width: an integer between 0 and 255; the pen thickness, in pixels.
         rgb: an integer between 0x000000 and 0xffffff
@@ -171,7 +171,7 @@ class GroupBase(object):
 
     def fill(self, rgb, alpha=100):
         """Set the current fill. Fill will not be drawn until close is called.
-        
+
         rgb: color of fill, integer between 0x000000 and 0xffffff
         alpha: an integer between 0 and 100; the opacity of the fill
         """
@@ -223,7 +223,7 @@ class GroupBase(object):
         """Load an mp3 from the URL "where". The result is a Sound object which
         can be further manipulated.
 
-        If stream is True, the sound will play as soon as possible. If false, 
+        If stream is True, the sound will play as soon as possible. If false,
         """
         cook = cookie()
         S = Sound(cook, self)
@@ -432,7 +432,7 @@ class Canvas(rend.Page):
     """A page which can embed canvases. Simplest usage is to subclass and
     override width, height and onload. Then, putting render_canvas in the
     template will output that canvas there.
-    
+
     You can also embed more than one canvas in a page using the canvas
     helper function, canvas(width, height, onload). The resulting stan
     will cause a canvas of the given height and width to be embedded in
@@ -440,8 +440,8 @@ class Canvas(rend.Page):
     with a CanvasSocket when the connection is established.
     """
     addSlash = True
-    def __init__(self, original=None, width=None, height=None, onload=None, 
-    onMouseMove=None, onMouseDown=None, onMouseUp=None, 
+    def __init__(self, original=None, width=None, height=None, onload=None,
+    onMouseMove=None, onMouseDown=None, onMouseUp=None,
     onKeyDown=None, onKeyUp=None, **kw):
         rend.Page.__init__(self, original, **kw)
         if width: self.width = width

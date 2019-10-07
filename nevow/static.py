@@ -137,7 +137,7 @@ def loadMimeTypes(mimetype_locations=['/etc/mime.types']):
     for location in mimetype_locations:
         if os.path.exists(location):
             contentTypes.update(mimetypes.read_mime_types(location))
-            
+
     return contentTypes
 
 def getTypeAndEncoding(filename, types, encodings, defaultType):
@@ -217,16 +217,16 @@ class File:
 
     def putChild(self, name, child):
         self.children[name] = child
-        
+
     def locateChild(self, ctx, segments):
         r = self.children.get(segments[0], None)
         if r:
             return r, segments[1:]
-        
+
         path=segments[0]
-        
+
         self.fp.restat()
-        
+
         if not self.fp.isdir():
             return rend.NotFound
 
@@ -413,7 +413,7 @@ threadable.synchronize(FileTransfer)
 
 @implementer(inevow.IResource)
 class ASISProcessor:
-    
+
     def __init__(self, path, registry=None):
         self.path = path
         self.registry = registry or Registry()

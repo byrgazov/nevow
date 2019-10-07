@@ -19,58 +19,66 @@ class Typed(TestCase):
         self.assertEqual(process(s, ''), None)
         self.assertEqual(process(s, "Fooo"), "Fooo")
         self.assertEqual(process(s, "This is a string"), "This is a string")
+        self.assertEqual(process(s, b'C\xc3\xa9sar'), 'C\xc3\xa9sar')
         self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\xc3\xa9sar')
 
-        s = formless.String(str=True)
-        self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\u00e9sar')
+#       I'm not sure what functionality was intended here, and I can't
+#       see how it was implemented.  Let's assume we don't want it
+#       any more -- MD 2018-08
+#        s = formless.String(str=True)
+#        self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\u00e9sar')
 
         s = formless.String(required=True)
         self.assertRaises(formless.InputError, process, s, "")
-        
+
         s = formless.String(required=False)
         self.assertEqual(process(s, "Bar"), "Bar")
         self.assertEqual(process(s, ""), None)
-    
+
         s = formless.String()
         self.assertEqual(process(s, ' abc '), ' abc ')
-        
+
         s = formless.String(strip=True, required=True)
         self.assertEqual(process(s, ' abc '), 'abc')
         self.assertEqual(process(s, '\t abc \t  \n '), 'abc')
         self.assertRaises(formless.InputError, process, s, ' ')
-        
+
         s = formless.String(required=False, strip=True)
         self.assertEqual(process(s, ' abc '), 'abc')
         self.assertEqual(process(s, ' '), None)
-        
+
     def testText(self):
         s = formless.Text()
         self.assertEqual(process(s, ""), None)
         self.assertEqual(process(s, "Fooo"), "Fooo")
         self.assertEqual(process(s, "This is a string"), "This is a string")
+        self.assertEqual(process(s, b'C\xc3\xa9sar'), 'C\xc3\xa9sar')
         self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\xc3\xa9sar')
 
-        s = formless.Text(str=True)
-        self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\u00e9sar')
+#       I'm not sure what functionality was intended here, and I can't
+#       see how it was implemented.  Let's assume we don't want it
+#       any more -- MD 2018-08
+#        s = formless.Text(str=True)
+#        self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\u00e9sar')
 
         s = formless.Text(required=True)
         self.assertRaises(formless.InputError, process, s, "")
-        
+
         s = formless.Text(required=False)
         self.assertEqual(process(s, "Bar"), "Bar")
         self.assertEqual(process(s, ""), None)
-        
+
         s = formless.Text()
         self.assertEqual(process(s, ' abc '), ' abc ')
-        
+
         s = formless.Text(strip=True, required=True)
         self.assertEqual(process(s, ' abc '), 'abc')
         self.assertRaises(formless.InputError, process, s, ' ')
-        
+
         s = formless.Text(required=False, strip=True)
         self.assertEqual(process(s, ' abc '), 'abc')
         self.assertEqual(process(s, ' '), None)
-        
+
     def testPassword(self):
 
         def process(pw, val, val2=None):
@@ -79,42 +87,51 @@ class Typed(TestCase):
                 formless.Property('password', pw),
                 {'password': [val], 'password____2': [val2]})['password']
 
-        s = formless.Password()
+        s = formless.Password(encoding="latin1")
         self.assertEqual(process(s, "Fooo"), "Fooo")
         self.assertEqual(process(s, "This is a string"), "This is a string")
         self.assertEqual(process(s, "This is a string"), "This is a string")
+        self.assertEqual(process(s, b'C\xc3\xa9sar'), 'C\xc3\xa9sar')
         self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\xc3\xa9sar')
 
-        s = formless.Password(str=True)
-        self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\u00e9sar')
+
+#       I'm not sure what functionality was intended here, and I can't
+#       see how it was implemented.  Let's assume we don't want it
+#       any more -- MD 2018-08
+#        s = formless.Password(str=True)
+#        self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\u00e9sar')
 
         s = formless.Password(required=True)
         self.assertRaises(formless.ValidateError, process, s, "")
-        
+
         s = formless.Password(required=False)
         self.assertEqual(process(s, "Bar"), "Bar")
         self.assertEqual(process(s, ""), None)
-    
+
         s = formless.Password()
         self.assertEqual(process(s, ' abc '), ' abc ')
-        
+
         s = formless.Password(strip=True, required=True)
         self.assertEqual(process(s, ' abc '), 'abc')
         self.assertRaises(formless.ValidateError, process, s, ' ')
-        
+
         s = formless.Password(required=False, strip=True)
         self.assertEqual(process(s, ' abc '), 'abc')
         self.assertEqual(process(s, ' '), None)
-        
+
     def testPasswordEntry(self):
         s = formless.PasswordEntry()
         self.assertEqual(process(s, ''), None)
         self.assertEqual(process(s, 'abc'), 'abc')
         self.assertEqual(process(s, ' blah blah blah  '), ' blah blah blah  ')
+        self.assertEqual(process(s, b'C\xc3\xa9sar'), 'C\xc3\xa9sar')
         self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\xc3\xa9sar')
 
-        s = formless.PasswordEntry(str=True)
-        self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\u00e9sar')
+#       I'm not sure what functionality was intended here, and I can't
+#       see how it was implemented.  Let's assume we don't want it
+#       any more -- MD 2018-08
+#        s = formless.PasswordEntry(str=True)
+#        self.assertEqual(process(s, 'C\xc3\xa9sar'), 'C\u00e9sar')
 
         s = formless.PasswordEntry(strip=True)
         self.assertEqual(process(s, ''), None)
@@ -126,7 +143,7 @@ class Typed(TestCase):
         self.assertRaises(formless.InputError, process, s, '   ')
         self.assertEqual(process(s, 'abc'), 'abc')
         self.assertEqual(process(s, ' blah blah blah  '), 'blah blah blah')
-        
+
     def testInteger(self):
         i = formless.Integer(required=True)
         self.assertEqual(process(i, "0"), 0)
@@ -134,11 +151,11 @@ class Typed(TestCase):
         self.assertRaises(formless.InputError, process, i, "")
         self.assertRaises(formless.InputError, process, i, "a string")
         self.assertRaises(formless.InputError, process, i, "1.5")
-        
+
         i = formless.Integer(required=False)
         self.assertEqual(process(i, "1234567"), 1234567)
         self.assertEqual(process(i, ""), None)
-        
+
     def testReal(self):
         i = formless.Real(required=True)
         self.assertApproximates(process(i, "0.0"), 0.0, 1e-10)
@@ -165,7 +182,7 @@ class Typed(TestCase):
         self.assertEqual(process(b, ""), None)
         self.assertEqual(process(b, "True"), True)
         self.assertEqual(process(b, "False"), False)
-        
+
     def testFixedDigitInteger(self):
         d = formless.FixedDigitInteger(3, required=True)
         self.assertEqual(process(d, "123"), 123)
@@ -186,12 +203,12 @@ class Typed(TestCase):
         p1 = self.mktemp()
         os.mkdir(p1)
         p2 = self.mktemp()
-        
+
         d = formless.Directory(required=True)
         self.assertEqual(process(d, p1), p1)
         self.assertRaises(formless.InputError, process, d, p2)
         self.assertRaises(formless.InputError, process, d, "")
-        
+
         d = formless.Directory(required=False)
         self.assertEqual(process(d, p1), p1)
         self.assertRaises(formless.InputError, process, d, p2)
@@ -381,7 +398,7 @@ class TestPropertyGroups(TestCase):
 
             class Inner(formless.TypedInterface):
                 """Docstring
-                
+
                 This is a docstring.
                 """
                 anInnerProperty = formless.Integer()
