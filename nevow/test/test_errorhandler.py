@@ -1,5 +1,5 @@
 
-from zope.interface import implements
+from zope.interface import implementer
 from twisted.python import log
 from twisted.internet import defer
 from nevow import appserver, context, inevow, loaders, rend, tags as T, testutil
@@ -9,9 +9,8 @@ class Root(rend.Page):
     docFactory = loaders.stan(T.html[T.p['Root']])
 
 
-
+@implementer(inevow.ICanHandleNotFound)
 class NotFoundHandler(object):
-    implements(inevow.ICanHandleNotFound)
     html = 'NotFoundHandler'
     def renderHTTP_notFound(self, ctx):
         return self.html
@@ -19,8 +18,8 @@ class NotFoundHandler(object):
 class BrokenException(Exception):
     pass
 
+@implementer(inevow.ICanHandleNotFound)
 class BadNotFoundHandler(object):
-    implements(inevow.ICanHandleNotFound)
     html = 'NotFoundHandler'
     exceptionType = BrokenException
     exceptionMessage ='Error from BadNotFoundHandler'
@@ -61,25 +60,28 @@ class Test404(testutil.TestCase):
         """
         root = Root()
         def later(resource):
-            self.failUnless(isinstance(resource, rend.FourOhFour))
-            def morelater((code, html)):
-                self.assertEquals(rend.FourOhFour.notFound, html)
-                self.assertEquals(code, 404)
+            self.assertTrue(isinstance(resource, rend.FourOhFour))
+            def morelater(xxx_todo_changeme):
+                (code, html) = xxx_todo_changeme
+                self.assertEqual(rend.FourOhFour.notFound, html)
+                self.assertEqual(code, 404)
             return renderResource('/foo').addCallback(morelater)
         return getResource(root, '/foo').addCallback(later)
 
     def test_remembered404Handler(self):
-        def later((code, html)):
-            self.assertEquals(html, NotFoundHandler.html)
-            self.assertEquals(code, 404)
+        def later(xxx_todo_changeme1):
+            (code, html) = xxx_todo_changeme1
+            self.assertEqual(html, NotFoundHandler.html)
+            self.assertEqual(code, 404)
 
         return renderResource('/foo', notFoundHandler=NotFoundHandler()).addCallback(later)
 
     def test_keyErroringNotFoundHandler(self):
-        def later((code, html)):
-            self.assertEquals(rend.FourOhFour.notFound, html)
-            self.assertEquals(code, 404)
+        def later(xxx_todo_changeme2):
+            (code, html) = xxx_todo_changeme2
+            self.assertEqual(rend.FourOhFour.notFound, html)
+            self.assertEqual(code, 404)
             fe = self.flushLoggedErrors(BrokenException)
-            self.assertEquals(len(fe), 1)
+            self.assertEqual(len(fe), 1)
         return renderResource('/foo', notFoundHandler=BadNotFoundHandler()).addCallback(later)
 

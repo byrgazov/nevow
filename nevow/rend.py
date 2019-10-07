@@ -18,11 +18,11 @@ Mostly, you'll use the renderers:
 """
 
 from time import time as now
-from cStringIO import StringIO
+from io import StringIO
 import random
 import warnings
 
-from zope.interface import implements, providedBy
+from zope.interface import implementer, providedBy
 
 import twisted.python.components as tpc
 from twisted.python.reflect import qual, accumulateClassList
@@ -52,9 +52,9 @@ def _getPreprocessors(inst):
     return preprocessors
 
 
-
+@implementer(inevow.IRendererFactory)
 class RenderFactory(object):
-    implements(inevow.IRendererFactory)
+
 
     def renderer(self, context, name):
         """Return a renderer with the given name.
@@ -88,8 +88,9 @@ class RenderFactory(object):
     render_data = lambda self, context, data_: data(context, data_)
 
 
+@implementer(inevow.IMacroFactory)
 class MacroFactory(object):
-    implements(inevow.IMacroFactory)
+
 
     def macro(self, ctx, name):
         """Return a macro with the given name.
@@ -117,9 +118,8 @@ class DataNotFoundError(Exception):
     original attribute by the DataFactory.
     """
 
-
+@implementer(inevow.IContainer)
 class DataFactory(object):
-    implements(inevow.IContainer)
 
     def child(self, context, n):
         args = []
@@ -177,6 +177,7 @@ class FreeformChildMixin:
         return inevow.IHand(inevow.ISession(ctx), None)
 
 
+@implementer(iformless.IConfigurable)
 class ConfigurableMixin(object):
     """
     A sane L{IConfigurable} implementation for L{Fragment} and L{Page}. 
@@ -193,7 +194,7 @@ class ConfigurableMixin(object):
             assert isinstance(argName, str)
             assert isinstance(anotherArg, int)
     """
-    implements(iformless.IConfigurable)
+
 
     def getBindingNames(self, ctx):
         """Expose bind_* methods and attributes on this class.
@@ -257,13 +258,13 @@ class ConfigurableMixin(object):
         return util.maybeDeferred(self.getBinding, ctx, 
                                   bindingName).addCallback(_callback)
 
-
+@implementer(iformless.IConfigurableFactory)
 class ConfigurableFactory:
     """Locates configurables by looking for methods that start with
     configurable_ and end with the name of the configurable. The method
     should take a single arg (other than self) - the current context.
     """
-    implements(iformless.IConfigurableFactory)
+
 
     def locateConfigurable(self, context, name):
         """formless.webform.renderForms calls locateConfigurable on the IConfigurableFactory
@@ -287,8 +288,8 @@ class ConfigurableFactory:
         ...     def bar(): pass
         ...     bar = autocallable(bar)
         ...
-        >>> class Foo(Page):
-        ...     implements(IFoo)
+        >>> @implementer(IFoo)
+        ... class Foo(Page):
         ...
         ...     def bar():
         ...         print "bar called through the web!"
@@ -298,7 +299,7 @@ class ConfigurableFactory:
         ...
         ...     docFactory = stan(render_forms).
         """
-        if filter(lambda x: issubclass(x, annotate.TypedInterface), providedBy(self)):
+        if [x for x in providedBy(self) if issubclass(x, annotate.TypedInterface)]:
             warnings.warn("[0.5] Subclassing TypedInterface to declare annotations is deprecated. Please provide bind_* methods on your Page or Fragment subclass instead.", DeprecationWarning)
             from formless import configurable
             return configurable.TypedInterfaceConfigurable(self)
@@ -329,7 +330,7 @@ def defaultsFactory(ctx):
     defaults = webform.FormDefaults()
     if co is not None:
         e = iformless.IFormErrors(co, {})
-        for k, v in e.items():
+        for k, v in list(e.items()):
             defaults.getAllDefaults(k).update(v.partialForm)
     return defaults
 
@@ -341,7 +342,7 @@ def errorsFactory(ctx):
     errs = webform.FormErrors()
     if co is not None:
         e = iformless.IFormErrors(co, {})
-        for k, v in e.items():
+        for k, v in list(e.items()):
             errs.updateErrors(k, v.errors)
             errs.setError(k, v.formErrorMessage)
     return errs
@@ -362,7 +363,7 @@ def statusFactory(ctx):
 def originalFactory(ctx):
     return ctx.tag
 
-
+@implementer(inevow.IRenderer, inevow.IGettable)
 class Fragment(DataFactory, RenderFactory, MacroFactory, ConfigurableMixin):
     """
     This class is deprecated because it relies on context objects
@@ -370,7 +371,7 @@ class Fragment(DataFactory, RenderFactory, MacroFactory, ConfigurableMixin):
 
     @see: L{Element}
     """
-    implements(inevow.IRenderer, inevow.IGettable)
+
 
     docFactory = None
     original = None
@@ -408,7 +409,7 @@ class Fragment(DataFactory, RenderFactory, MacroFactory, ConfigurableMixin):
             finally:
                 self.docFactory.pattern = old
                 self.docFactory.precompiledDoc = None
-        except TypeError, e:
+        except TypeError as e:
             # Avert your eyes now! I don't want to catch anything but IQ
             # adaption exceptions here but all I get is TypeError. This whole
             # section of code is a complete hack anyway so one more won't
@@ -512,12 +513,12 @@ class ChildLookupMixin(FreeformChildMixin):
         self.children[name] = child
 
 
+@implementer(inevow.IResource)
 class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
     """A page is the main Nevow resource and renders a document loaded
     via the document factory (docFactory).
     """
 
-    implements(inevow.IResource)
 
     buffered = False
 
@@ -546,7 +547,7 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
 
         def finishRequest():
             carryover = request.args.get('_nevow_carryover_', [None])[0]
-            if carryover is not None and _CARRYOVER.has_key(carryover):
+            if carryover is not None and carryover in _CARRYOVER:
                 del _CARRYOVER[carryover]
             if self.afterRender is not None:
                 return util.maybeDeferred(self.afterRender,ctx)
@@ -668,7 +669,7 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
                 magicCookie = '%s%s%s' % (now(),request.getClientIP(),random.random())
                 refpath = refpath.replace('_nevow_carryover_', magicCookie)
                 _CARRYOVER[magicCookie] = C = tpc.Componentized()
-                for k, v in aspects.iteritems():
+                for k, v in aspects.items():
                     C.setComponent(k, v)
 
             destination = flat.flatten(refpath, ctx)
@@ -768,7 +769,7 @@ def mapping(context, data):
        <td><nevow:slot name="email"/></td>
      </tr>
     """
-    for k, v in data.items():
+    for k, v in list(data.items()):
         context.fillSlots(k, v)
     return context.tag
 
@@ -783,10 +784,10 @@ def data(context, data):
     return context.tag.clear()[data]
 
 
+@implementer(inevow.IResource)
 class FourOhFour:
     """A simple 404 (not found) page.
     """
-    implements(inevow.IResource)
 
     notFound = "<html><head><title>Page Not Found</title></head><body>Sorry, but I couldn't find the object you requested.</body></html>"
     original = None
@@ -799,7 +800,7 @@ class FourOhFour:
         # Look for an application-remembered handler
         try:
             notFoundHandler = ctx.locate(inevow.ICanHandleNotFound)
-        except KeyError, e:
+        except KeyError as e:
             return self.notFound
         # Call the application-remembered handler but if there are any errors
         # then log it and fallback to the standard message.
@@ -809,8 +810,9 @@ class FourOhFour:
             log.err()
             return self.notFound
 
-    def __nonzero__(self):
+    def __bool__(self):
         return False
+    __nonzero__ = __bool__
 
 
 # Not found singleton

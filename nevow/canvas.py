@@ -1,7 +1,7 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 from twisted.python import log
@@ -11,7 +11,11 @@ from nevow.flat import flatten
 from nevow.stan import Proto, Tag
 from itertools import count
 
-cn = count().next
+try:
+    cn = count().__next__
+except AttributeError:
+    cn = count().next
+
 cookie = lambda: str(cn())
 
 _hookup = {}
@@ -193,7 +197,7 @@ class GroupBase(object):
             l[[a(v=x) for x in colors]],
             l[[a(v=x) for x in alphas]],
             l[[a(v=x) for x in ratios]],
-            d[[i(k=k, v=v) for (k, v) in matrix.items()]])
+            d[[i(k=k, v=v) for (k, v) in list(matrix.items())]])
 
     def text(self, text, x, y, height, width):
         """Place the given text on the canvas using the given x, y, height and width.
@@ -212,7 +216,7 @@ class GroupBase(object):
         cook = cookie()
         I = Image(cook, self)
         self.call('image', cook, where)
-        print "IMAGE", where
+        print("IMAGE", where)
         return I
 
     def sound(self, where, stream=True):
@@ -283,11 +287,11 @@ class Group(GroupBase):
         return 0
 
 
+@implementer(inevow.IResource)
 class CanvasSocket(GroupBase):
     """An object which represents the client-side canvas. Defines APIs for drawing
     on the canvas. An instance of this class will be passed to your onload callback.
     """
-    implements(inevow.IResource)
 
     groupName = 'canvas'
 
@@ -354,18 +358,18 @@ class CanvasSocket(GroupBase):
 
     def handle_onMouseUp(self, info):
         if self.delegate.onMouseUp:
-            self.delegate.onMouseUp(self, *map(int, map(float, info.split())))
+            self.delegate.onMouseUp(self, *list(map(int, list(map(float, info.split())))))
 
     def handle_onMouseDown(self, info):
         if self.delegate.onMouseDown:
-            self.delegate.onMouseDown(self, *map(int, map(float, info.split())))
+            self.delegate.onMouseDown(self, *list(map(int, list(map(float, info.split())))))
 
     def handle_onMouseMove(self, info):
         if self.delegate.onMouseMove:
-            self.delegate.onMouseMove(self, *map(int, map(float, info.split())))
+            self.delegate.onMouseMove(self, *list(map(int, list(map(float, info.split())))))
 
     def handle_diagnostic(self, info):
-        print "Trace", info
+        print("Trace", info)
 
 canvasServerMessage = loaders.stan(tags.html["This server dispatches for nevow canvas events."])
 

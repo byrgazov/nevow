@@ -1,12 +1,13 @@
 # -*- test-case-name: nevow.test.test_athena -*-
 
-import itertools, os, re, warnings, StringIO
+import itertools, os, re, warnings, io
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer, error, reactor
 from twisted.python import log, failure, context
 from twisted.python.util import sibpath
+from twisted.python import compat
 from twisted import plugin
 
 from nevow import inevow, plugins, flat, _flat
@@ -49,7 +50,7 @@ class LivePageError(Exception):
     """
     Base exception for LivePage errors.
     """
-    jsClass = u'Divmod.Error'
+    jsClass = 'Divmod.Error'
 
 
 
@@ -58,7 +59,7 @@ class NoSuchMethod(LivePageError):
     Raised when an attempt is made to invoke a method which is not defined or
     exposed.
     """
-    jsClass = u'Nevow.Athena.NoSuchMethod'
+    jsClass = 'Nevow.Athena.NoSuchMethod'
 
     def __init__(self, objectID, methodName):
         self.objectID = objectID
@@ -85,7 +86,7 @@ def activeChannel(request):
     request.write('')
 
 
-
+@implementer(inevow.IResource)
 class MappingResource(object):
     """
     L{inevow.IResource} which looks up segments in a mapping between symbolic
@@ -96,7 +97,6 @@ class MappingResource(object):
     'Nevow.Athena') and C{str} instances which name files containing data
     which should be served in response.
     """
-    implements(inevow.IResource)
 
     def __init__(self, mapping):
         self.mapping = mapping
@@ -186,7 +186,7 @@ class AthenaModule(object):
         Calculate our dependencies given the path to our source.
         """
         depgen = self._extractImports(file(jsFile, 'rU'))
-        return self.packageDeps + dict.fromkeys(depgen).keys()
+        return self.packageDeps + list(dict.fromkeys(depgen).keys())
 
 
     def dependencies(self):
@@ -252,6 +252,7 @@ class CSSModule(AthenaModule):
 
 
 
+@implementer(plugin.IPlugin, inevow.IJavascriptPackage)
 class JSPackage(object):
     """
     A Javascript package.
@@ -260,7 +261,6 @@ class JSPackage(object):
     @ivar mapping: Mapping between JS module names and C{str} representing
     filesystem paths containing their implementations.
     """
-    implements(plugin.IPlugin, inevow.IJavascriptPackage)
 
     def __init__(self, mapping):
         self.mapping = mapping
@@ -300,7 +300,7 @@ def _collectPackageBelow(baseDir, extension):
             path = os.path.join(root, dir, '__init__.' + extension)
             if not os.path.exists(path):
                 path = EMPTY
-            mapping[unicode(name, 'ascii')] = path
+            mapping[name.encode("ascii")] = path
             _revMap[os.path.join(root, dir)] = name + '.'
 
         for fn in filenames:
@@ -315,11 +315,11 @@ def _collectPackageBelow(baseDir, extension):
 
             name = stem + fn[:-(len(extension) + 1)]
             path = os.path.join(root, fn)
-            mapping[unicode(name, 'ascii')] = path
+            mapping[name.encode('ascii')] = path
     return mapping
 
 
-
+@implementer(plugin.IPlugin, inevow.IJavascriptPackage)
 class AutoJSPackage(object):
     """
     A L{inevow.IJavascriptPackage} implementation that scans an on-disk
@@ -329,19 +329,18 @@ class AutoJSPackage(object):
     @ivar baseDir: A path to the root of a JavaScript packages/modules
     filesystem hierarchy.
     """
-    implements(plugin.IPlugin, inevow.IJavascriptPackage)
 
     def __init__(self, baseDir):
         self.mapping = _collectPackageBelow(baseDir, 'js')
 
 
 
+@implementer(plugin.IPlugin, inevow.ICSSPackage)
 class AutoCSSPackage(object):
     """
     Like L{AutoJSPackage}, but for CSS packages.  Modules within this package
     can be referenced by L{LivePage.cssModule} or L{LiveElement.cssModule}.
     """
-    implements(plugin.IPlugin, inevow.ICSSPackage)
 
     def __init__(self, baseDir):
         self.mapping = _collectPackageBelow(baseDir, 'css')
@@ -540,18 +539,17 @@ def getJSFailure(exc, modules):
     """
     Convert a serialized client-side exception to a Failure.
     """
-    text = '%s: %s' % (exc[u'name'], exc[u'message'])
+    text = '%s: %s' % (exc['name'], exc['message'])
 
     frames = []
-    if u'stack' in exc:
-        frames = parseStack(exc[u'stack'])
+    if 'stack' in exc:
+        frames = parseStack(exc['stack'])
 
     return failure.Failure(JSException(text), exc_tb=buildTraceback(frames, modules))
 
 
-
+@implementer(inevow.IResource)
 class LivePageTransport(object):
-    implements(inevow.IResource)
 
     def __init__(self, messageDeliverer, useActiveChannels=True):
         self.messageDeliverer = messageDeliverer
@@ -618,8 +616,8 @@ class ConnectionLost(Exception):
     pass
 
 
-CLOSE = u'close'
-UNLOAD = u'unload'
+CLOSE = 'close'
+UNLOAD = 'unload'
 
 class ReliableMessageDelivery(object):
     """
@@ -775,8 +773,8 @@ class ReliableMessageDelivery(object):
 
 
     def _unregisterDeferredAsOutputChannel(self, deferred):
-        for i in xrange(len(self.outputs)):
-            if self.outputs[i][0].im_self is deferred:
+        for i in range(len(self.outputs)):
+            if self.outputs[i][0].__self__ is deferred:
                 output, timeout = self.outputs.pop(i)
                 timeout.cancel()
                 break
@@ -1007,7 +1005,7 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
     @ivar _localObjectIDCounter: A callable that will return a new
         locally-unique object ID each time it is called.
     """
-    jsClass = u'Nevow.Athena.PageWidget'
+    jsClass = 'Nevow.Athena.PageWidget'
     cssModule = None
 
     factory = LivePageFactory()
@@ -1149,7 +1147,11 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         if self.cssModuleRoot is None:
             self.cssModuleRoot = location.child(self.clientID).child('cssmodule')
 
-        self._requestIDCounter = itertools.count().next
+        try:
+            self._requestIDCounter = itertools.count().__next__
+        except AttributeError:
+            # py2 compatibility
+            self._requestIDCounter = itertools.count().next
 
         self._messageDeliverer = ReliableMessageDelivery(
             self,
@@ -1160,7 +1162,11 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
             connectionMade=self._connectionMade)
         self._remoteCalls = {}
         self._localObjects = {}
-        self._localObjectIDCounter = itertools.count().next
+        try:
+            self._localObjectIDCounter = itertools.count().next
+        except AttributeError:
+            # py2 compatibilty
+            self._localObjectIDCounter = itertools.count().__next__
 
         self.addLocalObject(self)
 
@@ -1261,7 +1267,7 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         """
         Invoke connectionMade on all attached widgets.
         """
-        for widget in self._localObjects.values():
+        for widget in list(self._localObjects.values()):
             widget.connectionMade()
         self._didConnect = True
 
@@ -1283,10 +1289,10 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
                 d.errback(reason)
             calls = self._remoteCalls
             self._remoteCalls = {}
-            for (reqID, resD) in calls.iteritems():
+            for (reqID, resD) in calls.items():
                 resD.errback(reason)
             if self._didConnect:
-                for widget in self._localObjects.values():
+                for widget in list(self._localObjects.values()):
                     widget.connectionLost(reason)
             self.factory.removeClient(self.clientID)
 
@@ -1325,8 +1331,8 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
 
 
     def callRemote(self, methodName, *args):
-        requestID = u's2c%i' % (self._requestIDCounter(),)
-        message = (u'call', (unicode(methodName, 'ascii'), requestID, args))
+        requestID = 's2c%i' % (self._requestIDCounter(),)
+        message = ('call', (methodName.encode('ascii'), requestID, args))
         resultD = defer.Deferred()
         self._remoteCalls[requestID] = resultD
         self.addMessage(message)
@@ -1449,12 +1455,13 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         raise AttributeError(methodName)
 
 
-    def liveTransportMessageReceived(self, ctx, (action, args)):
+    def liveTransportMessageReceived(self, ctx, xxx_todo_changeme):
         """
         A message was received from the reliable transport layer.  Process it by
         dispatching it first to myself, then later to application code if
         applicable.
         """
+        (action, args) = xxx_todo_changeme
         method = getattr(self, 'action_' + action)
         method(ctx, *args)
 
@@ -1482,11 +1489,11 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
                         result.value.args)
                 else:
                     result = (
-                        u'Divmod.Error',
-                        [u'%s: %s' % (
+                        'Divmod.Error',
+                        ['%s: %s' % (
                                 result.type.__name__.decode('ascii'),
                                 result.getErrorMessage().decode('ascii'))])
-            message = (u'respond', (unicode(requestId), success, result))
+            message = ('respond', (str(requestId), success, result))
             self.addMessage(message)
         result.addBoth(_cbCall)
 
@@ -1527,7 +1534,7 @@ def _rewriteEventHandlerToAttribute(tag):
     """
     if isinstance(tag, stan.Tag):
         extraAttributes = {}
-        for i in xrange(len(tag.children) - 1, -1, -1):
+        for i in range(len(tag.children) - 1, -1, -1):
             if isinstance(tag.children[i], stan.Tag) and tag.children[i].tagName == 'athena:handler':
                 info = tag.children.pop(i)
                 name = info.attributes['event'].encode('ascii')
@@ -1575,7 +1582,7 @@ def _rewriteAthenaId(tag):
             if headers is not None:
                 ids = headers.split()
                 headers = [_mangleId(headerId) for headerId in ids]
-                for n in xrange(len(headers) - 1, 0, -1):
+                for n in range(len(headers) - 1, 0, -1):
                     headers.insert(n, ' ')
                 tag.attributes['headers'] = headers
     return tag
@@ -1590,7 +1597,7 @@ def rewriteAthenaIds(root):
 
 
 class _LiveMixin(_HasJSClass, _HasCSSModule):
-    jsClass = u'Nevow.Athena.Widget'
+    jsClass = 'Nevow.Athena.Widget'
     cssModule = None
 
     preprocessors = [rewriteEventHandlerNodes, rewriteAthenaIds]
@@ -1643,7 +1650,8 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         C{self.page}, add this object to the page and fill the I{athena:id}
         slot with this object's Athena identifier.
         """
-        assert isinstance(self.jsClass, unicode), "jsClass must be a unicode string"
+        assert isinstance(self.jsClass, compat.unicode
+            ), "jsClass must be a unicode string"
 
         if self.page is None:
             raise OrphanedFragment(self)
@@ -1691,7 +1699,7 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         # different module from whence nevow.athena and nevow.testutil could
         # import it. -exarkun
         from nevow.testutil import FakeRequest
-        s = StringIO.StringIO()
+        s = io.StringIO()
         for _ in _flat.flatten(FakeRequest(), s.write, what, False, False):
             pass
         return s.getvalue()
@@ -1723,15 +1731,15 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         del children[0]
 
         self._structuredCache = {
-            u'requiredModules': [(name, flat.flatten(url).decode('utf-8'))
+            'requiredModules': [(name, flat.flatten(url).decode('utf-8'))
                                  for (name, url) in requiredModules],
-            u'requiredCSSModules': [flat.flatten(url).decode('utf-8')
+            'requiredCSSModules': [flat.flatten(url).decode('utf-8')
                                     for url in requiredCSSModules],
-            u'class': self.jsClass,
-            u'id': self._athenaID,
-            u'initArguments': tuple(self.getInitialArguments()),
-            u'markup': markup,
-            u'children': children}
+            'class': self.jsClass,
+            'id': self._athenaID,
+            'initArguments': tuple(self.getInitialArguments()),
+            'markup': markup,
+            'children': children}
         return self._structuredCache
 
 
@@ -1751,9 +1759,9 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         # This will only be set if _structured() is being run.
         if context.get('children') is not None:
             context.get('children').append({
-                    u'class': self.jsClass,
-                    u'id': self._athenaID,
-                    u'initArguments': self.getInitialArguments()})
+                    'class': self.jsClass,
+                    'id': self._athenaID,
+                    'initArguments': self.getInitialArguments()})
             context.get('requiredModules').extend(requiredModules)
             context.get('requiredCSSModules').extend(requiredCSSModules)
             return tag
@@ -1802,7 +1810,7 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         return self.page.callRemote(
             "Nevow.Athena.callByAthenaID",
             self._athenaID,
-            unicode(methodName, 'ascii'),
+            methodName.encode('ascii'),
             varargs)
 
 
@@ -2008,7 +2016,7 @@ class IntrospectionFragment(LiveFragment):
     the state of a live page.
     """
 
-    jsClass = u'Nevow.Athena.IntrospectionWidget'
+    jsClass = 'Nevow.Athena.IntrospectionWidget'
 
     docFactory = loaders.stan(
         tags.span(render=tags.directive('liveFragment'))[

@@ -1,9 +1,9 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-from __future__ import generators
 
-from zope.interface import implements
+
+from zope.interface import implementer
 
 from twisted.python import components
 
@@ -20,7 +20,7 @@ except:
         i = 0
         it = iter(collection)
         while 1:
-            yield (i, it.next())
+            yield (i, next(it))
             i += 1
 
 
@@ -48,7 +48,7 @@ class PrefixerDict(dict):
         return self.errors[pfxkey]
 
     def update(self, other):
-        for key, value in other.items():
+        for key, value in list(other.items()):
             self[key] = value
 
 
@@ -85,11 +85,11 @@ class FormDefaults(components.Adapter):
     def clearAll(self):
         self.defaults = {}
 
-
+@implementer(iformless.IFormErrors)
 class FormErrors(components.Adapter):
     """An object which keeps track of which forms have which errors
     """
-    implements(iformless.IFormErrors)
+
     def __init__(self):
         self.errors = {}
 
@@ -107,7 +107,7 @@ class FormErrors(components.Adapter):
         PrefixerDict(formName, self.errors).update(errors)
 
     def clearErrors(self, formName):
-        for key in self.errors.keys():
+        for key in list(self.errors.keys()):
             if key.startswith(formName):
                 del self.errors[key]
 

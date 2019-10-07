@@ -1,7 +1,7 @@
-import cPickle as pickle
+import pickle as pickle
 import os.path
 import time
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.application import service
 from twisted.python import log
@@ -18,11 +18,8 @@ class Record(object):
         self.time = time
         self.version = 0
 
-
+@implementer(interfaces.IPasteBin)
 class FSPasteBinService(service.Service):
-
-    implements(interfaces.IPasteBin)
-
     def __init__(self, storageDir):
         self._dir = storageDir
 
@@ -84,9 +81,9 @@ class FSPasteBinService(service.Service):
         f = file(self._makeFilename('index'), 'wb')
         pickle.dump(d, f, pickle.HIGHEST_PROTOCOL)
 
+@implementer(pasting.IPasting)
 class Pasting(object):
-    
-    implements(pasting.IPasting)
+
 
     def __init__(self, data):
         self._data = data
@@ -102,11 +99,8 @@ class Pasting(object):
         history.reverse()
         return history
                               
-
+@implementer(pasting.IVersion)
 class Version:
-
-    implements(pasting.IVersion)
-
     def __init__(self, data):
         self._data = data
 

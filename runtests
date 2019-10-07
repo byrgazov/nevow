@@ -12,7 +12,7 @@ skips = []
 
 try:
     import twisted
-    sys.exit(os.system('trial -v nevow.test formless.test'))
+    sys.exit(os.system('python -m twisted.trial nevow.test formless.test'))
 except ImportError:
     skips.extend([
         'nevow.test.test_disktemplate',

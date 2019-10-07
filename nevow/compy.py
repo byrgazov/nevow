@@ -7,7 +7,7 @@ so that nevow works with it.
 
 import warnings
 
-from zope.interface import Interface, implements as zimplements, Attribute
+from zope.interface import Interface, implementer, Attribute
 
 from twisted.python.components import *
 
@@ -35,8 +35,7 @@ def registerAdapter(adapterFactory, origInterface, *interfaceClasses):
         origInterface = _namedAnyWithBuiltinTranslation(origInterface)
         interfaceClasses = [_namedAnyWithBuiltinTranslation(x) for x in interfaceClasses]
 
-    if 'nevow.inevow.ISerializable' in interfaceClasses or filter(
-            lambda o: getattr(o, '__name__', None) == 'ISerializable', interfaceClasses):
+    if 'nevow.inevow.ISerializable' in interfaceClasses or [o for o in interfaceClasses if getattr(o, '__name__', None) == 'ISerializable']:
         warnings.warn("ISerializable is deprecated. Please use nevow.flat.registerFlattener instead.", stacklevel=2)
         from nevow import flat
         flat.registerFlattener(adapterFactory, origInterface)
@@ -47,13 +46,13 @@ class IComponentized(Interface):
     pass
 
 _Componentized = Componentized
+@implementer(IComponentized)
 class Componentized(_Componentized):
-    zimplements(IComponentized)
     
     def __init__(self, adapterCache=None):
         _Componentized.__init__(self)
         if adapterCache:
-            for k, v in adapterCache.items():
+            for k, v in list(adapterCache.items()):
                 self.setComponent(k, v)
 
 

@@ -5,9 +5,9 @@
 Tests for L{nevow.appserver}.
 """
 
-from zope.interface import implements, implementer
+from zope.interface import implementer
 
-from cStringIO import StringIO
+from io import BytesIO
 from shlex import split
 
 from twisted.trial.unittest import TestCase
@@ -45,8 +45,8 @@ from nevow.rend import Page
 from nevow.testutil import FakeRequest
 
 
+@implementer(inevow.IResource)
 class Render:
-    implements(inevow.IResource)
 
     rendered = False
 
@@ -158,8 +158,8 @@ class TestLookup(testutil.TestCase):
             lambda result: self.assertIdentical(r, result.tag))
 
     def test_cycle(self):
+        @implementer(inevow.IResource)
         class Resource(object):
-            implements(inevow.IResource)
             def locateChild(self, ctx, segments):
                 if segments[0] == 'self':
                     return self, segments
@@ -185,7 +185,7 @@ class TestSiteAndRequest(testutil.TestCase):
                 return util.succeed("hello")
 
         return self.renderResource(Deferreder(), 'foo').addCallback(
-            lambda result: self.assertEquals(result, "hello"))
+            lambda result: self.assertEqual(result, "hello"))
 
     def test_regularRender(self):
         class Regular(Render):
@@ -193,7 +193,7 @@ class TestSiteAndRequest(testutil.TestCase):
                 return "world"
 
         return self.renderResource(Regular(), 'bar').addCallback(
-            lambda result: self.assertEquals(result, 'world'))
+            lambda result: self.assertEqual(result, 'world'))
 
     def test_returnsResource(self):
         class Res2(Render):
@@ -205,7 +205,7 @@ class TestSiteAndRequest(testutil.TestCase):
                 return Res2()
 
         return self.renderResource(Res1(), 'bar').addCallback(
-            lambda result: self.assertEquals(result, 'world'))
+            lambda result: self.assertEqual(result, 'world'))
 
     def test_connectionLost(self):
         """
@@ -242,9 +242,9 @@ class TestSiteAndRequest(testutil.TestCase):
         r = appserver.NevowRequest(channel, True)
         r.method = b'POST'
         r.path = b'/'
-        r.content = StringIO(b'foo=bar')
+        r.content = BytesIO(b'foo=bar')
         self.successResultOf(r.process())
-        self.assertEquals(r.fields[b'foo'].value, b'bar')
+        self.assertEqual(r.fields[b'foo'].value, b'bar')
 
 
 
@@ -254,7 +254,7 @@ class FakeTransport(protocol.FileWrapper):
     disconnecting = False
     disconnect_done = False
     def __init__(self, addr, peerAddr):
-        self.data = StringIO()
+        self.data = BytesIO()
         protocol.FileWrapper.__init__(self, self.data)
         self.addr = addr
         self.peerAddr = peerAddr
@@ -273,7 +273,7 @@ class Logging(testutil.TestCase):
         self.site = appserver.NevowSite(Res1())
         self.site.startFactory()
         self.addCleanup(self.site.stopFactory)
-        self.site.logFile = StringIO()
+        self.site.logFile = BytesIO()
 
 
     def renderResource(self, path):
@@ -307,7 +307,7 @@ class Logging(testutil.TestCase):
         self.setSiteTime('faketime')
         proto = self.renderResource('/foo')
         logLines = proto.site.logFile.getvalue().splitlines()
-        self.assertEquals(len(logLines), 1)
+        self.assertEqual(len(logLines), 1)
         self.assertEqual(
             split(logLines[0]),
             ['fakeaddress2', '-', '-', 'faketime', 'GET /foo HTTP/1.0', '200', '6',
@@ -331,8 +331,8 @@ class Logging(testutil.TestCase):
         self.site.remember(myLog, inevow.ILogger)
         proto = self.renderResource('/foo')
         logLines = proto.site.logFile.getvalue().splitlines()
-        self.assertEquals(len(logLines), 0)
-        self.assertEquals(myLog.logged,
+        self.assertEqual(len(logLines), 0)
+        self.assertEqual(myLog.logged,
                           [
             ('fakeLog', 'fakeaddress2', 'GET', '/foo', 'HTTP/1.0', 200, 6),
             ])

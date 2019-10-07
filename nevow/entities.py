@@ -7,10 +7,13 @@ trees.
 
 import types
 
+from twisted.python import compat
+
 
 __by_number = {}
 
-def makeEntity((name, num, description)):
+def makeEntity(xxx_todo_changeme):
+    (name, num, description) = xxx_todo_changeme
     from nevow.stan import Entity
     e = Entity(name, num, description)
     __by_number[types.IntType(num)] = e
@@ -18,7 +21,7 @@ def makeEntity((name, num, description)):
 
 
 def getEntity(num):
-    if isinstance(num, str):
+    if isinstance(num, (compat.unicode, bytes)):
         num = ord(num)
     return __by_number[num]
 

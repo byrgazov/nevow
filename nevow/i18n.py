@@ -1,4 +1,6 @@
-from zope.interface import implements
+from twisted.python import compat
+
+from zope.interface import implementer
 
 from nevow import inevow
 
@@ -23,10 +25,9 @@ def languagesFactory(ctx):
     langs.sort(lambda a,b: cmp(b[0], a[0]))
     return [lang for quality, lang in langs]
 
-    
-class I18NConfig(object):
-    implements(inevow.II18NConfig)
 
+@implementer(inevow.II18NConfig)
+class I18NConfig(object):
     def __init__(self,
                  domain=None,
                  localeDir=None,
@@ -209,7 +210,10 @@ def render(translator=None):
         children = ctx.tag.children
         ctx.tag.clear()
         for child in children:
-            if isinstance(child, basestring):
+            # The bytes in the following is for py2 *exclusively*.  In py3,
+            # bytes in here won't match strings (raise a warning if bytes
+            # are encountered here?)
+            if isinstance(child, (compat.unicode, bytes)):
                 child = translator(child)
             ctx.tag[child]
         return ctx.tag

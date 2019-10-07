@@ -5,12 +5,13 @@
 Tests for L{nevow._flat}.
 """
 
-import sys, traceback, StringIO
+import sys, traceback, io
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.trial.unittest import TestCase
 from twisted.internet.defer import Deferred, succeed
+from twisted.python import compat
 
 from nevow.inevow import IRequest, IQ, IRenderable, IData
 from nevow._flat import FlattenerError, UnsupportedType, UnfilledSlot
@@ -34,9 +35,10 @@ from nevow.context import WovenContext
 # lambda to avoid adding anything else to this namespace.  The result will
 # be a string which agrees with the one the traceback module will put into a
 # traceback for frames associated with functions defined in this file.
-HERE = (lambda: None).func_code.co_filename
+HERE = (lambda: None).__code__.co_filename
 
 
+@implementer(IRenderable)
 class TrivialRenderable(object):
     """
     An object which renders to a parameterized value.
@@ -44,7 +46,6 @@ class TrivialRenderable(object):
     @ivar result: The object which will be returned by the render method.
     @ivar requests: A list of all the objects passed to the render method.
     """
-    implements(IRenderable)
 
     def __init__(self, result):
         self.result = result
@@ -60,6 +61,7 @@ class TrivialRenderable(object):
 
 
 
+@implementer(IRenderable)
 class RenderRenderable(object):
     """
     An object which renders to a parameterized value and has a render method
@@ -71,7 +73,6 @@ class RenderRenderable(object):
     @ivar tag: The value which will be returned from C{render}.
     @ivar result: The value which will be returned from the render method.
     """
-    implements(IRenderable)
 
     def __init__(self, renders, name, tag, result):
         self.renders = renders
@@ -102,10 +103,10 @@ class FlattenMixin:
     """
     def assertStringEqual(self, value, expected):
         """
-        Assert that the given value is a C{str} instance and that it equals the
-        expected value.
+        Assert that the given value is a c{bytes} instance and that
+        it equals the expected value.
         """
-        self.assertTrue(isinstance(value, str))
+        self.assertTrue(isinstance(value, compat.unicode))
         self.assertEqual(value, expected)
 
 
@@ -118,7 +119,7 @@ class FlattenTests(TestCase, FlattenMixin):
         """
         Helper to get a string from L{flatten}.
         """
-        s = StringIO.StringIO()
+        s = io.StringIO()
         for _ in flatten(request, s.write, root, inAttribute, inXML):
             pass
         return s.getvalue()
@@ -193,8 +194,8 @@ class FlattenTests(TestCase, FlattenMixin):
         An instance of L{unicode} is flattened to the UTF-8 representation of
         itself.
         """
-        self.assertStringEqual(self.flatten(u'bytes<>&"\0'), 'bytes<>&"\0')
-        unich = u"\N{LATIN CAPITAL LETTER E WITH GRAVE}"
+        self.assertStringEqual(self.flatten('bytes<>&"\0'), 'bytes<>&"\0')
+        unich = "\N{LATIN CAPITAL LETTER E WITH GRAVE}"
         self.assertStringEqual(self.flatten(unich), unich.encode('utf-8'))
 
 
@@ -203,7 +204,7 @@ class FlattenTests(TestCase, FlattenMixin):
         An L{xml} instance is flattened to the UTF-8 representation of itself.
         """
         self.assertStringEqual(self.flatten(xml("foo")), "foo")
-        unich = u"\N{LATIN CAPITAL LETTER E WITH GRAVE}"
+        unich = "\N{LATIN CAPITAL LETTER E WITH GRAVE}"
         self.assertStringEqual(self.flatten(xml(unich)), unich.encode('utf-8'))
 
 
@@ -303,8 +304,8 @@ class FlattenTests(TestCase, FlattenMixin):
         A L{Tag} with a C{tagName} attribute which is C{unicode} instead of
         C{str} is flattened to an XML representation.
         """
-        self.assertStringEqual(self.flatten(Tag(u'div')), "<div></div>")
-        self.assertStringEqual(self.flatten(Tag(u'div')['']), "<div></div>")
+        self.assertStringEqual(self.flatten(Tag('div')), "<div></div>")
+        self.assertStringEqual(self.flatten(Tag('div')['']), "<div></div>")
 
 
     def test_unicodeAttributeName(self):
@@ -313,7 +314,7 @@ class FlattenTests(TestCase, FlattenMixin):
         is flattened to an XML representation.
         """
         self.assertStringEqual(
-            self.flatten(Tag(u'div', {u'foo': 'bar'})), '<div foo="bar"></div>')
+            self.flatten(Tag('div', {'foo': 'bar'})), '<div foo="bar"></div>')
 
 
     def test_stringTagAttributes(self):
@@ -529,8 +530,8 @@ class FlattenTests(TestCase, FlattenMixin):
         replaced with the return value of the named renderer on the
         L{IRenderable} which had the render method which returned the L{Tag}.
         """
+        @implementer(IRenderable)
         class TwoRenderers(object):
-            implements(IRenderable)
 
             def renderer(self, name):
                 return getattr(self, name)
@@ -574,7 +575,7 @@ class FlattenTests(TestCase, FlattenMixin):
         as though it did not have a render directive.
         """
         class IdempotentRenderable(object):
-            implements(IRenderable)
+        @implementer(IRenderable)
 
             def renderer(self, name):
                 return getattr(self, name)
@@ -599,28 +600,28 @@ class FlattenTests(TestCase, FlattenMixin):
         link = URL.fromString("http://foo/fu?bar=baz&bar=baz#quux%2f")
         self.assertStringEqual(
             self.flatten(link),
-            "http://foo/fu?bar=baz&bar=baz#quux%2F")
+            u"http://foo/fu?bar=baz&bar=baz#quux%2F")
         self.assertStringEqual(
             self.flatten(div[link]),
-            '<div>http://foo/fu?bar=baz&amp;bar=baz#quux%2F</div>')
+            u'<div>http://foo/fu?bar=baz&amp;bar=baz#quux%2F</div>')
         self.assertStringEqual(
             self.flatten(div(foo=link)),
-            '<div foo="http://foo/fu?bar=baz&amp;bar=baz#quux%2F"></div>')
+            u'<div foo="http://foo/fu?bar=baz&amp;bar=baz#quux%2F"></div>')
         self.assertStringEqual(
             self.flatten(div[div(foo=link)]),
-            '<div><div foo="http://foo/fu?bar=baz&amp;bar=baz#quux%2F"></div>'
-            '</div>')
+            u'<div><div foo="http://foo/fu?bar=baz&amp;bar=baz#quux%2F"></div>'
+            u'</div>')
 
         link = URL.fromString("http://foo/fu?%2f=%7f")
         self.assertStringEqual(
             self.flatten(link),
-            "http://foo/fu?%2F=%7F")
+            u"http://foo/fu?%2F=%7F")
         self.assertStringEqual(
             self.flatten(div[link]),
-            '<div>http://foo/fu?%2F=%7F</div>')
+            u'<div>http://foo/fu?%2F=%7F</div>')
         self.assertStringEqual(
             self.flatten(div(foo=link)),
-            '<div foo="http://foo/fu?%2F=%7F"></div>')
+            u'<div foo="http://foo/fu?%2F=%7F"></div>')
 
 
     def test_unfilledSlot(self):
@@ -820,7 +821,7 @@ class FlattenTests(TestCase, FlattenMixin):
         significantly greater than the Python maximum recursion limit.
         """
         obj = ["foo"]
-        for i in xrange(1000):
+        for i in range(1000):
             obj = [obj]
         self._nestingTest(obj, "foo")
 
@@ -831,7 +832,7 @@ class FlattenTests(TestCase, FlattenMixin):
         significantly greater than the Python maximum recursion limit.
         """
         tag = div()[slot("foo-0")]
-        for i in xrange(1000):
+        for i in range(1000):
             tag.fillSlots("foo-" + str(i), slot("foo-" + str(i + 1)))
         tag.fillSlots("foo-1000", "bar")
         self._nestingTest(tag, "<div>bar</div>")
@@ -844,7 +845,7 @@ class FlattenTests(TestCase, FlattenMixin):
         """
         n = 1000
         tag = div["foo"]
-        for i in xrange(n - 1):
+        for i in range(n - 1):
             tag = div[tag]
         self._nestingTest(tag, "<div>" * n + "foo" + "</div>" * n)
 
@@ -855,7 +856,7 @@ class FlattenTests(TestCase, FlattenMixin):
         nesting significantly greater than the Python maximum recursion limit.
         """
         obj = TrivialRenderable("foo")
-        for i in xrange(1000):
+        for i in range(1000):
             obj = TrivialRenderable(obj)
         self._nestingTest(obj, "foo")
 
@@ -919,8 +920,8 @@ class FlattenTests(TestCase, FlattenMixin):
         def broken():
             raise RuntimeError("foo")
 
+        @implementer(IRenderable)
         class BrokenRenderable(object):
-            implements(IRenderable)
 
             def render(self, request):
                 # insert another stack frame before the exception
@@ -935,8 +936,8 @@ class FlattenTests(TestCase, FlattenMixin):
             # There are probably some frames above this, but I don't care what
             # they are.
             exc._traceback[-2:],
-            [(HERE, 927, 'render', 'broken()'),
-             (HERE, 920, 'broken', 'raise RuntimeError("foo")')])
+            [(HERE, 928, 'render', 'broken()'),
+             (HERE, 921, 'broken', 'raise RuntimeError("foo")')])
 
 
 
@@ -991,8 +992,8 @@ class FlattenerErrorTests(TestCase):
         the repr of that object is included in the string representation of the
         exception.
         """
+        @implementer(IRenderable)
         class Renderable(object):
-            implements(IRenderable)
 
             def __repr__(self):
                 return "renderable repr"
@@ -1048,7 +1049,7 @@ class FlattenerErrorTests(TestCase):
 
         try:
             f()
-        except RuntimeError, exc:
+        except RuntimeError as exc:
             # Get the traceback, minus the info for *this* frame
             tbinfo = traceback.extract_tb(sys.exc_info()[2])[1:]
         else:
@@ -1062,8 +1063,8 @@ class FlattenerErrorTests(TestCase):
             "  File \"%s\", line %d, in g\n"
             "    raise RuntimeError(\"reason\")\n"
             "RuntimeError: reason\n" % (
-                HERE, f.func_code.co_firstlineno + 1,
-                HERE, g.func_code.co_firstlineno + 1))
+                HERE, f.__code__.co_firstlineno + 1,
+                HERE, g.__code__.co_firstlineno + 1))
 
 
 
@@ -1150,9 +1151,8 @@ class DeferflattenTests(TestCase, FlattenMixin):
         """
         class TestException(Exception):
             pass
+        @implementer(IRenderable)
         class BrokenRenderable(object):
-            implements(IRenderable)
-
             def render(self, request):
                 raise TestException()
         flattened = self.deferflatten(BrokenRenderable())
@@ -1234,8 +1234,8 @@ class DeferflattenTests(TestCase, FlattenMixin):
         frames allowed by the Python recursion limit succeeds if all the
         L{Deferred}s have results already.
         """
-        results = [str(i) for i in xrange(1000)]
-        deferreds = map(succeed, results)
+        results = [str(i) for i in range(1000)]
+        deferreds = list(map(succeed, results))
         limit = sys.getrecursionlimit()
         sys.setrecursionlimit(100)
         try:

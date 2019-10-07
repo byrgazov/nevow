@@ -1,12 +1,13 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-from __future__ import generators
+
 
 import types
 import warnings
 from zope.interface import declarations, interface
 
+from twisted.python import compat
 import twisted.python.components as tpc
 
 from nevow import inevow
@@ -81,10 +82,10 @@ def iterflatten(stan, ctx, writer, shouldYieldItem=None):
     while rest:
         gen = rest.pop()
         for item in gen:
-            if isinstance(item, str):
+            if isinstance(item, bytes):
+                straccum.append(item.decode('utf-8'))
+            elif isinstance(item, compat.unicode):
                 straccum.append(item)
-            elif isinstance(item, unicode):
-                straccum.append(item.encode('utf8'))
             elif isinstance(item, (list, types.GeneratorType)):
                 # stop iterating this generator and put it back on the stack
                 # and start iterating the new item instead.
@@ -93,7 +94,7 @@ def iterflatten(stan, ctx, writer, shouldYieldItem=None):
                 break
             else:
                 if straccum:
-                    writer(tags.raw(''.join(straccum)))
+                    writer(tags.raw(u''.join(straccum)))
                     del straccum[:]
                 if shouldYieldItem is not None and shouldYieldItem(item):
                     replacement = []
@@ -112,7 +113,7 @@ def iterflatten(stan, ctx, writer, shouldYieldItem=None):
                         break
 
     if straccum:
-        writer(tags.raw(''.join(straccum)))
+        writer(tags.raw(u''.join(straccum)))
 
 
 def flatten(stan, ctx=None):
@@ -126,7 +127,7 @@ def flatten(stan, ctx=None):
         ctx.remember(None, inevow.IData)
     result = []
     list(iterflatten(stan, ctx, result.append))
-    return tags.raw(''.join(result))
+    return tags.raw(u''.join(result))
 
 
 def precompile(stan, ctx=None):

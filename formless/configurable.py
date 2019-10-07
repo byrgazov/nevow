@@ -1,7 +1,7 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-from zope.interface import implements, providedBy
+from zope.interface import implementer, providedBy
 
 from formless.iformless import IConfigurable, IActionableType, IBinding
 from formless.annotate import Argument, ElementBinding, GroupBinding, Object, TypedInterface
@@ -9,8 +9,8 @@ from formless.annotate import Argument, ElementBinding, GroupBinding, Object, Ty
 from nevow import inevow
 from nevow.context import WovenContext
 
+@implementer(IConfigurable)
 class Configurable(object):
-    implements(IConfigurable)
 
     bindingDict = None
 
@@ -66,7 +66,7 @@ class Configurable(object):
             try:
                 binding = self.bindingDict[name]
             except KeyError:
-                raise RuntimeError, "%s is not an exposed binding on object %s." % (name, self.boundTo)
+                raise RuntimeError("%s is not an exposed binding on object %s." % (name, self.boundTo))
         binding.boundTo = self.boundTo
         return binding
 
@@ -125,7 +125,7 @@ class Configurable(object):
 
 class NotFoundConfigurable(Configurable):
     def getBinding(self, context, name):
-        raise RuntimeError, self.original
+        raise RuntimeError(self.original)
 
 
 class TypedInterfaceConfigurable(Configurable):

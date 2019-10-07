@@ -7,11 +7,17 @@ URL parsing, construction and rendering.
 """
 
 import weakref
-import urlparse
-import urllib
+try:
+	from urllib.parse import unquote, unquote_plus, quote, urlsplit
+except ImportError:
+	# python2 compatibility
+	from urllib import unquote, unquote_plus, quote
+	from urlparse import urlsplit
 
-from zope.interface import implements
 
+from zope.interface import implementer
+
+from twisted.python import compat
 from twisted.web.util import redirectTo
 
 from nevow import inevow, flat
@@ -22,9 +28,9 @@ from nevow.context import WovenContext
 def _uqf(query):
     for x in query.split('&'):
         if '=' in x:
-            yield tuple( [urllib.unquote_plus(s) for s in x.split('=', 1)] )
+            yield tuple( [unquote_plus(s) for s in x.split('=', 1)] )
         elif x:
-            yield (urllib.unquote_plus(x), None)
+            yield (unquote_plus(x), None)
 unquerify = lambda query: list(_uqf(query))
 
 
@@ -80,7 +86,7 @@ class URL(object):
                     # It is this particular set in order to match that used by
                     # nevow.flat.flatstan.StringSerializer, so that url.path
                     # will give something which is contained by flatten(url).
-                    urllib.quote(seg, safe="-_.!*'()") for seg in self._qpathlist])
+                    quote(seg, safe="-_.!*'()") for seg in self._qpathlist])
         doc = """
         The path portion of the URL.
         """
@@ -99,6 +105,11 @@ class URL(object):
         if not isinstance(other, self.__class__):
             return NotImplemented
         return not self.__eq__(other)
+
+    def __hash__(self):
+        # I *think* URLs are immutable (enough) to make them useful as dict
+        # keys.
+        return hash(str(self))
 
     query = property(
         lambda self: [y is None and x or '='.join((x,y))
@@ -124,11 +135,11 @@ class URL(object):
     ## class methods used to build URL objects ##
 
     def fromString(klass, st):
-        scheme, netloc, path, query, fragment = urlparse.urlsplit(st)
+        scheme, netloc, path, query, fragment = urlsplit(st)
         u = klass(
             scheme, netloc,
-            [urllib.unquote(seg) for seg in path.split('/')[1:]],
-            unquerify(query), urllib.unquote(fragment))
+            [unquote(seg) for seg in path.split('/')[1:]],
+            unquerify(query), unquote(fragment))
         return u
     fromString = classmethod(fromString)
 
@@ -159,7 +170,7 @@ class URL(object):
     def pathList(self, unquote=False, copy=True):
         result = self._qpathlist
         if unquote:
-            result = map(urllib.unquote, result)
+            result = list(map(unquote, result))
         if copy:
             result = result[:]
         return result
@@ -241,7 +252,7 @@ class URL(object):
         Return a path which is the URL where a browser would presumably
         take you if you clicked on a link with an 'href' as given.
         """
-        scheme, netloc, path, query, fragment = urlparse.urlsplit(href)
+        scheme, netloc, path, query, fragment = urlsplit(href)
 
         if (scheme, netloc, path, query, fragment) == ('', '', '', '', ''):
             return self
@@ -252,7 +263,7 @@ class URL(object):
             if path and path[0] == '/':
                 path = path[1:]
             return self.cloneURL(
-                scheme, netloc, map(raw, path.split('/')), query, fragment)
+                scheme, netloc, list(map(raw, path.split('/'))), query, fragment)
         else:
             scheme = self.scheme
 
@@ -274,7 +285,7 @@ class URL(object):
 
         path = normURLPath(path)
         return self.cloneURL(
-            scheme, netloc, map(raw, path.split('/')), query, fragment)
+            scheme, netloc, list(map(raw, path.split('/'))), query, fragment)
 
     ## query manipulation ##
 
@@ -308,7 +319,7 @@ class URL(object):
             if k == name:
                 break
             i += 1
-        q = filter(lambda x: x[0] != name, ql)
+        q = [x for x in ql if x[0] != name]
         q.insert(i, (name, value))
         return self._pathMod(self.pathList(copy=False), q)
 
@@ -317,8 +328,7 @@ class URL(object):
         """
         return self._pathMod(
             self.pathList(copy=False),
-            filter(
-                lambda x: x[0] != name, self.queryList(False)))
+            [x for x in self.queryList(False) if x[0] != name])
 
     def clear(self, name=None):
         """Remove all existing query arguments
@@ -326,7 +336,7 @@ class URL(object):
         if name is None:
             q = []
         else:
-            q = filter(lambda x: x[0] != name, self.queryList(False))
+            q = [x for x in self.queryList(False) if x[0] != name]
         return self._pathMod(self.pathList(copy=False), q)
 
     ## scheme manipulation ##
@@ -509,7 +519,7 @@ def URLSerializer(original, context):
     IRI standard (RFC 3987).
     """
     def _maybeEncode(s):
-        if isinstance(s, unicode):
+        if isinstance(s, compat.unicode):
             s = s.encode('utf-8')
         return s
     urlContext = WovenContext(parent=context, precompile=context.precompile, inURL=True)
@@ -561,7 +571,6 @@ def URLOverlaySerializer(original, context):
 
 
 class URLGenerator:
-    #implements(IURLGenerator)
 
     def __init__(self):
         self._objmap = weakref.WeakKeyDictionary()
@@ -586,7 +595,7 @@ class URLGenerator:
         self.__dict__ = state
         self._objmap = weakref.WeakKeyDictionary()
 
-
+@implementer(inevow.IResource)
 class URLRedirectAdapter:
     """
     Adapter for URL and URLOverlay instances that results in an HTTP
@@ -611,7 +620,7 @@ class URLRedirectAdapter:
             # Redirect to the URL of this resource
             return url.URL.fromContext(ctx)
     """
-    implements(inevow.IResource)
+
 
     def __init__(self, original):
         self.original = original
@@ -630,5 +639,5 @@ class URLRedirectAdapter:
             # It might also be relative so resolve it against the current URL
             # and flatten it again.
             u = flat.flatten(URL.fromContext(ctx).click(u), ctx)
-            return redirectTo(u, inevow.IRequest(ctx))
+            return redirectTo(bytes(u), inevow.IRequest(ctx))
         return flat.flattenFactory(self.original, ctx, bits.append, flattened)

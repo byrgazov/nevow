@@ -1,7 +1,7 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-from zope.interface import implements, Interface
+from zope.interface import implementer, Interface
 
 from twisted.internet import defer
 from twisted.trial import unittest
@@ -38,8 +38,9 @@ def deferredRender(res, request=None):
                 tag=request)))
 
     def done(result):
-        if isinstance(result, str):
+        if isinstance(result, (unicode, bytes)):
             request.write(result)
+
         request.d.callback(request.accumulator)
         return result
     d.addCallback(done)
@@ -52,7 +53,7 @@ class TestPage(unittest.TestCase):
         xhtml = '<ul id="nav"><li>one</li><li>two</li><li>three</li></ul>'
         r = rend.Page(docFactory=loaders.htmlstr(xhtml))
         return deferredRender(r).addCallback(
-            lambda result: self.assertEquals(result, xhtml))
+            lambda result: self.assertEqual(result, xhtml))
     test_simple.suppress = [
         SUPPRESS(message=
                  r"\[v0.8\] htmlstr is deprecated because it's buggy. "
@@ -66,7 +67,7 @@ class TestPage(unittest.TestCase):
             docFactory = loaders.htmlstr(xhtml)
         r = R()
         return deferredRender(r).addCallback(
-            lambda result: self.assertEquals(result, xhtml))
+            lambda result: self.assertEqual(result, xhtml))
     test_extend.suppress = [
         SUPPRESS(message=
                  r"\[v0.8\] htmlstr is deprecated because it's buggy. "
@@ -85,7 +86,7 @@ class TestPage(unittest.TestCase):
                 return ['one', 'two', 'three']
         r = R()
         return deferredRender(r).addCallback(
-            lambda result: self.assertEquals(
+            lambda result: self.assertEqual(
             result,
             '<ul id="nav"><li>one</li><li>two</li><li>three</li></ul>'))
     test_data.suppress = [
@@ -120,7 +121,7 @@ class TestPage(unittest.TestCase):
 
         r = R()
         return deferredRender(r).addCallback(
-            lambda result: self.assertEquals(result, '<span>abc</span>'))
+            lambda result: self.assertEqual(result, '<span>abc</span>'))
     test_render.suppress = [
         SUPPRESS(message=
                  r"\[v0.8\] htmlstr is deprecated because it's buggy. "
@@ -151,7 +152,7 @@ class TestPage(unittest.TestCase):
         r = R()
         d = deferredRender(r)
         d.addCallback(
-            lambda result: self.assertEquals(
+            lambda result: self.assertEqual(
                 result,
                 '<table>'
                 '<tr><th>English</th><th>French</th></tr>'
@@ -176,7 +177,7 @@ class TestPage(unittest.TestCase):
 
         r = R()
         return deferredRender(r).addCallback(
-            lambda result: self.assertEquals(result, '<ul><li>one</li><li>two</li><li>three</li></ul>'))
+            lambda result: self.assertEqual(result, '<ul><li>one</li><li>two</li><li>three</li></ul>'))
 
     def test_stanRender(self):
 
@@ -189,7 +190,7 @@ class TestPage(unittest.TestCase):
 
         r = R()
         return deferredRender(r).addCallback(
-            lambda result: self.assertEquals(result, '<span>abc</span>'))
+            lambda result: self.assertEqual(result, '<span>abc</span>'))
 
     def test_stanDataAndRender(self):
 
@@ -216,7 +217,7 @@ class TestPage(unittest.TestCase):
 
         r = R()
         return deferredRender(r).addCallback(
-            lambda result: self.assertEquals(result, '<table><tr><th>English</th><th>French</th></tr><tr><td>one</td><td>un/une</td></tr><tr><td>two</td><td>deux</td></tr><tr><td>three</td><td>trois</td></tr></table>'))
+            lambda result: self.assertEqual(result, '<table><tr><th>English</th><th>French</th></tr><tr><td>one</td><td>un/une</td></tr><tr><td>two</td><td>deux</td></tr><tr><td>three</td><td>trois</td></tr></table>'))
 
     def test_composite(self):
 
@@ -232,7 +233,7 @@ class TestPage(unittest.TestCase):
                 )
         r = R()
         return deferredRender(r).addCallback(
-            lambda result: self.assertEquals(result, '<div id="outer"><div id="inner"></div></div>'))
+            lambda result: self.assertEqual(result, '<div id="outer"><div id="inner"></div></div>'))
 
     def _testDocFactoryInStanTree(self, docFactory, expected):
         class Page(rend.Page):
@@ -353,7 +354,7 @@ class TestPage(unittest.TestCase):
         p = Page()
         return deferredRender(p).addCallback(
             lambda result:
-            self.assertEquals(result, '<html><head><title>test</title></head></html>'))
+            self.assertEqual(result, '<html><head><title>test</title></head></html>'))
 
     def test_component(self):
         """
@@ -381,7 +382,7 @@ class TestPage(unittest.TestCase):
         page = Page()
         return deferredRender(page).addCallback(
             lambda result:
-            self.assertEquals(result, '<div><p><strong>foo</strong> bar</p></div>'))
+            self.assertEqual(result, '<div><p><strong>foo</strong> bar</p></div>'))
 
     def test_fragmentContext(self):
         # A fragment is remembered as the IRendererFactory. It must create a new context
@@ -415,8 +416,8 @@ class TestPage(unittest.TestCase):
 
         result = Page().renderSynchronously()
         # print result
-        self.failIf("'foo' was not found" in result)
-        self.failIf("'after' was not found" in result)
+        self.assertFalse("'foo' was not found" in result)
+        self.assertFalse("'after' was not found" in result)
 
 
     def test_rendererNotFound(self):
@@ -434,7 +435,7 @@ class TestPage(unittest.TestCase):
             docFactory = loaders.stan(html(render=directive("notfound")))
         page = Page()
         result = page.renderSynchronously()
-        self.assertEquals(
+        self.assertEqual(
             result,
             "<html>The renderer named 'notfound' was not found in %s.</html>"
             % util.escapeToXML(repr(page)))
@@ -453,7 +454,7 @@ class TestPage(unittest.TestCase):
             docFactory = loaders.stan(html(render=directive("notfound dummy")))
         page = Page()
         result = page.renderSynchronously()
-        self.assertEquals(
+        self.assertEqual(
             result,
             "<html>The renderer named 'notfound' was not found in %s.</html>"
             % util.escapeToXML(repr(page)))
@@ -522,7 +523,7 @@ class TestRenderFactory(unittest.TestCase):
     def test_dataRenderer(self):
         ctx = context.WovenContext()
         ctx.remember(rend.RenderFactory(), inevow.IRendererFactory)
-        self.assertEquals(flat.flatten(p(data='foo', render=directive('data')), ctx), '<p>foo</p>')
+        self.assertEqual(flat.flatten(p(data='foo', render=directive('data')), ctx), '<p>foo</p>')
 
 class TestConfigurableMixin(unittest.TestCase):
     def test_formRender(self):
@@ -574,7 +575,7 @@ class TestConfigurableMixin(unittest.TestCase):
 
         ctx = context.WovenContext()
         result = FormPage().postForm(ctx, 'test1', {'foo': ['42']})
-        return result.addCallback(lambda result: self.assertEquals(result, 42))
+        return result.addCallback(lambda result: self.assertEqual(result, 42))
 
     def test_formPostDeferred(self):
         class FormPage(rend.Page):
@@ -584,7 +585,7 @@ class TestConfigurableMixin(unittest.TestCase):
 
         ctx = context.WovenContext()
         result = FormPage().postForm(ctx, 'test1', {'foo': ['42']})
-        return result.addCallback(lambda result: self.assertEquals(result, 42))
+        return result.addCallback(lambda result: self.assertEqual(result, 42))
 
     def test_formPostFailure(self):
         class FormPage(rend.Page):
@@ -609,15 +610,16 @@ class TestConfigurableMixin(unittest.TestCase):
 class IThing(formless.TypedInterface):
     foo = formless.String()
 
+@implementer(IThing)
 class Thing:
-    implements(IThing)
+    pass
 
 class TestLocateConfigurable(unittest.TestCase):
 
     def test_onSelf(self):
 
+        @implementer(IThing)
         class Page(rend.Page):
-            implements(IThing)
             docFactory = loaders.stan(html[freeform.renderForms()])
 
         page = Page()
@@ -656,8 +658,8 @@ class TestDeferredDefaultValue(unittest.TestCase):
         from nevow import util
         deferred = util.Deferred()
         deferred.callback('the default value')
+        @implementer(IDeferredProperty)
         class Implementation(object):
-            implements(IDeferredProperty)
             d = deferred
 
         return deferredRender(rend.Page(Implementation(), docFactory=loaders.stan(html[freeform.renderForms('original')]))).addCallback(
@@ -669,7 +671,7 @@ class TestRenderString(unittest.TestCase):
     def test_simple(self):
         doc = div[p['foo'],p['bar']]
         return rend.Page(docFactory=loaders.stan(doc)).renderString().addCallback(
-            lambda result: self.assertEquals(result, '<div><p>foo</p><p>bar</p></div>'))
+            lambda result: self.assertEqual(result, '<div><p>foo</p><p>bar</p></div>'))
 
     def test_parentCtx(self):
         class IFoo(Interface):
@@ -682,7 +684,7 @@ class TestRenderString(unittest.TestCase):
             docFactory = loaders.stan(p[render_foo])
         return Page().renderString(ctx).addCallback(
             lambda result:
-            self.assertEquals(
+            self.assertEqual(
             result,
             '<p>Hello!</p>'
             ))
@@ -703,7 +705,7 @@ class TestRenderString(unittest.TestCase):
                 return ctx.tag.clear()[data+'bar']
 
         return Page().renderString().addCallback(
-            lambda result: self.assertEquals(result, '<html><body><p>foobar</p></body></html>'))
+            lambda result: self.assertEqual(result, '<html><body><p>foobar</p></body></html>'))
 
 
 class TestRenderSynchronously(unittest.TestCase):
@@ -712,7 +714,7 @@ class TestRenderSynchronously(unittest.TestCase):
 
         doc = div[p['foo'],p['bar']]
         result = rend.Page(docFactory=loaders.stan(doc)).renderSynchronously()
-        self.assertEquals(result, '<div><p>foo</p><p>bar</p></div>')
+        self.assertEqual(result, '<div><p>foo</p><p>bar</p></div>')
 
     def test_parentCtx(self):
         class IFoo(Interface):
@@ -723,7 +725,7 @@ class TestRenderSynchronously(unittest.TestCase):
             def render_foo(self, ctx, data):
                 return IFoo(ctx)
             docFactory = loaders.stan(p[render_foo])
-        self.assertEquals(Page().renderSynchronously(ctx), '<p>Hello!</p>')
+        self.assertEqual(Page().renderSynchronously(ctx), '<p>Hello!</p>')
 
 
 def getResource(root, path):
@@ -742,7 +744,7 @@ class TestLocateChild(unittest.TestCase):
         p = Parent()
         p.putChild('child', Child())
         return getResource(p, '/child').addCallback(
-            lambda r: self.failUnless(inevow.IResource.providedBy(r.tag)))
+            lambda r: self.assertTrue(inevow.IResource.providedBy(r.tag)))
 
     def test_resourceAttr(self):
         class Child(rend.Page):
@@ -751,7 +753,7 @@ class TestLocateChild(unittest.TestCase):
             child_child = Child()
         p = Parent()
         return getResource(p, '/child').addCallback(
-            lambda r: self.failUnless(inevow.IResource.providedBy(r.tag)))
+            lambda r: self.assertTrue(inevow.IResource.providedBy(r.tag)))
 
     def test_methodAttr(self):
         class Child(rend.Page):
@@ -768,11 +770,11 @@ class TestLocateChild(unittest.TestCase):
 
         return defer.DeferredList([
             getResource(p, '/now').addCallback(
-            lambda r: self.failUnless(inevow.IResource.providedBy(r.tag))),
+            lambda r: self.assertTrue(inevow.IResource.providedBy(r.tag))),
 
             getResource(p, '/defer').addCallback(
 
-            lambda r: self.failUnless(inevow.IResource.providedBy(r.tag)))],
+            lambda r: self.assertTrue(inevow.IResource.providedBy(r.tag)))],
                                   fireOnOneErrback=True)
 
     def test_childFactory(self):
@@ -793,7 +795,7 @@ class TestLocateChild(unittest.TestCase):
             child_child = twcgi.CGIScript('abc.cgi')
         p = Parent()
         return getResource(p, '/child').addCallback(
-            lambda r: self.failUnless(inevow.IResource.providedBy(r.tag)))
+            lambda r: self.assertTrue(inevow.IResource.providedBy(r.tag)))
 
     def test_noneChild(self):
         class Parent(rend.Page):
@@ -805,10 +807,10 @@ class TestLocateChild(unittest.TestCase):
 
         return defer.DeferredList([
             getResource(p, '/child').addCallback(
-            lambda r: self.failUnless(isinstance(r.tag, rend.FourOhFour))),
+            lambda r: self.assertTrue(isinstance(r.tag, rend.FourOhFour))),
 
             getResource(p, '/other').addCallback(
-            lambda r: self.failUnless(isinstance(r.tag, rend.FourOhFour))
+            lambda r: self.assertTrue(isinstance(r.tag, rend.FourOhFour))
             )],
                                   fireOnOneErrback=True)
 
@@ -830,7 +832,7 @@ class TestLocateChild(unittest.TestCase):
 
         page = Page()
         return getResource(page, '/child').addCallback(
-            lambda r: self.failUnless(inevow.IResource.providedBy(r.tag)))
+            lambda r: self.assertTrue(inevow.IResource.providedBy(r.tag)))
 
     def test_redirectToURL(self):
         redirectTarget = "http://example.com/bar"
@@ -843,7 +845,7 @@ class TestLocateChild(unittest.TestCase):
             ## Render the redirect.
             r.tag.renderHTTP(r)
             req = inevow.IRequest(r)
-            self.assertEquals(req.redirected_to, redirectTarget)
+            self.assertEqual(req.redirected_to, redirectTarget)
 
         return getResource(page, '/url').addCallback(doAssert)
 
@@ -856,7 +858,7 @@ class TestLocateChild(unittest.TestCase):
 
         def dotest(r):
             r.tag.renderHTTP(r)
-            self.assertEquals(uchr,
+            self.assertEqual(uchr,
                               inevow.IRequest(r).redirected_to)
 
         return getResource(page, '/url').addCallback(dotest)
@@ -875,12 +877,12 @@ class TestLocateChild(unittest.TestCase):
 
         return getResource(page, '/foo').addCallback(
             lambda c: deferredRender(c.tag).addCallback(
-            lambda result: self.assertEquals(result, theString)))
+            lambda result: self.assertEqual(result, theString)))
 
     def test_freeformChildMixin_nonTrue(self):
         """Configurables that have c.__nonzero__()==False are accepted."""
+        @implementer(iformless.IConfigurable)
         class SimpleConf(object):
-            implements(iformless.IConfigurable)
             # mock mock
             def postForm(self, ctx, bindingName, args):
                 return 'SimpleConf OK'
@@ -892,15 +894,15 @@ class TestLocateChild(unittest.TestCase):
 
         D = getResource(page, '/foo')
         def x1(r):
-            self.failUnless(isinstance(r.tag, rend.FourOhFour))
+            self.assertTrue(isinstance(r.tag, rend.FourOhFour))
         D.addCallback(x1)
 
         def x2(ign):
             D2 = getResource(page, '/freeform_post!!foo')
             def x3(r):
-                self.failIf(isinstance(r.tag, rend.FourOhFour))
+                self.assertFalse(isinstance(r.tag, rend.FourOhFour))
                 return deferredRender(r.tag).addCallback(
-                    lambda result: self.assertEquals(result, 'You posted a form to foo'))
+                    lambda result: self.assertEqual(result, 'You posted a form to foo'))
             D2.addCallback(x3)
             return D2
         D.addCallback(x2)
@@ -910,10 +912,10 @@ class TestLocateChild(unittest.TestCase):
 
             D3 = getResource(page, '/freeform_post!!foo')
             def x5(r):
-                self.failIf(isinstance(r.tag, rend.FourOhFour))
+                self.assertFalse(isinstance(r.tag, rend.FourOhFour))
                 return deferredRender(r.tag).addCallback(
                     lambda result:
-                    self.assertEquals(result, 'You posted a form to foo'))
+                    self.assertEqual(result, 'You posted a form to foo'))
             return D3.addCallback(x5)
         D.addCallback(x4)
         return D
@@ -926,19 +928,19 @@ class TestStandardRenderers(unittest.TestCase):
 
         ctx.remember('foo', inevow.IData)
         tag = p(render=rend.data)
-        self.assertEquals(flat.flatten(tag, ctx), '<p>foo</p>')
+        self.assertEqual(flat.flatten(tag, ctx), '<p>foo</p>')
 
         ctx.remember('\xc2\xa3'.decode('utf-8'), inevow.IData)
         tag = p(render=rend.data)
-        self.assertEquals(flat.flatten(tag, ctx), '<p>\xc2\xa3</p>')
+        self.assertEqual(flat.flatten(tag, ctx), '<p>\xc2\xa3</p>')
 
         ctx.remember([1,2,3,4,5], inevow.IData)
         tag = p(render=rend.data)
-        self.assertEquals(flat.flatten(tag, ctx), '<p>12345</p>')
+        self.assertEqual(flat.flatten(tag, ctx), '<p>12345</p>')
 
         ctx.remember({'foo':'bar'}, inevow.IData)
         tag = p(data=directive('foo'), render=rend.data)
-        self.assertEquals(flat.flatten(tag, ctx), '<p>bar</p>')
+        self.assertEqual(flat.flatten(tag, ctx), '<p>bar</p>')
 
 class TestMacro(unittest.TestCase):
 
@@ -980,7 +982,7 @@ class TestMacro(unittest.TestCase):
         p1_str = p1.renderSynchronously(ctx1)
         p2_str = p2.renderSynchronously(ctx2)
 
-        self.assertNotEquals(p1_str, p2_str)
+        self.assertNotEqual(p1_str, p2_str)
 
     def test_macroInsideSpecialScope(self):
         """http://divmod.org/trac/ticket/490
@@ -1020,5 +1022,5 @@ class TestMacro(unittest.TestCase):
         p1_str = p1.renderSynchronously(ctx1)
         p2_str = p2.renderSynchronously(ctx2)
 
-        self.assertEquals(p1_str, p2_str)
+        self.assertEqual(p1_str, p2_str)
 

@@ -1,4 +1,4 @@
-from zope.interface import implements, Interface
+from zope.interface import implementer, Interface
 
 from axiom import item, store
 from axiom.attributes import text, timestamp
@@ -18,9 +18,8 @@ class Post(item.Item):
     author = text()
     created = timestamp()
 
+@implementer(IPostit)
 class Application(item.Item, item.InstallableMixin):
-    implements(IPostit)
-
     name = text()
 
     def installOn(self, other):
@@ -37,11 +36,11 @@ def initialize():
     s = store.Store('postit.axiom')
     postit = IPostit(s, None)
     if not postit:
-        Application(store=s, name=u'Postit').installOn(s)
+        Application(store=s, name='Postit').installOn(s)
         Post(store=s, 
-             title=u"This is the title",
-             url=u"http://www.divmod.org",
-             content=u"Here is the content for the link",
-             author=u"dialtone",
+             title="This is the title",
+             url="http://www.divmod.org",
+             content="Here is the content for the link",
+             author="dialtone",
              created=Time())
     return s

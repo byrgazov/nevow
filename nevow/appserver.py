@@ -9,9 +9,13 @@ A web application server built using twisted.web
 import cgi
 import warnings
 from collections import MutableMapping
-from urllib import unquote
+try:
+	from urllib.parse import unquote
+except ImportError:
+	# python2 compatibility
+	from urlparse import unquote
 
-from zope.interface import implements, classImplements
+from zope.interface import implementer, classImplements
 
 import twisted.python.components as tpc
 from twisted.web import server
@@ -22,6 +26,7 @@ except ImportError:
     from twisted.protocols import http
 
 from twisted.python import log
+from twisted.python import compat
 from twisted.internet import defer
 
 from nevow import context
@@ -94,7 +99,7 @@ class _DictHeaders(MutableMapping):
         Return a C{dict} mapping each header name to the last corresponding
         header value.
         """
-        return dict(self.items())
+        return dict(list(self.items()))
 
 
     def has_key(self, key):
@@ -105,9 +110,9 @@ class _DictHeaders(MutableMapping):
         return key in self
 
 
-
+@implementer(inevow.ICanHandleException)
 class UninformativeExceptionHandler:
-    implements(inevow.ICanHandleException)
+
 
     def renderHTTP_exception(self, ctx, reason):
         request = inevow.IRequest(ctx)
@@ -122,8 +127,9 @@ class UninformativeExceptionHandler:
         return """<div style="border: 1px dashed red; color: red; clear: both">[[ERROR]]</div>"""
 
 
+@implementer(inevow.ICanHandleException)
 class DefaultExceptionHandler:
-    implements(inevow.ICanHandleException)
+
 
     def renderHTTP_exception(self, ctx, reason):
         log.err(reason)
@@ -173,8 +179,8 @@ def processingFailed(reason, request, ctx):
 def defaultExceptionHandlerFactory(ctx):
     return DefaultExceptionHandler()
 
-
-class NevowRequest(tpc.Componentized, server.Request):
+@implementer(inevow.IRequest)
+class NevowRequest(tpc.Componentized): #; , server.Request):
     """
     A Request subclass which does additional
     processing if a form was POSTed. When a form is POSTed,
@@ -195,7 +201,7 @@ class NevowRequest(tpc.Componentized, server.Request):
         lost) or not.  C{False} until this happens, C{True} afterwards.
     @type _lostConnection: L{bool}
     """
-    implements(inevow.IRequest)
+
 
     fields = None
     _lostConnection = False
@@ -232,10 +238,11 @@ class NevowRequest(tpc.Componentized, server.Request):
         self.setHeader('server', server.version)
         self.setHeader('date', server.http.datetimeToString())
         self.setHeader('content-type', "text/html; charset=UTF-8")
+        self.setHeader("X-Frame-Options", "SAMEORIGIN")
 
         # Resource Identification
         self.prepath = []
-        self.postpath = map(unquote, self.path[1:].split('/'))
+        self.postpath = list(map(unquote, self.path[1:].split('/')))
         self.sitepath = []
 
         self.deferred = defer.Deferred()
@@ -293,7 +300,7 @@ class NevowRequest(tpc.Componentized, server.Request):
         if self._lostConnection:
             # No response can be sent at this point.
             pass
-        elif isinstance(html, str):
+        elif isinstance(html, (compat.unicode, bytes)):
             self.write(html)
             self.finishRequest(  True )
         elif html is errorMarker:
@@ -445,7 +452,7 @@ class NevowSite(server.Site):
             assert  len(newpath) < len(path), "Infinite loop impending..."
 
         ## We found a Resource... update the request.prepath and postpath
-        for x in xrange(len(path) - len(newpath)):
+        for x in range(len(path) - len(newpath)):
             if request.postpath:
                 request.prepath.append(request.postpath.pop(0))
 
@@ -477,8 +484,9 @@ class NevowSite(server.Site):
 
 ## This should be moved somewhere else, it's cluttering up this module.
 
+@implementer(inevow.IResource)
 class OldResourceAdapter(object):
-    implements(inevow.IResource)
+
 
     # This is required to properly handle the interaction between
     # original.isLeaf and request.postpath, from which PATH_INFO is set in

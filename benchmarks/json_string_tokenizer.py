@@ -1,3 +1,4 @@
+from __future__ import print_statement, division, absolute_import
 
 from time import time
 
@@ -22,7 +23,7 @@ class StringTokenizer(Options):
         self['scale'] = int(self['scale'])
 
 
-BASE = u'Hello, world.  "Quotes".'
+BASE = 'Hello, world.  "Quotes".'
 def benchmark(iterations, scale):
     """
     Deserialize a string C{iterations} times.  Make the string longer based
@@ -32,10 +33,10 @@ def benchmark(iterations, scale):
     """
     s = serialize(BASE * scale)
     before = time()
-    for i in xrange(iterations):
+    for i in range(iterations):
         parse(s)
     after = time()
-    print (after - before) / iterations, 'per call'
+    print((after - before) / iterations, 'per call')
 
 
 
