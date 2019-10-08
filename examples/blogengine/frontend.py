@@ -1,5 +1,5 @@
 from time import time as now
-from zope.interface import implements, Interface
+from zope.interface import implementer, Interface
 
 from twisted.web import xmlrpc
 from twisted.python.components import registerAdapter
@@ -108,10 +108,11 @@ class UI(BaseUI):
     def child_thx(self, ctx):
         return Thx()
 
+
 ##################################
+@implementer(IInsert)
 class NewEntry(BaseUI):
-    implements(IInsert)
-                
+
     docFactory = loaders.stan(
         t.html[
             t.head[
@@ -139,6 +140,7 @@ class NewEntry(BaseUI):
         IBlog(IStore(ctx)).addNewPost(newPost)
         inevow.IRequest(ctx).setComponent(iformless.IRedirectAfterPost, '/thx')
 
+
 #####################################
 class Thx(rend.Page):
     docFactory = loaders.stan(
@@ -149,9 +151,10 @@ class Thx(rend.Page):
                 ]
             ])
 
+
 ####################################
+@implementer(IInsert)
 class Entry(UI):
-    implements(IInsert)
     def data_getEntries(self, ctx, data):
         return [data]
 
@@ -170,6 +173,7 @@ class Entry(UI):
         self.original.category = str(category)
         self.original.content = str(content)
         inevow.IRequest(ctx).setComponent(iformless.IRedirectAfterPost, '/thx')
+
 
 #####################################
 class Atom(BaseUI):

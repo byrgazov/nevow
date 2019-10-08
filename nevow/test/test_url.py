@@ -12,7 +12,6 @@ except ImportError:
 	from urllib import unquote, unquote_plus, quote
 	from urlparse import urlsplit
 
-
 from nevow import context, url, inevow, util, loaders
 from nevow import tags
 from nevow.testutil import TestCase, FakeRequest
@@ -266,7 +265,7 @@ class TestURL(TestCase):
         # replace just the query
         self.assertEqual("http://www.foo.com:80/a/nice/path/?burp",
                           str(urlpath.click("?burp")))
-        # one full url to another should not generate '//' between netloc and pathsegs 
+        # one full url to another should not generate '//' between netloc and pathsegs
         self.failIfIn("//foobar", str(urlpath.click('http://www.foo.com:80/foobar')))
 
         # from a url with no query clicking a url with a query,
@@ -578,7 +577,7 @@ class Serialization(TestCase):
             (r'/foo/', '%2Ffoo%2F'),
             (r'c:\foo\bar bar', 'c%3A%5Cfoo%5Cbar%20bar'),
             (r'&<>', '%26%3C%3E'),
-            (u'!"\N{POUND SIGN}$%^&*()_+'.encode('utf-8'), '!%22%C2%A3%24%25%5E%26*()_%2B'),
+            ('!"\N{POUND SIGN}$%^&*()_+'.encode('utf-8'), '!%22%C2%A3%24%25%5E%26*()_%2B'),
             )
         for test, result in tests:
             u = url.URL.fromString(base).child(test)

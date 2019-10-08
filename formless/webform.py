@@ -25,17 +25,21 @@ from nevow.static import File
 
 defaultCSS = File(util.resource_filename('formless', 'freeform-default.css'), 'text/css')
 
+
 @implementer(inevow.IRenderer, iformless.ITypedRenderer)
 class DefaultRenderer(object):
     complexType = False
+
     def rend(self, context, data):
         return StringRenderer(data)
 
 defaultBindingRenderer = DefaultRenderer()
 
+
 @implementer(inevow.IRenderer, iformless.ITypedRenderer)
 class BaseInputRenderer(components.Adapter):
     complexType = False
+
     def rend(self, context, data):
         defaults = context.locate(iformless.IFormDefaults)
         value = defaults.getDefault(context.key, context)
@@ -44,8 +48,8 @@ class BaseInputRenderer(components.Adapter):
         if data.typedValue.getAttribute('immutable'):
             inp = tags.span(id=keyToXMLID(context.key))[value]
         else:
-            ##value may be a deferred; make sure to wait on it properly before calling self.input
-            ## TODO: If flattening this results in an empty string, return an empty string
+            # value may be a deferred; make sure to wait on it properly before calling self.input
+            # TODO: If flattening this results in an empty string, return an empty string
             inp = tags.invisible(
                 render=lambda c, value: self.input( context, tags.invisible(), data, data.name, value ),
                 data=value)
@@ -137,7 +141,7 @@ def isSelected(c, d):
         return c.tag(selected='selected')
     return c.tag
 
-    
+
 def isChecked(c, d):
     if csv(c) == valToKey(c, d):
         return c.tag(checked='checked')
@@ -146,8 +150,8 @@ def isChecked(c, d):
 
 class ChoiceRenderer(BaseInputRenderer):
     default_select = tags.select(id=slot('id'), name=slot('name'), render=tags.directive('sequence'))[
-        tags.option(pattern="item", 
-            value=valToKey, 
+        tags.option(pattern="item",
+            value=valToKey,
             render=isSelected)[
             lambda c, d: iformless.ITyped(c).stringify(d)]]
 
@@ -178,9 +182,11 @@ class RadioRenderer(ChoiceRenderer):
 @implementer(inevow.IRenderer, iformless.ITypedRenderer)
 class ObjectRenderer(components.Adapter):
     complexType = True
+
     def rend(self, context, data):
         configurable = context.locate(iformless.IConfigurable)
         return getattr(configurable, data.name)
+
 
 @implementer(inevow.IRenderer, iformless.ITypedRenderer)
 class NullRenderer(components.Adapter):
@@ -189,6 +195,7 @@ class NullRenderer(components.Adapter):
     """
     def rend(self, context, data):
         return ''
+
 
 @implementer(inevow.IRenderer)
 class GroupBindingRenderer(components.Adapter):
@@ -232,6 +239,7 @@ class BaseBindingRenderer(components.Adapter):
 
     isGrouped = False
     needsSkin = False
+
     def calculateDefaultSkin(self, context):
         if self.isGrouped:
             frm = tags.invisible
@@ -445,7 +453,7 @@ def renderForms(configurableKey='', bindingNames=None, bindingDefaults=None):
                         binding_pattern = tag.patternGenerator( 'freeform-form' )
                     except NodeNotFound:
                         binding_pattern = freeformDefaultForm
-                        
+
                 if binding_pattern is freeformDefaultForm:
                     renderer.needsSkin = True
                 return binding_pattern(data=binding, render=renderer, key=name)

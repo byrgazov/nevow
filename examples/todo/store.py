@@ -1,9 +1,10 @@
-from zope.interface import implements
+from zope.interface import implementer
 import pgasync
 import itodo
 
+
+@implementer(itodo.ITodos)
 class Todos(object):
-    implements(itodo.ITodos)
     def __init__(self, dbname, user, password, host):
         self.original = pgasync.ConnectionPool("pgasync", dbname=dbname, 
                         user=user, password=password, host=host)
@@ -26,4 +27,3 @@ class Todos(object):
     def findAll(self):
         query = "SELECT * FROM todos"
         return self.original.runQuery(query)
-    

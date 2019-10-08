@@ -34,10 +34,11 @@ customValueToKey = annotate.Choice(
 class IMyForm(annotate.TypedInterface):
     foo = annotate.Integer()
 
-    def bar(baz=annotate.Integer(), 
+    def bar(baz=annotate.Integer(),
         slam=newChoicesWay, ham=deferChoicesWay, radio=radioChoices, custom=customValueToKey):
         pass
     bar = annotate.autocallable(bar)
+
 
 @implementer(IMyForm)
 class Implementation(object):

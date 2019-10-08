@@ -35,7 +35,7 @@ class InputError(Exception):
     """
     def __init__(self, reason):
         self.reason = reason
-    
+
     def __str__(self):
         return self.reason
 
@@ -46,7 +46,7 @@ class ValidateError(Exception):
 
     One use of this is to raise from an autocallable if an input is invalid.
     For example, a password is incorrect.
-    
+
     errors must be a dictionary mapping argument names to error messages
     to display next to the arguments on the form.
 
@@ -73,13 +73,13 @@ class Typed(Attribute):
     """A typed value. Subclasses of Typed are constructed inside of
     TypedInterface class definitions to describe the types of properties,
     the parameter types to method calls, and method return types.
-    
+
     @ivar label: The short label which will describe this
         parameter/proerties purpose to the user.
-    
+
     @ivar description: A long description which further describes the
         sort of input the user is expected to provide.
-    
+
     @ivar default: A default value that may be used as an initial
         value in the form.
 
@@ -92,7 +92,6 @@ class Typed(Attribute):
         of the data from the browser and pass unicode strings to
         coerce.
     """
-
 
     complexType = False
     strip = False
@@ -211,7 +210,7 @@ class Integer(Typed):
                     return int(val)
                 except ValueError:
                     raise InputError("'%s' is not an integer." % val)
-            
+
             raise InputError("'%s' is not an integer." % val)
 
 
@@ -240,7 +239,7 @@ class Boolean(Typed):
 
 
 class FixedDigitInteger(Integer):
-    
+
     def __init__(self, digits = 1, *args, **kw):
         Integer.__init__(self, *args, **kw)
         self.digits = digits
@@ -255,7 +254,7 @@ class FixedDigitInteger(Integer):
 
 
 class Directory(Typed):
-    
+
     requiredFailMessage = 'Please enter a directory name.'
 
     def coerce(self, val, configurable):
@@ -359,7 +358,6 @@ class Object(Typed):
 @implementer(iformless.IActionableType)
 class List(Object):
 
-
     complexType = True
     def __init__(self, actions=None, header='', footer='', separator='', *args, **kw):
         """Actions is a list of action methods which may be invoked on one
@@ -388,7 +386,7 @@ class List(Object):
 
     def attachActionBindings(self, possibleActions):
         ## Go through and replace self.actions, which is a list of method
-        ## references, with the MethodBinding instance which holds 
+        ## references, with the MethodBinding instance which holds
         ## metadata about this function.
         act = self.actions
         for method, binding in possibleActions:
@@ -464,13 +462,13 @@ def autocallable(method, action=None, visible=False, **kw):
     """Describe a method in a TypedInterface as being callable through the
     UI. The "action" paramter will be used to label the action button, or the
     user interface element which performs the method call.
-    
+
     Use this like a method adapter around a method in a TypedInterface:
-    
+
     >>> class IFoo(TypedInterface):
     ...     def doSomething():
     ...         '''Do Something
-    ...         
+    ...
     ...         Do some action bla bla'''
     ...         return None
     ...     doSomething = autocallable(doSomething, action="Do it!!")
@@ -492,23 +490,22 @@ def autocallable(method, action=None, visible=False, **kw):
 class Binding(object):
     """Bindings bind a Typed instance to a name. When TypedInterface is subclassed,
     the metaclass looks through the dict looking for all properties and methods.
-    
+
     If a properties is a Typed instance, a Property Binding is constructed, passing
     the name of the binding and the Typed instance.
-    
+
     If a method has been wrapped with the "autocallable" function adapter,
     a Method Binding is constructed, passing the name of the binding and the
     Typed instance. Then, getargspec is called. For each keyword argument
     in the method definition, an Argument is constructed, passing the name
     of the keyword argument as the binding name, and the value of the
     keyword argument, a Typed instance, as the binding typeValue.
-    
+
     One more thing. When an autocallable method is found, it is called with
     None as the self argument. The return value is passed the Method
     Binding when it is constructed to keep track of what the method is
     supposed to return.
     """
-
 
     label = None
     description = ''
@@ -678,7 +675,7 @@ class MetaTypedInterface(InterfaceClass):
     this metaclass' __new__ method is invoked. The Typed Binding introspection
     described in the Binding docstring occurs, and when it is all done, there will
     be three attributes on the TypedInterface class:
-    
+
      - __methods__: An ordered list of all the MethodBinding instances
        produced by introspecting all autocallable methods on this
        TypedInterface
@@ -688,21 +685,21 @@ class MetaTypedInterface(InterfaceClass):
        Typed values on this TypedInterface
 
      - __spec__: An ordered list of all methods and properties
-    
+
     These lists are sorted in the order that the methods and properties appear
     in the TypedInterface definition.
-    
+
     For example:
-    
+
     >>> class Foo(TypedInterface):
     ...     bar = String()
     ...     baz = Integer()
-    ...     
+    ...
     ...     def frotz(): pass
     ...     frotz = autocallable(frotz)
-    ...     
+    ...
     ...     xyzzy = Float()
-    ...     
+    ...
     ...     def blam(): pass
     ...     blam = autocallable(blam)
 

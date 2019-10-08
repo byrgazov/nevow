@@ -105,9 +105,11 @@ class BasePage(rend.Page):
         tag = context.tag.clear()
         tag[loaders.htmlfile(templateDir='templates', template=self.contentTemplateFile)]
         return tag
-    
+
+
 @implementer(IAddPasting)
 class RootPage(BasePage):
+
     addSlash = True
 
     def __init__(self, pastebin):
@@ -128,7 +130,7 @@ class RootPage(BasePage):
     def addPasting(self, request, author, text):
         oid = self.pastebin.addPasting(author, text)
         request.setComponent(iformless.IRedirectAfterPost, '/'+str(oid))
-        
+
 
 @implementer(IEditPasting)
 class Pasting(BasePage):
@@ -194,7 +196,7 @@ class Version(BasePage):
         self.pastebin = pastebin
         self.pasting = pasting
         self.version = version
-        
+
     def data_history(self, context, data):
         return self.pasting.getHistory()
 
@@ -207,4 +209,4 @@ class Version(BasePage):
             render_time(theTime), ' (',author,')'
             ])
         return context.tag
-    
+

@@ -37,6 +37,7 @@ class FakeChannel:
 class FakeSite:
     pass
 
+
 @implementer(inevow.ISession)
 class FakeSession(Componentized):
     def __init__(self, avatar):
@@ -48,6 +49,7 @@ class FakeSession(Componentized):
 
 
 fs = FakeSession(None)
+
 
 @implementer(inevow.IRequest)
 class FakeRequest(Componentized):
@@ -328,6 +330,7 @@ if not hasattr(TrialTestCase, 'mktemp'):
         return tempfile.mktemp()
     TestCase.mktemp = mktemp
 
+
 @implementer(iformless.IFormDefaults)
 class AccumulatingFakeRequest(FakeRequest):
     """
@@ -455,7 +458,7 @@ class JavaScriptTestCase(TrialTestCase):
 
     def _writeToTemp(self, contents):
         fname = self.mktemp()
-        fd = file(fname, 'w')
+        fd = open(fname, 'w')
         try:
             fd.write(contents)
         finally:
@@ -588,7 +591,7 @@ class CSSModuleTestMixin:
         """
         def makeModule(contents=None):
             fname = self.mktemp()
-            f = file(fname, 'w')
+            f = open(fname, 'w')
             if contents is not None:
                 f.write(contents)
             f.close()

@@ -31,7 +31,7 @@ def setContent(name, content):
     # collected.  It doesn't really matter how long that takes, since if an
     # exception is raised, no code is going to try to use the contents of
     # the file.  So, don't bother making extra sure it gets closed.
-    fObj = file(name, 'w')
+    fObj = open(name, 'w')
     fObj.write(content)
     fObj.close()
 

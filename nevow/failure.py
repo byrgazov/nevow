@@ -8,7 +8,7 @@ import linecache
 import re
 
 from nevow import tags as t
-from twisted.python import failure
+from twisted.python import failure, compat
 
 
 stylesheet = """
@@ -167,7 +167,7 @@ def htmlDict(d):
             for k, v in list(d.items())
         ]]
     ]
-                
+
 
 def htmlList(l):
     return t.div(_class="list")[
@@ -207,7 +207,7 @@ def htmlUnknown(u):
 htmlReprTypes = {
     dict: htmlDict,
     list: htmlList,
-    types.InstanceType: htmlInst,
+    compat.InstanceType: htmlInst,
     bytes: htmlString,
     types.FunctionType: htmlFunc,
     types.MethodType: htmlMeth,
@@ -215,7 +215,12 @@ htmlReprTypes = {
 
 
 def htmlrepr(x):
-    return htmlReprTypes.get(type(x), htmlUnknown)(x)
+    x_type = type(x)
+    try:
+        func = htmlReprTypes[x_type]
+    except KeyError:
+        func = htmlInst if inspect.isclass(x_type) else htmlUnknown
+    return func(x)
 
 
 def varTable(usedVars):

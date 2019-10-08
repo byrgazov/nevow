@@ -37,8 +37,6 @@ from nevow.util import CachedFile
 class stan(object):
     """A stan tags document factory"""
 
-
-
     stan = None
     pattern = None
     _cache = None
@@ -65,8 +63,6 @@ class stan(object):
 @implementer(inevow.IDocFactory)
 class htmlstr(object):
     """A document factory for HTML contained in a string"""
-
-
 
     template = None
     pattern = None
@@ -95,11 +91,10 @@ class htmlstr(object):
             self._cache = doc
         return self._cache
 
+
 @implementer(inevow.IDocFactory)
 class htmlfile(object):
     """A document factory for an HTML disk template"""
-
-
 
     template = None
     pattern = None
@@ -133,10 +128,9 @@ class htmlfile(object):
         assert not preprocessors, "preprocessors not supported by htmlfile"
         return self._cache.load(ctx)
 
+
 @implementer(inevow.IDocFactory)
 class xmlstr(object):
-
-
 
     template = None
     pattern = None
@@ -167,6 +161,7 @@ class xmlstr(object):
                 doc = inevow.IQ(doc).onePattern(self.pattern)
             self._cache = doc
         return self._cache
+
 
 @implementer(inevow.IDocFactory)
 class xmlfile(object):

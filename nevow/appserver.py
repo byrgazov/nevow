@@ -113,7 +113,6 @@ class _DictHeaders(MutableMapping):
 @implementer(inevow.ICanHandleException)
 class UninformativeExceptionHandler:
 
-
     def renderHTTP_exception(self, ctx, reason):
         request = inevow.IRequest(ctx)
         log.err(reason)
@@ -129,7 +128,6 @@ class UninformativeExceptionHandler:
 
 @implementer(inevow.ICanHandleException)
 class DefaultExceptionHandler:
-
 
     def renderHTTP_exception(self, ctx, reason):
         log.err(reason)
@@ -169,9 +167,14 @@ def processingFailed(reason, request, ctx):
         log.err()
         log.err("Original exception:", isErr=1)
         log.err(reason)
-        request.write("<html><head><title>Internal Server Error</title></head>")
-        request.write("<body><h1>Internal Server Error</h1>An error occurred rendering the requested page. Additionally, an error occurred rendering the error page.</body></html>")
-        request.finishRequest( False )
+        request.write(
+            b"<html><head><title>Internal Server Error</title></head>")
+        request.write(
+            b"<body><h1>Internal Server Error</h1>"
+            b"An error occurred rendering the requested page. "
+            b"Additionally, an error occurred rendering the error page."
+            b"</body></html>")
+        request.finishRequest(False)
 
     return errorMarker
 
@@ -201,7 +204,6 @@ class NevowRequest(tpc.Componentized): #; , server.Request):
         lost) or not.  C{False} until this happens, C{True} afterwards.
     @type _lostConnection: L{bool}
     """
-
 
     fields = None
     _lostConnection = False
@@ -300,9 +302,12 @@ class NevowRequest(tpc.Componentized): #; , server.Request):
         if self._lostConnection:
             # No response can be sent at this point.
             pass
-        elif isinstance(html, (compat.unicode, bytes)):
+        elif isinstance(html, bytes):
             self.write(html)
-            self.finishRequest(  True )
+            self.finishRequest(True)
+        elif isinstance(html, compat.unicode):
+            self.write(html.encode('ascii'))
+            self.finishRequest(True)
         elif html is errorMarker:
             ## Error webpage has already been rendered and finish called
             pass
@@ -482,11 +487,9 @@ class NevowSite(server.Site):
             request._logger()
 
 
-## This should be moved somewhere else, it's cluttering up this module.
-
+# This should be moved somewhere else, it's cluttering up this module.
 @implementer(inevow.IResource)
 class OldResourceAdapter(object):
-
 
     # This is required to properly handle the interaction between
     # original.isLeaf and request.postpath, from which PATH_INFO is set in

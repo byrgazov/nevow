@@ -4,6 +4,7 @@
 import formless
 from zope.interface import implementer
 
+
 class IBar(formless.TypedInterface):
     bar = formless.String()
 
@@ -37,7 +38,7 @@ class Frob:
 class IObjectTest(formless.TypedInterface):
     def someMethod(one=formless.Object(interface=IBar), two=formless.Integer(description="an integer please")):
         """Some Method.
-        
+
         This method takes an IBar instance.
         """
         return None
@@ -45,7 +46,7 @@ class IObjectTest(formless.TypedInterface):
 
     def frobber(frobber=formless.Object(interface=IFrob), frobee=formless.Object(IFrob)):
         """Frobber.
-        
+
         Takes two frobs and raises one to the power of the other.
         """
         return IFrob
@@ -79,7 +80,7 @@ class CompoundChecker(formless.Compound):
 class IAnotherTest(formless.TypedInterface):
     def aBarMethod(abar=formless.Object(interface=IBar)):
         """A Bar Method
-        
+
         This method takes a bar, but there are no bar instances on this page.
         You'll have to use the shelf.
         """
@@ -88,7 +89,7 @@ class IAnotherTest(formless.TypedInterface):
 
     def aFrobMethod(aFrob=formless.Object(interface=IFrob)):
         """A Frob Method
-        
+
         This method takes a frob, but there are no frob instances on this page.
         You'll have to use the shelf.
         """
@@ -97,7 +98,7 @@ class IAnotherTest(formless.TypedInterface):
 
     def whatIsMyClass(anObj=formless.Object()):
         """What is my class?
-        
+
         Pass an object and get back the class in your hand.
         """
         return formless.Object()
@@ -120,7 +121,7 @@ class IAnotherTest(formless.TypedInterface):
             label="Full Name"),
         anInt = formless.Integer()):
         """Compound Test
-        
+
         A test of a widget/controller which renders multiple fields, triggers multiple
         validators, but gathers the result into one method argument. There can
         be an additional validation step which validates that the compound data
@@ -136,7 +137,7 @@ class IAnotherTest(formless.TypedInterface):
             description="What is the meaning of life, the universe, and everything?")
         ):
         """The Answer
-        
+
         Please type the integer six in the first box, and nine in the second.
         """
         return formless.Object(label="The Answer", interface=formless.Integer)
@@ -180,7 +181,10 @@ class AnotherTest:
                 if not debugInstance.breaks[removal.fn]:
                     del debugInstance.breaks[removal.fn]
                 list.remove(self, removal)
-        class Dummy(formless.TypedInterface): pass
+
+        class Dummy(formless.TypedInterface):
+            pass
+
         @implementer(Dummy)
         class BP:
             def __init__(self, fn, ln):

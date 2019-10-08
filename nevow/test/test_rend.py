@@ -287,7 +287,7 @@ class TestPage(unittest.TestCase):
         """
         doc = '<p>fum</p>'
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(doc)
         f.close()
 
@@ -306,7 +306,7 @@ class TestPage(unittest.TestCase):
         """
         doc = '<p>I</p>'
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(doc)
         f.close()
 
@@ -607,13 +607,17 @@ class TestConfigurableMixin(unittest.TestCase):
         result = FormPage().postForm(ctx, 'test1', {'foo': ['hello, world!']})
         return self.assertFailure(result, annotate.ValidateError)
 
+
 class IThing(formless.TypedInterface):
     foo = formless.String()
+
 
 @implementer(IThing)
 class Thing:
     pass
 
+
+@implementer(IThing)
 class TestLocateConfigurable(unittest.TestCase):
 
     def test_onSelf(self):
@@ -658,6 +662,7 @@ class TestDeferredDefaultValue(unittest.TestCase):
         from nevow import util
         deferred = util.Deferred()
         deferred.callback('the default value')
+
         @implementer(IDeferredProperty)
         class Implementation(object):
             d = deferred
@@ -886,6 +891,7 @@ class TestLocateChild(unittest.TestCase):
             # mock mock
             def postForm(self, ctx, bindingName, args):
                 return 'SimpleConf OK'
+
         class FormPage(rend.Page):
             addSlash = True
             def configurable_(self, ctx):
@@ -893,6 +899,7 @@ class TestLocateChild(unittest.TestCase):
         page = FormPage()
 
         D = getResource(page, '/foo')
+
         def x1(r):
             self.assertTrue(isinstance(r.tag, rend.FourOhFour))
         D.addCallback(x1)
@@ -956,7 +963,7 @@ class TestMacro(unittest.TestCase):
 </html>
         """
         temp = self.mktemp()
-        f = file(temp, 'w')
+        f = open(temp, 'w')
         f.write(doc)
         f.close()
 

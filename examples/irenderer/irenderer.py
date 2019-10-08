@@ -6,7 +6,7 @@
 
 
 import random
-from zope.interface import implements, Interface
+from zope.interface import implementer, Interface
 from twisted.python.components import registerAdapter, Adapter
 
 from nevow import inevow
@@ -47,11 +47,11 @@ class IFullView(Interface):
 ############################################################################
 # Define the rendering adapters that do the real work of rendering an
 # object.
-
+@implementer(inevow.IRenderer, ISummaryView)
 class PersonSummaryView(Adapter):
     """Render a summary of a Person.
     """
-    implements(inevow.IRenderer, ISummaryView)
+
     def rend(self, data):
         return T.div(_class="summaryView person")[
             T.a(href=['mailto:',self.original.email])[
@@ -59,10 +59,11 @@ class PersonSummaryView(Adapter):
                 ]
             ]
 
+
+@implementer(inevow.IRenderer, IFullView)
 class PersonFullView(Adapter):
     """Render a full view of a Person.
     """
-    implements(inevow.IRenderer, IFullView)
     def rend(self, data):
         attrs = ['firstName', 'lastName', 'email']
         return T.div(_class="fullView person")[
@@ -72,20 +73,22 @@ class PersonFullView(Adapter):
                 for attr in attrs]
                 ]
             ]
-    
+
+
+@implementer(inevow.IRenderer, ISummaryView)
 class BookmarkSummaryView(Adapter):
     """Render a summary of a Person.
     """
-    implements(inevow.IRenderer, ISummaryView)
     def rend(self, data):
         return T.div(_class="summaryView bookmark")[
             T.a(href=self.original.url)[self.original.name]
             ]
-    
+
+
+@implementer(inevow.IRenderer, IFullView)
 class BookmarkFullView(Adapter):
     """Render a full view of a Bookmark.
     """
-    implements(inevow.IRenderer, IFullView)
     def rend(self, data):
         attrs = ['name', 'url']
         return T.div(_class="fullView bookmark")[

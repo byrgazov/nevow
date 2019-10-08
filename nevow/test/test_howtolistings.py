@@ -13,6 +13,7 @@ from nevow.testutil import renderLivePage, JavaScriptTestCase
 from nevow.athena import jsDeps, expose
 
 from nevow import plugins
+import imp
 
 
 class ExampleTestBase(object):
@@ -53,7 +54,7 @@ class ExampleTestBase(object):
         jsDeps._loadPlugins = True
         # Even more horrible!  nevow.plugins.__path__ needs to be recomputed
         # each time for the new value of sys.path.
-        reload(plugins)
+        imp.reload(plugins)
 
 
     def tearDown(self):
@@ -64,7 +65,7 @@ class ExampleTestBase(object):
         sys.modules.clear()
         sys.modules.update(self.originalModules)
         sys.path[:] = self.originalPath
-        reload(plugins)
+        imp.reload(plugins)
 
 
 

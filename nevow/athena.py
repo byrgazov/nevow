@@ -90,7 +90,7 @@ def activeChannel(request):
 class MappingResource(object):
     """
     L{inevow.IResource} which looks up segments in a mapping between symbolic
-    names and the files they correspond to. 
+    names and the files they correspond to.
 
     @type mapping: C{dict}
     @ivar mapping: A map between symbolic, requestable names (eg,
@@ -177,7 +177,7 @@ class AthenaModule(object):
     def _extractImports(self, fileObj):
         s = fileObj.read()
         for m in self._importExpression.finditer(s):
-            yield self.getOrCreate(m.group(1).decode('ascii'), self.mapping)
+            yield self.getOrCreate(m.group(1), self.mapping)
 
 
 
@@ -185,7 +185,7 @@ class AthenaModule(object):
         """
         Calculate our dependencies given the path to our source.
         """
-        depgen = self._extractImports(file(jsFile, 'rU'))
+        depgen = self._extractImports(open(jsFile, 'rU'))
         return self.packageDeps + list(dict.fromkeys(depgen).keys())
 
 
@@ -251,7 +251,6 @@ class CSSModule(AthenaModule):
     _modules = {}
 
 
-
 @implementer(plugin.IPlugin, inevow.IJavascriptPackage)
 class JSPackage(object):
     """
@@ -264,7 +263,6 @@ class JSPackage(object):
 
     def __init__(self, mapping):
         self.mapping = mapping
-
 
 
 def _collectPackageBelow(baseDir, extension):
@@ -300,7 +298,8 @@ def _collectPackageBelow(baseDir, extension):
             path = os.path.join(root, dir, '__init__.' + extension)
             if not os.path.exists(path):
                 path = EMPTY
-            mapping[name.encode("ascii")] = path
+#           mapping[name.encode("ascii")] = path
+            mapping[name] = path
             _revMap[os.path.join(root, dir)] = name + '.'
 
         for fn in filenames:
@@ -315,7 +314,8 @@ def _collectPackageBelow(baseDir, extension):
 
             name = stem + fn[:-(len(extension) + 1)]
             path = os.path.join(root, fn)
-            mapping[name.encode('ascii')] = path
+#           mapping[name.encode('ascii')] = path
+            mapping[name] = path
     return mapping
 
 
@@ -332,7 +332,6 @@ class AutoJSPackage(object):
 
     def __init__(self, baseDir):
         self.mapping = _collectPackageBelow(baseDir, 'js')
-
 
 
 @implementer(plugin.IPlugin, inevow.ICSSPackage)
@@ -1259,7 +1258,7 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
 
         neverEverCache(request)
         if request.args.get(ATHENA_RECONNECT):
-            return json.serialize(self.clientID.decode("ascii"))
+            return json.serialize(self.clientID)
         return rend.Page.renderHTTP(self, ctx)
 
 
@@ -1332,7 +1331,9 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
 
     def callRemote(self, methodName, *args):
         requestID = 's2c%i' % (self._requestIDCounter(),)
-        message = ('call', (methodName.encode('ascii'), requestID, args))
+#       message = ('call', (methodName.encode('ascii'), requestID, args))
+#       message = ('call', (str(methodName, 'ascii'), requestID, args))
+        message = ('call', (methodName, requestID, args))
         resultD = defer.Deferred()
         self._remoteCalls[requestID] = resultD
         self.addMessage(message)
@@ -1409,10 +1410,10 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         """
         return [
             ("Divmod.bootstrap",
-             [flat.flatten(self.transportRoot, ctx).decode("ascii"),
+             [flat.flatten(self.transportRoot, ctx),
               self.TRANSPORT_CLIENT_IDLE_TIMEOUT]),
             ("Nevow.Athena.bootstrap",
-             [self.jsClass, self.clientID.decode('ascii')])]
+             [self.jsClass, self.clientID])]
 
 
     def _bootstrapCall(self, methodName, args):
@@ -1537,11 +1538,11 @@ def _rewriteEventHandlerToAttribute(tag):
         for i in range(len(tag.children) - 1, -1, -1):
             if isinstance(tag.children[i], stan.Tag) and tag.children[i].tagName == 'athena:handler':
                 info = tag.children.pop(i)
-                name = info.attributes['event'].encode('ascii')
+                name = info.attributes['event']
                 handler = info.attributes['handler']
                 extraAttributes[name] = _handlerFormat % {
-                    'handler': json.serialize(handler.decode('ascii')),
-                    'event': json.serialize(name.decode('ascii'))}
+                    'handler': json.serialize(handler),
+                    'event': json.serialize(name)}
                 tag(**extraAttributes)
     return tag
 
@@ -1726,7 +1727,8 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
             {'children': children,
              'requiredModules': requiredModules,
              'requiredCSSModules': requiredCSSModules},
-            self._flatten, tags.div(xmlns="http://www.w3.org/1999/xhtml")[self]).decode('utf-8')
+            self._flatten,
+            tags.div(xmlns="http://www.w3.org/1999/xhtml")[self])
 
         del children[0]
 
@@ -1810,7 +1812,9 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         return self.page.callRemote(
             "Nevow.Athena.callByAthenaID",
             self._athenaID,
-            methodName.encode('ascii'),
+#           methodName.encode('ascii'),
+#           str(methodName, 'ascii'),
+            methodName,
             varargs)
 
 

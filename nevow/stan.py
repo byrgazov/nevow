@@ -88,20 +88,29 @@ class directive(object):
     def __init__(self, name):
         self.name = name
 
-
     def __repr__(self):
         return "directive('%s')" % self.name
-
 
     def __hash__(self):
         return hash((directive, self.name))
 
-
     def __cmp__(self, other):
+        raise NotImplementedError
+
+    def __eq__(self, other):
         if isinstance(other, directive):
-            return cmp(self.name, other.name)
+            return self.name == other.name
         return NotImplemented
 
+    def __lt__(self, other):
+        if isinstance(other, directive):
+            return self.name < other.name
+        return NotImplemented
+
+    def __lte__(self, other):
+        if isinstance(other, directive):
+            return self.name <= other.name
+        return NotImplemented
 
 
 class slot(object):

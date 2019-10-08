@@ -9,6 +9,7 @@ from formless.annotate import Argument, ElementBinding, GroupBinding, Object, Ty
 from nevow import inevow
 from nevow.context import WovenContext
 
+
 @implementer(IConfigurable)
 class Configurable(object):
 
@@ -102,7 +103,7 @@ class Configurable(object):
                 else:
                     child = accessor.child(ctx, binding.name)
             ## If it's a groupbinding, we don't do anything at all for this path segment
-            
+
             ## This won't work right now. We need to push the previous configurable
             ## as the configurableFactory somehow and ask that for hte next binding
             ## we also need to support deferreds coming back from locateConfigurable

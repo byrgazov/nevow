@@ -180,7 +180,6 @@ class CustomTransportable(object):
         return ("Hello", 5, "world")
 
 
-
 class ServerToClientArgumentSerialization(testcase.TestCase):
     """
     Tests that a method invoked on the client by the server is passed the

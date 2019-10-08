@@ -89,6 +89,7 @@ def _makeBase():
             d[attrName] = _ProxyDescriptor(attrName)
     return type('_CompressionRequestWrapperBase', (object,), d)
 
+
 @implementer(IRequest)
 class CompressingRequestWrapper(_makeBase()):
     """
@@ -149,7 +150,6 @@ class CompressingRequestWrapper(_makeBase()):
             self.write('')
         self._gzipFile.close()
         self.underlying.finishRequest(success)
-
 
 
 @implementer(IResource)

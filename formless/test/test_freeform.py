@@ -17,6 +17,7 @@ from formless import configurable
 
 from nevow.test import test_flatstan
 
+
 @implementer(iformless.IConfigurableFactory)
 class Base(test_flatstan.Base):
 
@@ -85,7 +86,6 @@ class Complete(Base):
             self.assertSubstring('<input name="change" type="submit"', val)
         return self.renderForms(dumb).addCallback(doasserts)
 
-
     def test_configureMethod(self):
         class IDumb(formless.TypedInterface):
             def foo(bar=formless.String()):
@@ -113,12 +113,12 @@ class BuildingBlocksTest(Base):
             label="Hello",
             description="Hello, world."))
 
-        ## Look up a renderer specific to the type of our binding, typedValue;
+        # Look up a renderer specific to the type of our binding, typedValue;
         renderer = iformless.ITypedRenderer(
             binding.typedValue, None)
 
-        ## But render the binding itself with this renderer
-        ## The binding has the ".name" attribute we need
+        # But render the binding itself with this renderer
+        # The binding has the ".name" attribute we need
         def later(val):
             self.assertSubstring('hello', val)
             self.assertSubstring('Hello', val)
@@ -202,6 +202,7 @@ class TestDefaults(Base):
 
         @implementer(IDefaultProperty)
         class Bar(configurable.Configurable):
+            pass
 
         def later(val):
             self.failIfSubstring('2', val)
@@ -236,6 +237,7 @@ class TestDefaults(Base):
 
         @implementer(IDynamicDefaults)
         class Implements(configurable.Configurable):
+            pass
 
         def later(val):
             self.assertSubstring("YESFOO", val)
@@ -259,13 +261,12 @@ class TestNonConfigurableSubclass(Base):
         @implementer(ISimpleTypedInterface) # But implements a TypedInterface
         class ANonConfigurable(object): # Not subclassing Configurable
             pass
-        
+
         def later(val):
             self.assertSubstring('anInt', val)
             self.assertSubstring('aMethod', val)
 
         return self.renderForms(ANonConfigurable()).addCallback(later)
-
 
 
 class TestPostAForm(Base):
@@ -378,7 +379,7 @@ class TestRenderMethod(Base):
         @implementer(IFoo)
         class Impl:
             pass
-        
+
         def later(val):
             self.assertSubstring('value="Foo"', val)
             self.assertSubstring('name="abc"', val)
@@ -571,14 +572,12 @@ class TestCharsetDetectionSupport(Base):
         class Impl:
             pass
 
-
         impl = Impl()
         ctx = self.setupContext()
         def later(val):
             self.assertIn('<input name="_charset_" type="hidden" />', val)
             self.assertIn('accept-charset="utf-8"', val)
         return self.renderForms(impl, ctx).addCallback(later)
-
 
     def test_method(self):
 
@@ -590,7 +589,6 @@ class TestCharsetDetectionSupport(Base):
         @implementer(ITest)
         class Impl:
             pass
-        
 
         impl = Impl()
         ctx = self.setupContext()
@@ -616,6 +614,7 @@ class TestUnicode(Base):
         D = self.postForm(ctx, inst, 'aString', {'aString':['\xc2\xa3']})
         return D.addCallback(lambda result: self.assertEqual(inst.aString, '\xa3'))
 
+
 class TestChoice(Base):
     """Test various behaviors of submitting values to a Choice Typed.
     """
@@ -632,7 +631,6 @@ class TestChoice(Base):
 
         @implementer(IFormyThing)
         class Impl(object):
-            pass
 
             def choiceyFunc(innerSelf, arg):
                 self.called.append(arg)

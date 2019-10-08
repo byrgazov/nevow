@@ -1,6 +1,6 @@
 # -*- python -*-
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from nevow import loaders
 from nevow import rend
@@ -13,8 +13,10 @@ from formless import webform
 class IMyForm(annotate.TypedInterface):
     foo = annotate.Integer()
 
-implementer(IMyForm)
+
+@implementer(IMyForm)
 class FormPage(rend.Page):
+
     addSlash = True
 
     child_webform_css = webform.defaultCSS

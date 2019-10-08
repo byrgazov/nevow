@@ -413,6 +413,10 @@ def flatten(request, write, root, inAttribute, inXML):
             # None.
             frame = stack[-1].gi_frame
             element = next(stack[-1])
+#           last_stack = stack[-1]
+#           if isinstance(last_stack, bytes):
+#               last_stack = last_stack.decode('utf-8')
+#           element = next(last_stack)
         except StopIteration:
             stack.pop()
         except Exception as e:
@@ -424,7 +428,10 @@ def flatten(request, write, root, inAttribute, inXML):
             raise FlattenerError(e, roots, extract_tb(exc_info()[2]))
         else:
             if isinstance(element, (bytes, compat.unicode)):
+#           if type(element) is bytes:
                 write(element)
+#           elif type(element) is str:
+#               write(element.encode('ascii'))
             elif isinstance(element, Deferred):
                 def cbx(xxx_todo_changeme):
                     (original, toFlatten) = xxx_todo_changeme

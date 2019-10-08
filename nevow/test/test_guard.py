@@ -6,6 +6,7 @@ Tests for L{nevow.guard}.
 """
 
 import gc
+import io
 
 from zope.interface import implementer
 
@@ -79,7 +80,8 @@ class FakeHTTPChannel:
         req.user = username
         req.password = password
         req.received_cookies.update(self.received_cookies)
-        req.requestReceived("GET", path, "HTTP/1.0")
+        print(path)
+        req.requestReceived(b"GET", path.encode('ascii'), b"HTTP/1.0")
         return req
 
 
@@ -88,10 +90,9 @@ class FakeHTTPRequest(appserver.NevowRequest):
         appserver.NevowRequest.__init__(self, *args, **kw)
         self._pchn = self.channel
         self._cookieCache = {}
-        from io import BytesIO
-        self.content = BytesIO()
+        self.content = io.BytesIO()
         self.requestHeaders.setRawHeaders(b'host', [b'fake.com'])
-        self.written = BytesIO()
+        self.written = io.BytesIO()
 
     def followRedirect(self):
         [L] = self.responseHeaders.getRawHeaders('location')
@@ -256,10 +257,12 @@ class GetLoggedInAvatar(rend.Page):
         assert r is self
         return r.__class__.__name__
 
+
 class GetLoggedInAnonymous(rend.Page):
     def child_(self, ctx): return self
     def renderHTTP(self, ctx):
         raise RuntimeError("We weren't supposed to get here.")
+
 
 @implementer(IRealm)
 class GetLoggedInRealm:
@@ -581,7 +584,7 @@ class GuardTestFuncs:
         # only be done when the guard is not the root resource
         if not self.guardPath:
             return
-        
+
         class TrailingSlashPage(rend.Page):
             def locateChild(self, context, segments):
                 return self.__class__('%s/%s' % (self.original, segments[0])), segments[1:]

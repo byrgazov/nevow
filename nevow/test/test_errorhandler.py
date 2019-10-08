@@ -15,8 +15,10 @@ class NotFoundHandler(object):
     def renderHTTP_notFound(self, ctx):
         return self.html
 
+
 class BrokenException(Exception):
     pass
+
 
 @implementer(inevow.ICanHandleNotFound)
 class BadNotFoundHandler(object):

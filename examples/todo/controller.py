@@ -1,4 +1,4 @@
-from zope.interface import implements
+from zope.interface import implementer
 
 from nevow import rend, loaders, tags as t
 from formless import annotate, webform
@@ -21,40 +21,40 @@ class ITodo(annotate.TypedInterface):
         pass
     update = annotate.autocallable(update, invisible=True)
 
+
+@implementer(ITodo)
 class Root(rend.Page):
-    implements(ITodo)
-    
     child_css = webform.defaultCSS
-    
+
     docFactory = loaders.stan(
         t.html(render=t.directive("time"))[
             t.head[
                 t.title['todo'],
                 t.style(type="text/css")[".done { color: #dddddd; }"],
                 t.style(type="text/css")["@import url(/css);"]
-                ],
+            ],
             t.body[
                 webform.renderForms(),
                 t.ul(data=t.directive("findAll"),
                      render=t.directive("sequence"))[
-                         t.li(pattern="item",render=t.directive('todo')),
-                         t.li(pattern="empty",render=t.directive('empty')),
+                    t.li(pattern="item",render=t.directive('todo')),
+                    t.li(pattern="empty",render=t.directive('empty')),
                 ],
                 t.p(render=t.directive("end"))
             ]
         ]
     )
-    
+
     def insert(self, ctx, description):
         return itodo.ITodos(ctx).add(description, 0)
-    
+
     def delete(self, ctx, id):
         return itodo.ITodos(ctx).delete(id)
 
     def update(self, ctx, id, oldstate):
         newstate = [1, 0][oldstate]
         return itodo.ITodos(ctx).update(id, newstate)
-        
+
     def data_findAll(self, ctx, data):
         return itodo.ITodos(ctx).findAll()
 
@@ -72,11 +72,11 @@ class Root(rend.Page):
 
     def render_empty(self, ctx, data):
         return ctx.tag["No Todos"]
-    
+
     def render_time(self, ctx, data):
         ctx.remember(now(), itodo.ITimer)
         return ctx.tag
-        
+
     def render_end(self, ctx, data):
         return ctx.tag["%.3f"%(now()-itodo.ITimer(ctx))]
 

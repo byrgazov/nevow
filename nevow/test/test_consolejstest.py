@@ -54,7 +54,7 @@ class _ConsoleJSTestMixin:
         @rtype: C{str}
         """
         fname = self.mktemp()
-        fObj = file(fname, 'w')
+        fObj = open(fname, 'w')
         fObj.write(s)
         fObj.close()
         return fname

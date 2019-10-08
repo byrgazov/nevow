@@ -18,7 +18,6 @@ from nevow.compression import CompressingResourceWrapper, CompressingRequestWrap
 from nevow.compression import parseAcceptEncoding, _ProxyDescriptor
 
 
-
 class HeaderTests(TestCase):
     """
     Tests for header parsing.
@@ -212,7 +211,6 @@ class RequestWrapperTests(TestCase):
         self.assertTrue(self.request.finished)
 
 
-
 @implementer(IResource)
 class TestResource(object):
     """
@@ -250,7 +248,6 @@ class TestResource(object):
         return self.html
 
 
-
 @implementer(IResource)
 class TestChildlessResource(object):
     """
@@ -262,7 +259,6 @@ class TestChildlessResource(object):
         Always return C{NotFound}.
         """
         return NotFound
-
 
 
 @implementer(IResource)
@@ -279,7 +275,6 @@ class TestDeferredResource(object):
         is wrapped in a deferred.
         """
         return succeed(type(self)()), []
-
 
 
 class TestResourceWrapper(CompressingResourceWrapper):
@@ -299,7 +294,6 @@ class TestBrokenResource(object):
         Return some garbage.
         """
         return 42
-
 
 
 class ResourceWrapper(TestCase):

@@ -1,7 +1,7 @@
 import string
 import urllib
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.internet import defer
 from twisted.python import failure
@@ -41,6 +41,7 @@ class User(object):
     def __repr__(self):
         return "UserObject id: %d, %s"%(id(self), self.__dict__)
 
+
 class UserDictDB(object):
     """In memory data-manager for User objects"""
     def __init__(self):
@@ -62,6 +63,7 @@ class UserDictDB(object):
 
     def findUser(self, username):
         return self.users.get(username)
+
 
 #=============================================================================
 # Formless Interfaces
@@ -98,6 +100,7 @@ class ICreateUser(annotate.TypedInterface):
 
     createUser = annotate.autocallable(createUser, action="Create")
 
+
 class IEditUser(annotate.TypedInterface):
     """used in edit screens. we can only edit the email address,
     not the username"""
@@ -120,6 +123,7 @@ class IDeleteUser(annotate.TypedInterface):
 
     deleteUser = annotate.autocallable(deleteUser, action="Delete")
 
+
 class ILogout(annotate.TypedInterface):
     """Call this to logout and destroy the current session"""
     def logout(self, request=annotate.Request()):
@@ -131,6 +135,7 @@ class ILogout(annotate.TypedInterface):
 
     logout = annotate.autocallable(logout, action="logout")
 
+
 #=============================================================================
 # Pages
 #=============================================================================
@@ -138,9 +143,11 @@ class ICurrentUser(components.Interface):
     """The current logged-in user object
     """
 
+
 class IUserManager(components.Interface):
     """The user manager object
     """
+
 
 class NotLoggedIn(rend.Page):
     """The resource that is returned when you are not logged in"""
@@ -173,8 +180,9 @@ class NotLoggedIn(rend.Page):
         ]
     ])
 
+
+@implementer(ILogout)
 class Logout(rend.Page):
-    implements(ILogout)
 
     def logout(self, request):
         request.getSession().expire()
@@ -182,8 +190,9 @@ class Logout(rend.Page):
 
     docFactory = loaders.stan(html[webform.renderForms()])
 
+
+@implementer(IEditUser, IDeleteUser)
 class UserPage(rend.Page):
-    implements(IEditUser, IDeleteUser)
 
     def __init__(self, user):
         rend.Page.__init__(self)
@@ -295,8 +304,9 @@ class UserPage(rend.Page):
     ]
     ])
 
+
+@implementer(ICreateUser)
 class UserBrowserPage(rend.Page):
-    implements(ICreateUser)
 
     addSlash = True
     
@@ -395,17 +405,18 @@ class UserBrowserPage(rend.Page):
 def noLogout():
     return None
 
+
+@implementer(checkers.ICredentialsChecker)
 class SimpleChecker:
     """
     A simple checker implementation. Delegates storage/retrieval to userdb object
     """
-    implements(checkers.ICredentialsChecker)
     credentialInterfaces = (credentials.IUsernamePassword,)
 
     def __init__(self, userdb):
         self.userdb = userdb
 
-    #implements ICredentialChecker
+    #implementer ICredentialChecker
     def requestAvatarId(self, credentials):
         """Return the avatar id of the avatar which can be accessed using
         the given credentials.
@@ -431,17 +442,18 @@ class SimpleChecker:
             print "password didn't match: ",username
             return failure.Failure(error.UnauthorizedLogin())
 
+
+@implementer(portal.IRealm)
 class SimpleRealm:
     """A simple implementor of cred's IRealm.
     For web, this gives us the LoggedIn page.
     """
-    implements(portal.IRealm)
 
     def __init__(self, userdb):
         #we need this to pass into UserDB page
         self.userdb = userdb
 
-    #implements IRealm
+    #implementer IRealm
     def requestAvatar(self, avatarId, mind, *interfaces):
         for iface in interfaces:
             if iface is inevow.IResource:

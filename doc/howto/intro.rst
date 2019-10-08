@@ -147,7 +147,7 @@ once validation has passed. A simple example:
 
 .. code-block:: python
 
-    from zope.interface import implements
+    from zope.interface import implementer
     from formless.annotate import TypedInterface, Integer, String
 
     class ISimpleMethod(TypedInterface):
@@ -159,9 +159,8 @@ once validation has passed. A simple example:
 
             Please enter your name and age.
             """
-
+    @implementer(ISimpleMethod)
     class Implementation(object):
-        implements(ISimpleMethod)
 
         def simple(self, name, age):
             print "Hello, %s, who is %s" % (name, age)

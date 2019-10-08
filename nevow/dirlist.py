@@ -89,9 +89,9 @@ class DirectoryLister(rend.Page):
     def render_tableLink(self, context, data):
         return tags.a(href=data['link'])[data['linktext']]
 
-    def __repr__(self):  
+    def __repr__(self):
         return '<DirectoryLister of %r>' % self.path
-        
+
     __str__ = __repr__
 
 

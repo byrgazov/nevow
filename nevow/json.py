@@ -158,13 +158,13 @@ _stringExpr = re.compile(
     re.VERBOSE)
 
 _controlMap = {
-    u'\\f': u'\f',
-    u'\\b': u'\b',
-    u'\\n': u'\n',
-    u'\\t': u'\t',
-    u'\\r': u'\r',
-    u'\\"': u'"',
-    u'\\\\': u'\\',
+    '\\f': '\f',
+    '\\b': '\b',
+    '\\n': '\n',
+    '\\t': '\t',
+    '\\r': '\r',
+    '\\"': '"',
+    '\\\\': '\\',
     }
 
 def _stringSub(m):
@@ -172,7 +172,7 @@ def _stringSub(m):
     if u is None:
         u = m.group('unicode2')
     if u is not None:
-        return unichr(int(u, 16))
+        return chr(int(u, 16))
     c = m.group('control')
     return _controlMap[c]
 
@@ -181,6 +181,7 @@ def parseString(tokens):
     if type(tokens[0]) is not StringToken:
         raise ParseError("Unexpected %r" % tokens[0])
     s = _stringExpr.sub(_stringSub, tokens.pop(0)[1:-1])
+#   s = _stringExpr.sub(_stringSub, tokens.pop(0)[1:-1].decode('utf-8'))
     return s, tokens
 
 
@@ -240,7 +241,7 @@ def parse(s):
 class CycleError(Exception):
     pass
 
-_translation = dict([(o, u'\\x%02x' % (o,)) for o in range(0x20)])
+_translation = dict([(o, '\\x%02x' % (o,)) for o in range(0x20)])
 
 # Characters which cannot appear as literals in the output
 _translation.update({
@@ -253,8 +254,8 @@ _translation.update({
     ord('\r'): ur'\r',
     # The next two are sneaky, see
     # http://timelessrepo.com/json-isnt-a-javascript-subset
-    ord(u'\u2028'): u'\\u2028',
-    ord(u'\u2029'): u'\\u2029',
+    ord('\u2028'): '\\u2028',
+    ord('\u2029'): '\\u2029',
     })
 
 def stringEncode(s):
@@ -273,7 +274,7 @@ def _serialize(obj, w, seen):
             w(u'false')
     elif isinstance(obj, (int, float)):
         w(str(obj))
-    elif isinstance(obj, (bytes, unicode)):
+    elif isinstance(obj, (bytes, compat.unicode)):
         w(u'"')
         w(stringEncode(obj))
         w(u'"')

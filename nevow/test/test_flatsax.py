@@ -31,7 +31,7 @@ class Basic(TestCase):
         number at which the tag was seen in that file.
         """
         fName = self.mktemp()
-        fObj = file(fName, 'w')
+        fObj = open(fName, 'w')
         fObj.write(
             '<html>\n'
             '  <head>\n'
@@ -44,7 +44,7 @@ class Basic(TestCase):
             '  </body>\n'
             '</html>\n')
         fObj.close()
-        [html] = parse(file(fName))
+        [html] = parse(open(fName))
         [head, body] = self._tagChildren(html)
         [title] = self._tagChildren(head)
         self.assertEqual(html.filename, fName)
@@ -70,13 +70,13 @@ class Basic(TestCase):
         number at which the tag was seen in that file.
         """
         fName = self.mktemp()
-        fObj = file(fName, 'w')
+        fObj = open(fName, 'w')
         fObj.write(
             '<html xmlns:nevow="http://nevow.com/ns/nevow/0.1">\n'
             '    <nevow:attr name="foo" />\n'
             '</html>\n')
         fObj.close()
-        [html] = parse(file(fName))
+        [html] = parse(open(fName))
         attr = html.attributes['foo']
         self.assertEqual(attr.filename, fName)
         self.assertEqual(attr.lineNumber, 2)
@@ -89,13 +89,13 @@ class Basic(TestCase):
         C{lineNumber}, and C{columnNumber} attributes as L{Tag} instances do.
         """
         fName = self.mktemp()
-        fObj = file(fName, 'w')
+        fObj = open(fName, 'w')
         fObj.write(
             '<html xmlns:nevow="http://nevow.com/ns/nevow/0.1">\n'
             '    <nevow:slot name="foo" />\n'
             '</html>')
         fObj.close()
-        [html] = parse(file(fName))
+        [html] = parse(open(fName))
         [foo] = [x for x in html.children if isinstance(x, slot)]
         self.assertEqual(foo.filename, fName)
         self.assertEqual(foo.lineNumber, 2)
@@ -154,7 +154,7 @@ div.logo {
 
     def test_unicodeComment(self):
         xml = '<!-- \xc2\xa3 --><html></html>'
-        self.assertEqual(xml, flatten(parseString(xml)).encode("utf-8"))
+        self.assertEqual(xml, flatten(parseString(xml)))
 
     def test_xmlAttr(self):
         xml = '<html xml:lang="en"></html>'

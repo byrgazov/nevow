@@ -55,7 +55,6 @@ def _getPreprocessors(inst):
 @implementer(inevow.IRendererFactory)
 class RenderFactory(object):
 
-
     def renderer(self, context, name):
         """Return a renderer with the given name.
         """
@@ -91,7 +90,6 @@ class RenderFactory(object):
 @implementer(inevow.IMacroFactory)
 class MacroFactory(object):
 
-
     def macro(self, ctx, name):
         """Return a macro with the given name.
         """
@@ -117,6 +115,7 @@ class DataNotFoundError(Exception):
     """Raised when a data directive could not be resolved on the page or its
     original attribute by the DataFactory.
     """
+
 
 @implementer(inevow.IContainer)
 class DataFactory(object):
@@ -154,6 +153,8 @@ class FreeformChildMixin:
         bindingName = None
 
         name = segments[0]
+        if isinstance(name, bytes):
+            name = name.decode('utf-8')
         if name.startswith('freeform_post!'):
             configurableName, bindingName = name.split('!')[1:3]
         elif name.startswith('freeform-action-post!'):
@@ -180,7 +181,7 @@ class FreeformChildMixin:
 @implementer(iformless.IConfigurable)
 class ConfigurableMixin(object):
     """
-    A sane L{IConfigurable} implementation for L{Fragment} and L{Page}. 
+    A sane L{IConfigurable} implementation for L{Fragment} and L{Page}.
 
     Methods starting with C{bind_} automatically expose corresponding method
     names.  C{bind_*} should return an L{IBinding} (L{PropertyBinding} or
@@ -194,7 +195,6 @@ class ConfigurableMixin(object):
             assert isinstance(argName, str)
             assert isinstance(anotherArg, int)
     """
-
 
     def getBindingNames(self, ctx):
         """Expose bind_* methods and attributes on this class.
@@ -255,8 +255,9 @@ class ConfigurableMixin(object):
             ctx.remember(rv, inevow.IHand)
             ctx.remember('%r success.' % bindingName, inevow.IStatusMessage)
             return rv
-        return util.maybeDeferred(self.getBinding, ctx, 
+        return util.maybeDeferred(self.getBinding, ctx,
                                   bindingName).addCallback(_callback)
+
 
 @implementer(iformless.IConfigurableFactory)
 class ConfigurableFactory:
@@ -264,7 +265,6 @@ class ConfigurableFactory:
     configurable_ and end with the name of the configurable. The method
     should take a single arg (other than self) - the current context.
     """
-
 
     def locateConfigurable(self, context, name):
         """formless.webform.renderForms calls locateConfigurable on the IConfigurableFactory
@@ -363,6 +363,7 @@ def statusFactory(ctx):
 def originalFactory(ctx):
     return ctx.tag
 
+
 @implementer(inevow.IRenderer, inevow.IGettable)
 class Fragment(DataFactory, RenderFactory, MacroFactory, ConfigurableMixin):
     """
@@ -371,7 +372,6 @@ class Fragment(DataFactory, RenderFactory, MacroFactory, ConfigurableMixin):
 
     @see: L{Element}
     """
-
 
     docFactory = None
     original = None
@@ -518,7 +518,6 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
     """A page is the main Nevow resource and renders a document loaded
     via the document factory (docFactory).
     """
-
 
     buffered = False
 

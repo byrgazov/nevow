@@ -7,7 +7,7 @@ from epsilon.extime import Time
 class IPostit(Interface):
     def getPosts(how_many):
         """Retrieve 'how_many' posts from the database."""
-    
+
     def getPost(id):
         """Retrieve the post 'id' from the database"""
 
@@ -18,8 +18,10 @@ class Post(item.Item):
     author = text()
     created = timestamp()
 
+
 @implementer(IPostit)
 class Application(item.Item, item.InstallableMixin):
+
     name = text()
 
     def installOn(self, other):
@@ -37,7 +39,7 @@ def initialize():
     postit = IPostit(s, None)
     if not postit:
         Application(store=s, name='Postit').installOn(s)
-        Post(store=s, 
+        Post(store=s,
              title="This is the title",
              url="http://www.divmod.org",
              content="Here is the content for the link",

@@ -83,6 +83,7 @@ class FormDefaults(components.Adapter):
     def clearAll(self):
         self.defaults = {}
 
+
 @implementer(iformless.IFormErrors)
 class FormErrors(components.Adapter):
     """An object which keeps track of which forms have which errors

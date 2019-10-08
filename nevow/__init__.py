@@ -219,6 +219,7 @@ nevow.flat.flatstan.CommentSerializer             nevow.stan.Comment
 nevow.flat.flatstan.XmlSerializer                 nevow.stan.xml
 nevow.flat.flatstan.RawSerializer                 nevow.stan.raw
 nevow.flat.flatstan.StringSerializer              builtins.str
+nevow.flat.flatstan.NoneWarningSerializer         builtins.NoneType
 nevow.flat.flatstan.StringCastSerializer          builtins.int
 nevow.flat.flatstan.StringCastSerializer          builtins.float
 nevow.flat.flatstan.BooleanSerializer          builtins.bool
@@ -245,7 +246,11 @@ nevow.flat.flatstan.ListSerializer  itertools.chain
 nevow.flat.flatstan.ListSerializer  itertools.count
 nevow.flat.flatstan.ListSerializer  itertools.cycle
 nevow.flat.flatstan.ListSerializer  itertools.dropwhile
+nevow.flat.flatstan.ListSerializer  builtins.filter
+nevow.flat.flatstan.ListSerializer  itertools.filterfalse
+nevow.flat.flatstan.ListSerializer  builtins.map
 nevow.flat.flatstan.ListSerializer  itertools.islice
+nevow.flat.flatstan.ListSerializer  builtins.zip
 nevow.flat.flatstan.ListSerializer  itertools.repeat
 nevow.flat.flatstan.ListSerializer  itertools.starmap
 nevow.flat.flatstan.ListSerializer  itertools.takewhile

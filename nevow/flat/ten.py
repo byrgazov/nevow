@@ -28,7 +28,7 @@ def registerFlattener(flattener, forType):
     """Register a function, 'flattener', which will be invoked when an object of type 'forType'
     is encountered in the stan dom. This function should return or yield strings, or objects
     for which there is also a flattener registered.
-    
+
     flattener should take (original, ctx) where original is the object to flatten.
     """
     if type(flattener) is str or type(forType) is str:
@@ -38,7 +38,7 @@ def registerFlattener(flattener, forType):
 
     if not isinstance(forType, interface.InterfaceClass):
         forType = declarations.implementedBy(forType)
-        
+
     tpc.globalRegistry.register([forType], ISerializable, 'nevow.flat', flattener)
 
 def getFlattener(original):
@@ -53,7 +53,7 @@ def getSerializer(obj):
 
 def partialflatten(context, obj):
     """Run a flattener on the object 'obj' in the context 'context'.
-    
+
     The return results from this function will not necessarily be a string, but will probably
     need further processing.
     """
@@ -76,7 +76,7 @@ def iterflatten(stan, ctx, writer, shouldYieldItem=None):
     instead use either flatten or precompile.
     """
     # 'rest' is a list of generators.
-    # initialize as one-element list of a one-element generator of 
+    # initialize as one-element list of a one-element generator of
     rest = [ iter([partialflatten(ctx, stan)]) ]
     straccum = []
     while rest:

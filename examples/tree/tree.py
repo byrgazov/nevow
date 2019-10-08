@@ -4,7 +4,7 @@ from twisted.python.components import registerAdapter
 
 from nevow import loaders, rend, inevow, tags as T
 from formless import annotate, webform
- 
+
 class Tree(dict):
     def __init__(self, name, description, *children):
         self.name = name
@@ -15,7 +15,7 @@ class Tree(dict):
         self[child.name] = child
     def __bool__(self):
         return True
- 
+
 class ITreeEdit(annotate.TypedInterface):
     def setDescription(description=annotate.String()):
         pass
@@ -27,6 +27,7 @@ class ITreeEdit(annotate.TypedInterface):
                        description=annotate.String()):
         pass
     addChild = annotate.autocallable(addChild)
+
 
 @implementer(ITreeEdit)
 class TreeRenderer(rend.Page):
@@ -70,5 +71,5 @@ class TreeRenderer(rend.Page):
                T.input(type="hidden", name="name", value=name),
                T.input(type="submit", value="Delete")]
         return ret
- 
+
 registerAdapter(TreeRenderer, Tree, inevow.IResource)

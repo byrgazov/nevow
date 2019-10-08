@@ -36,6 +36,7 @@ dangerousPathError = NoResource("Invalid request URL.")
 def isDangerous(path):
     return path == '..' or '/' in path or os.sep in path
 
+
 @implementer(inevow.IResource)
 class Data:
     """
@@ -150,6 +151,7 @@ def getTypeAndEncoding(filename, types, encodings, defaultType):
         enc = None
     type = types.get(ext, defaultType)
     return type, enc
+
 
 @implementer(inevow.IResource)
 class File:

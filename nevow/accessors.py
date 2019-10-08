@@ -44,7 +44,6 @@ class NoAccessor(NotImplementedError):
 @implementer(IGettable)
 class DirectiveAccessor(tpc.Adapter):
 
-
     def get(self, context):
         data = context.locate(IData)
         container = IContainer(data, None)
@@ -56,7 +55,6 @@ class DirectiveAccessor(tpc.Adapter):
 
 @implementer(IGettable)
 class SlotAccessor(tpc.Adapter):
-
 
     def get(self, context):
         return context.locateSlotData(self.original.name)
@@ -70,7 +68,7 @@ class FunctionAccessor(tpc.Adapter):
 
 @implementer(IContainer)
 class DictionaryContainer(tpc.Adapter):
-    
+
     def child(self, context, name):
         return self.original[name]
 
@@ -85,20 +83,20 @@ class ObjectContainer(tpc.Adapter):
 
     The adapter will cowardly refuse to get any attributes that start with an
     underscore.
-    
+
     For example:
-    
+
     >>> class Image:
     ...     def __init__(self, filename, comments):
     ...         self.filename = filename    # A string
     ...         self.comments = comments    # A sequence of strings
-    ... 
+    ...
     >>> registerAdapter(ObjectContainer, Image, IContainer)
-        
+
     Registering the adapter allows Nevow to retrieve attributes from the Image
     instance returned by the data_image method when rendering the following
     XHTML template::
-        
+
         <div n:data="image">
           <p n:data="filename" n:render="string">filename</p>
           <ul n:data="comments" n:render="sequence">
@@ -106,9 +104,7 @@ class ObjectContainer(tpc.Adapter):
           </ul>
         </div>
     """
-    
 
-    
     def child(self, context, name):
         if name[:1] == '_':
             raise ValueError("ObjectContainer does not support attribute names starting with '_', got %r"%name)
@@ -124,6 +120,7 @@ def intOrNone(s):
 
 @implementer(IContainer)
 class ListContainer(tpc.Adapter):
+
     def child(self, context, name):
         if ':' in name:
             return self.original[slice(*[intOrNone(x) for x in name.split(':')])]

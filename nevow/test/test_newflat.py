@@ -60,7 +60,6 @@ class TrivialRenderable(object):
         return self.result
 
 
-
 @implementer(IRenderable)
 class RenderRenderable(object):
     """
@@ -574,8 +573,8 @@ class FlattenTests(TestCase, FlattenMixin):
         If a render method returns the tag it was passed, the tag is flattened
         as though it did not have a render directive.
         """
-        class IdempotentRenderable(object):
         @implementer(IRenderable)
+        class IdempotentRenderable(object):
 
             def renderer(self, name):
                 return getattr(self, name)
@@ -972,13 +971,13 @@ class FlattenerErrorTests(TestCase):
         """
         self.assertEqual(
             str(FlattenerError(
-                    RuntimeError("reason"), [u'abc\N{SNOWMAN}xyz'], [])),
+                    RuntimeError("reason"), ['abc\N{SNOWMAN}xyz'], [])),
             "Exception while flattening:\n"
             "  u'abc\\u2603xyz'\n" # Codepoint for SNOWMAN
             "RuntimeError: reason\n")
         self.assertEqual(
             str(FlattenerError(
-                    RuntimeError("reason"), [u'01234567\N{SNOWMAN}9' * 10],
+                    RuntimeError("reason"), ['01234567\N{SNOWMAN}9' * 10],
                     [])),
             "Exception while flattening:\n"
             "  u'01234567\\u2603901234567\\u26039<...>01234567\\u2603901234567"
@@ -1151,8 +1150,10 @@ class DeferflattenTests(TestCase, FlattenMixin):
         """
         class TestException(Exception):
             pass
+
         @implementer(IRenderable)
         class BrokenRenderable(object):
+
             def render(self, request):
                 raise TestException()
         flattened = self.deferflatten(BrokenRenderable())

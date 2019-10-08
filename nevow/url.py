@@ -92,6 +92,9 @@ class URL(object):
         return get, None, None, doc
     path = property(*path())
 
+    def __cmp__(self, other):
+        raise NotImplementedError
+
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
@@ -560,11 +563,12 @@ def URLOverlaySerializer(original, context):
         yield serialize(url, context)
 
 
-## This is totally unfinished and doesn't work yet.
-#class IURLGenerator(compy.Interface):
-#    pass
+# This is totally unfinished and doesn't work yet.
+# class IURLGenerator(compy.Interface):
+#     pass
 
 
+# @implementer(IURLGenerator)
 class URLGenerator:
 
     def __init__(self):
@@ -589,6 +593,7 @@ class URLGenerator:
     def __setstate__(self, state):
         self.__dict__ = state
         self._objmap = weakref.WeakKeyDictionary()
+
 
 @implementer(inevow.IResource)
 class URLRedirectAdapter:
@@ -615,7 +620,6 @@ class URLRedirectAdapter:
             # Redirect to the URL of this resource
             return url.URL.fromContext(ctx)
     """
-
 
     def __init__(self, original):
         self.original = original

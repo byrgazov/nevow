@@ -2,7 +2,7 @@
 # See LICENSE for details.
 
 """Compatibility wrapper over new twisted.python.components,
-so that nevow works with it. 
+so that nevow works with it.
 """
 
 import warnings
@@ -20,11 +20,11 @@ CannotAdapt = TypeError
 _registerAdapter = registerAdapter
 def registerAdapter(adapterFactory, origInterface, *interfaceClasses):
     from nevow.util import _namedAnyWithBuiltinTranslation, _NamedAnyError
-    
+
     isStr = type(adapterFactory) is str
     if (type(origInterface) is str) != isStr:
         raise ValueError("Either all arguments must be strings or all must be objects.")
-    
+
     for interfaceClass in interfaceClasses:
         if (type(interfaceClass) is str) != isStr:
             raise ValueError("Either all arguments must be strings or all must be objects.")
@@ -45,10 +45,13 @@ def registerAdapter(adapterFactory, origInterface, *interfaceClasses):
 class IComponentized(Interface):
     pass
 
+
 _Componentized = Componentized
+
+
 @implementer(IComponentized)
 class Componentized(_Componentized):
-    
+
     def __init__(self, adapterCache=None):
         _Componentized.__init__(self)
         if adapterCache:

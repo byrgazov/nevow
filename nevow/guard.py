@@ -42,7 +42,10 @@ except ImportError:
 from nevow import inevow, url, stan
 
 def _sessionCookie():
-    return md5("%s_%s" % (str(random.random()) , str(time.time()))).hexdigest()
+    return \
+        md5(b"%r_%r" % (
+            str(random.random()),
+            str(time.time()))).hexdigest()
 
 def encode_login_failure(s):
     s = base64.urlsafe_b64encode(s)
@@ -228,6 +231,7 @@ LOGOUT_AVATAR = '__logout__'
 
 def nomind(*args): return None
 
+
 @implementer(inevow.IResource)
 class Forbidden(object):
 
@@ -239,6 +243,7 @@ class Forbidden(object):
         request.setResponseCode(http.FORBIDDEN)
         return ("<html><head><title>Forbidden</title></head>"
                 "<body><h1>Forbidden</h1>Request was forbidden.</body></html>")
+
 
 @implementer(inevow.IResource)
 class SessionWrapper:
@@ -275,7 +280,7 @@ class SessionWrapper:
 
     avatars = (LOGIN_AVATAR, LOGOUT_AVATAR)
     auth_avatar_handler = None
- 
+
     def __init__(self, portal, cookieKey=None, mindFactory=None, credInterface=None, useCookies=None): # useCookies ignored -- we always use cookies
         self.portal = portal
         if cookieKey is None:
@@ -401,7 +406,7 @@ class SessionWrapper:
         ret = urlToChild(ctx, SESSION_START, ())
         return ret
 
-    def checkLogin(self, ctx, session, segments):    
+    def checkLogin(self, ctx, session, segments):
         """
         Associate the given request with the given session and:
 
@@ -582,7 +587,7 @@ class SessionWrapper:
     def fatalLoginError(self, error, ctx, segments, loginFailure):
         print "Guard: login failure in %r -> %r" % (segments, loginFailure)
         return Forbidden(), ()
-    
+
     def authRequiredError(self, error, session):
         session.expire()
         error.trap(UnauthorizedLogin)

@@ -1,5 +1,6 @@
 
-import os, sets
+import os
+import binascii
 
 from xml.dom.minidom import parseString
 
@@ -53,10 +54,10 @@ class MappingResourceTests(unittest.TestCase):
         C{resourceFactory} method products when supplied a valid key.
         """
         m = athena.MappingResource({'name': 'value'})
-        m.resourceFactory = sets.Set
+        m.resourceFactory = set
         resource, segments = m.locateChild(None, ('name',))
         self.assertEqual(segments, [])
-        self.assertEqual(resource, sets.Set('value'))
+        self.assertEqual(resource, set('value'))
 
 
 
@@ -165,7 +166,7 @@ the end
         Write L{testModuleImpl} to a file.
         """
         self.testModuleFilename = self.mktemp()
-        testModule = file(self.testModuleFilename, 'w')
+        testModule = open(self.testModuleFilename, 'w')
         testModule.write(self.testModuleImpl)
         testModule.close()
 
@@ -190,7 +191,7 @@ the end
         Create a complicated network of module dependencies.
         """
         emptyModulePath = self.mktemp()
-        file(emptyModulePath, 'w').close()
+        open(emptyModulePath, 'w').close()
         modules = {
             'testmodule': self.testModuleFilename,
             'Another': self.mktemp(),
@@ -199,11 +200,11 @@ the end
             'SecondaryDependency': emptyModulePath,
             'ExampleDependency': emptyModulePath}
 
-        anotherModule = file(modules['Another'], 'w')
+        anotherModule = open(modules['Another'], 'w')
         anotherModule.write('// import SecondaryDependency\n')
         anotherModule.close()
 
-        exampleModule = file(modules['ExampleModule'], 'w')
+        exampleModule = open(modules['ExampleModule'], 'w')
         exampleModule.write('// import ExampleDependency\n')
         exampleModule.close()
 
@@ -255,11 +256,11 @@ the end
         name when CR LF newlines are used in a JavaScript source file.
         """
         fooModuleFilename = self.mktemp()
-        fooModule = file(fooModuleFilename, 'wb')
-        fooModule.write('// import Bar\r\n')
+        fooModule = open(fooModuleFilename, 'wb')
+        fooModule.write(b'// import Bar\r\n')
         fooModule.close()
         barModuleFilename = self.mktemp()
-        barModule = file(barModuleFilename, 'wb')
+        barModule = open(barModuleFilename, 'wb')
         barModule.close()
 
         modules = {
@@ -276,7 +277,7 @@ the end
         L{athena.AthenaModule} should cache module dependencies.
         """
         testModuleFilename = self.mktemp()
-        testModule = file(testModuleFilename, 'w')
+        testModule = open(testModuleFilename, 'w')
         testModule.write('')
         testModule.close()
 
@@ -307,8 +308,8 @@ the end
         dependencies.
         """
         modules = {'Foo': self.mktemp(), 'Foo.Bar': self.mktemp()}
-        file(modules['Foo'], 'wb').close()
-        file(modules['Foo.Bar'], 'wb').close()
+        open(modules['Foo'], 'wb').close()
+        open(modules['Foo.Bar'], 'wb').close()
         foo = self.moduleClass.getOrCreate('Foo', modules)
         bar = self.moduleClass.getOrCreate('Foo.Bar', modules)
         self.assertIn(foo, bar.allDependencies())
@@ -322,7 +323,7 @@ the end
         module = self.moduleClass(
             moduleName, {moduleName: self.mktemp()})
         self.assertEqual(
-            repr(module), 
+            repr(module),
            '%s(%r)' % (self.moduleClass.__name__, moduleName))
 
 
@@ -379,7 +380,7 @@ class MemoizationTests(unittest.TestCase):
         @rtype: C{str}
         """
         fname = self.mktemp()
-        fObj = file(fname, 'w')
+        fObj = open(fname, 'w')
         fObj.write(s)
         fObj.close()
         return fname
@@ -473,7 +474,7 @@ class _AutoPackageTestMixin:
 
         def childPath(*a):
             path = os.path.join(packageDir, *a)
-            file(path, 'w').close()
+            open(path, 'w').close()
             return path
 
         expected = {
@@ -856,7 +857,7 @@ class Transport(unittest.TestCase):
     of an existing request.
     """
 
-    theMessage = "Immediately Send This Message"
+    theMessage = b"Immediately Send This Message"
 
     connectTimeout = 1
     transportlessTimeout = 2
@@ -922,9 +923,11 @@ class Transport(unittest.TestCase):
         once when an output channel becomes available.
         """
         self.rdm.addMessage(self.theMessage)
-        self.rdm.addMessage(self.theMessage.encode('hex'))
+        self.rdm.addMessage(binascii.hexlify(self.theMessage))
         self.rdm.addOutput(mappend(self.transport))
-        self.assertEqual(self.transport, [[(0, self.theMessage), (1, self.theMessage.encode('hex'))]])
+        self.assertEqual(self.transport,
+                         [[(0, self.theMessage),
+                           (1, binascii.hexlify(self.theMessage))]])
 
 
     def testMultipleQueuedOutputs(self):
@@ -945,7 +948,7 @@ class Transport(unittest.TestCase):
         Test that outputs added while there are unacknowledged messages result
         in re-transmits of those messages.
         """
-        secondMessage = self.theMessage + '-2'
+        secondMessage = self.theMessage + b'-2'
         secondTransport = []
         thirdTransport = []
         fourthTransport = []
@@ -1169,25 +1172,25 @@ class Transport(unittest.TestCase):
         self.rdm.basketCaseReceived(
             None,
             [-1, [[0, self.theMessage],
-                  [1, self.theMessage + "-1"],
-                  [2, self.theMessage + "-2"]]])
+                  [1, self.theMessage + b"-1"],
+                  [2, self.theMessage + b"-2"]]])
         self.assertEqual(
             self.outgoingMessages,
             [(None, self.theMessage),
-             (None, self.theMessage + "-1"),
-             (None, self.theMessage + "-2")])
+             (None, self.theMessage + b"-1"),
+             (None, self.theMessage + b"-2")])
         self.outgoingMessages = []
 
         self.rdm.basketCaseReceived(
             None,
-            [-1, [[1, self.theMessage + "-1"]]])
+            [-1, [[1, self.theMessage + b"-1"]]])
         self.assertEqual(
             self.outgoingMessages,
             [])
 
         self.rdm.basketCaseReceived(
             None,
-            [-1, [[2, self.theMessage + "-2"]]])
+            [-1, [[2, self.theMessage + b"-2"]]])
         self.assertEqual(
             self.outgoingMessages,
             [])

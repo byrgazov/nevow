@@ -133,7 +133,7 @@ def getPOSTCharset(ctx):
     from nevow import inevow
 
     request = inevow.IRequest(ctx)
-    
+
     # Try the magic '_charset_' field, Mozilla and IE set this.
     charset = request.args.get('_charset_',[None])[0]
     if charset:
@@ -172,21 +172,21 @@ class _NamedAnyError(Exception):
     'Internal error for when importing fails.'
 
 def _namedAnyWithBuiltinTranslation(name):
-    if name == '__builtin__.function':
+    if name == 'builtins.function':
         name='types.FunctionType'
-    elif name == '__builtin__.method':
+    elif name == 'builtins.method':
         return _RandomClazz # Hack
-    elif name == '__builtin__.instancemethod':
+    elif name == 'builtins.instancemethod':
         name='types.MethodType'
-    elif name == '__builtin__.NoneType':
-        name='types.NoneType'
-    elif name == '__builtin__.generator':
+    elif name == 'builtins.NoneType':
+        return type(None)
+    elif name == 'builtins.generator':
         name='types.GeneratorType'
     return namedAny(name)
 
 # Import resource_filename from setuptools's pkg_resources module if possible
 # because it handles resources in .zip files. If it's not provide a version
-# that assumes the resource is directly available on the filesystem. 
+# that assumes the resource is directly available on the filesystem.
 try:
     from pkg_resources import resource_filename
 except ImportError:
@@ -238,13 +238,13 @@ def nativeString(s, encoding="utf-8"):
     Convert C{bytes} or C{unicode} to the native C{str} type, using encoding
     if conversion is necessary.
 
-    This is in the spirit of t.p.compat.nativeString, except we don't 
+    This is in the spirit of t.p.compat.nativeString, except we don't
     insist on ASCII.
 
     @raise UnicodeError: The input string is not encodable/decodable.
     @raise TypeError: The input is neither C{bytes} nor C{unicode}.
     """
-    if not isinstance(s, (bytes, unicode)):
+    if not isinstance(s, (bytes, compat.unicode)):
         raise TypeError("%r is neither bytes nor unicode" % s)
     if compat._PY3:
         if isinstance(s, bytes):

@@ -19,7 +19,7 @@ class VirtualHostList(rend.Page):
 
     def getStyleSheet(self):
         return self.stylesheet
- 
+
     def data_hostlist(self, context, data):
         return list(self.nvh.hosts.keys())
 
@@ -37,7 +37,7 @@ class VirtualHostList(rend.Page):
         link += req.path
 
         return context.tag[tags.a(href=link)[ host ]]
- 
+
     def render_title(self, context, data):
         req = context.locate(inevow.IRequest)
         proto = req.clientproto.split('/')[0].lower()
@@ -46,7 +46,7 @@ class VirtualHostList(rend.Page):
 
     def render_stylesheet(self, context, data):
         return tags.style(type="text/css")[self.getStyleSheet()]
-        
+
     docFactory = loaders.stan(
         tags.html[
             tags.head[
@@ -57,12 +57,12 @@ class VirtualHostList(rend.Page):
                 tags.h1(render=render_title),
                 tags.ul(data=directive("hostlist"), render=directive("sequence"))[
                     tags.li(pattern="item", render=render_hostlist)]]])
- 
+
 class NameVirtualHost(rend.Page):
-    """I am a resource which represents named virtual hosts. 
+    """I am a resource which represents named virtual hosts.
        And these are my obligatory comments
     """
-    
+
     supportNested = True
 
     def __init__(self, default=None, listHosts=True):
@@ -72,16 +72,16 @@ class NameVirtualHost(rend.Page):
 
         rend.Page.__init__(self)
         self.hosts = {}
-       
+
         self.default = default
         self.listHosts = listHosts
-        
+
         if self.listHosts and self.default == None:
             self.default = VirtualHostList(self)
-            
+
     def addHost(self, name, resrc):
         """Add a host to this virtual host. - The Fun Stuff(TM)
-            
+
         This associates a host named 'name' with a resource 'resrc'
 
             >>> nvh.addHost('nevow.com', nevowDirectory)
@@ -90,7 +90,7 @@ class NameVirtualHost(rend.Page):
 
         I told you that was fun.
         """
-        
+
         self.hosts[name] = resrc
 
     def removeHost(self, name):
@@ -101,17 +101,17 @@ class NameVirtualHost(rend.Page):
     def _getResourceForRequest(self, request):
         """(Internal) Get the appropriate resource for the request
         """
-        
+
         hostHeader = request.getHeader('host')
-        
+
         if hostHeader == None:
             return self.default or rend.NotFound[0]
         else:
             host = hostHeader.split(':')[0].lower()
-            
+
             if self.supportNested:
                 """ If supportNested is True domain prefixes (the stuff up to the first '.')
-                    will be chopped off until it's reduced to the tld or a valid domain is 
+                    will be chopped off until it's reduced to the tld or a valid domain is
                     found.
                 """
 
@@ -122,11 +122,12 @@ class NameVirtualHost(rend.Page):
 
     def locateChild(self, ctx, segments):
         """It's a NameVirtualHost, do you know where your children are?
-        
+
         This uses locateChild magic so you don't have to mutate the request.
         """
         resrc = self._getResourceForRequest(inevow.IRequest(ctx))
         return resrc, segments
+
 
 @implementer(inevow.IResource)
 class _VHostMonsterResourcePrepathCleaner:
@@ -139,28 +140,30 @@ class _VHostMonsterResourcePrepathCleaner:
         request.prepath = request.prepath[3:]
         return request.site.resource, segments
 
+
 _prepathCleaner = _VHostMonsterResourcePrepathCleaner()
+
 
 @implementer(inevow.IResource)
 class VHostMonsterResource:
     """VHostMonster resource that helps to deploy a Nevow site behind a proxy.
-    
+
     The main problem when deploying behind a proxy is that the scheme, host name
     and port the user typed into their browser are lost because the proxying web
     server forwards the request to something like http://localhost:8080/.
-    
+
     A vhost resource consumes the next 2 segments of the URL to rewrite the
     scheme, host and port in the request object. It then "forwards" the request
     to the site's root resource.
-    
+
     To install the resource use something like:
-    
+
     >>> root = MyRootPage()
     >>> root.putChild('vhost', VHostMonsterResource())
     >>> site = NevowSite(root)
-        
+
     An appropriate Apache configuration using mod_proxy would be::
-        
+
         ProxyPass / http://localhost:8080/vhost/http/real.domainname.com/
 
     If you only want to proxy a part of the url tree, try::
@@ -197,7 +200,7 @@ class VHostMonsterResource:
                 port = int(port)
             else:
                 host, port = segments[1], 80
-           
+
             request.setHost(host, port)
 
             prefixLen = len('/'+'/'.join(request.prepath)+'/'+'/'.join(segments[:2]))

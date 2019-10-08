@@ -8,6 +8,7 @@ import twisted.python.components as tpc
 from nevow import inevow, stan
 from zope.interface import implementer
 
+
 @implementer(inevow.IQ)
 class QueryContext(tpc.Adapter):
 

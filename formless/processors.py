@@ -31,9 +31,9 @@ def exceptblock(f, handler, exception, *a, **kw):
     else:
         return result
 
-@implementer(iformless.IInputProcessor)    
-class ProcessGroupBinding(components.Adapter):
 
+@implementer(iformless.IInputProcessor)
+class ProcessGroupBinding(components.Adapter):
 
     def process(self, context, boundTo, data):
         ## THE SPEC: self.original.typedValue.iface.__spec__
@@ -56,7 +56,7 @@ class ProcessGroupBinding(components.Adapter):
                 # XXX: It seems like this should only ever be called with a WovenContext
                 # XXX: if it's using context.key. But it seems that it's only ever called with
                 # XXX: a PageContext, so context.key used to be '' always?
-                
+
                 errors.updateErrors(getattr(context, 'key', ''), e.errors)
                 pf = e.partialForm
                 err = e.errors
@@ -79,9 +79,9 @@ class ProcessGroupBinding(components.Adapter):
                 raise formless.ValidateError(failures, 'Error:', results)
         return DeferredList(waiters).addBoth(_finish)
 
+
 @implementer(iformless.IInputProcessor)
 class ProcessMethodBinding(components.Adapter):
-
 
     def process(self, context, boundTo, data, autoConfigure = True):
         """Knows how to process a dictionary of lists
@@ -118,9 +118,9 @@ class ProcessMethodBinding(components.Adapter):
                                boundTo, results)
         return results
 
+
 @implementer(iformless.IInputProcessor)
 class ProcessPropertyBinding(components.Adapter):
-
 
     def process(self, context, boundTo, data, autoConfigure = True):
         """Knows how to process a dictionary of lists
@@ -144,9 +144,9 @@ class ProcessPropertyBinding(components.Adapter):
                 raise formless.ValidateError({binding.name: e.reason}, e.reason, result)
         return result
 
+
 @implementer(iformless.IInputProcessor)
 class ProcessTyped(components.Adapter):
-
 
     def process(self, context, boundTo, data):
         """data is a list of strings at this point
@@ -171,9 +171,9 @@ class ProcessTyped(components.Adapter):
             warnings.warn('Typed.coerce takes two values now, the value to coerce and the configurable in whose context the coerce is taking place. %s %s' % (typed.__class__, typed))
             return typed.coerce(val)
 
+
 @implementer(iformless.IInputProcessor)
 class ProcessPassword(components.Adapter):
-
 
     def process(self, context, boundTo, data):
         """Password needs to look at two passwords in the data,
@@ -205,9 +205,9 @@ class ProcessPassword(components.Adapter):
             warnings.warn('Typed.coerce takes two values now, the value to coerce and the configurable in whose context the coerce is taking place. %s %s' % (typed.__class__, typed))
             return typed.coerce(data[0])
 
+
 @implementer(iformless.IInputProcessor)
 class ProcessRequest(components.Adapter):
-
 
     def process(self, context, boundTo, data):
         return context.locate(inevow.IRequest)
@@ -216,14 +216,12 @@ class ProcessRequest(components.Adapter):
 @implementer(iformless.IInputProcessor)
 class ProcessContext(components.Adapter):
 
-
     def process(self, context, boundTo, data):
         return context
 
 
 @implementer(iformless.IInputProcessor)
 class ProcessUpload(components.Adapter):
-
 
     def process(self, context, boundTo, data):
 
@@ -236,7 +234,7 @@ class ProcessUpload(components.Adapter):
             field = fields[bind.name]
         except KeyError:
             return ''
-        
+
         def hasContent(field):
             """Test if the uploaded file has any content by looking for a single byte.
             """
@@ -246,7 +244,7 @@ class ProcessUpload(components.Adapter):
             ch = file.read(1)
             file.seek(pos)
             return ch != ''
-        
+
         # Testing for required'ness is a bit of a hack (not my fault!) ...
         # The upload is only considered missing if both the file name and content
         # are empty. That allows for files with content called ' ' and empty files
@@ -267,7 +265,7 @@ class ProcessUpload(components.Adapter):
                 raise formless.InputError(typed.requiredFailMessage)
             else:
                 return typed.null
-            
+
         return field
 
 
@@ -286,5 +284,5 @@ def process(typed, data, configurable=None, ctx=None):
         return iformless.IInputProcessor(typed).process(ctx, configurable, data, autoConfigure=False)
     except TypeError:
         return iformless.IInputProcessor(typed).process(ctx, configurable, data)
-        
+
 

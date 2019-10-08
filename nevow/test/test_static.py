@@ -21,7 +21,7 @@ class Range(unittest.TestCase):
         self.tmpdir = self.mktemp()
         os.mkdir(self.tmpdir)
         name = os.path.join(self.tmpdir, 'junk')
-        f = file(name, 'w')
+        f = open(name, 'w')
         f.write(800 * '0123456789')
         f.close()
         self.file = static.File(name)
