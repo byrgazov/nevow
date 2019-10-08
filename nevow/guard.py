@@ -585,7 +585,7 @@ class SessionWrapper:
         return u, ()
 
     def fatalLoginError(self, error, ctx, segments, loginFailure):
-        print "Guard: login failure in %r -> %r" % (segments, loginFailure)
+        print("Guard: login failure in %r -> %r" % (segments, loginFailure))
         return Forbidden(), ()
 
     def authRequiredError(self, error, session):

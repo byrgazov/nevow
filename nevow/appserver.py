@@ -182,8 +182,9 @@ def processingFailed(reason, request, ctx):
 def defaultExceptionHandlerFactory(ctx):
     return DefaultExceptionHandler()
 
+
 @implementer(inevow.IRequest)
-class NevowRequest(tpc.Componentized): #; , server.Request):
+class NevowRequest(server.Request, tpc.Componentized):
     """
     A Request subclass which does additional
     processing if a form was POSTed. When a form is POSTed,

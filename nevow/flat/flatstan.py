@@ -161,7 +161,7 @@ def StringSerializer(original, context):
         # changing this?  Change that, too.
         if isinstance(original, compat.unicode):
             original = original.encode("utf-8")
-        return quote(original, safe="-_.!*'()").decode("ascii")
+        return quote(original, safe="-_.!*'()")
     ## quote it
     if context.inJS:
         original = _jsSingleQuoteQuote(original)

@@ -20,16 +20,16 @@ class ParseError(ValueError):
     pass
 
 whitespace = re.compile(
-            ur'('
-            ur'[\r\n\t\ ]+'
-            ur'|/\*.*?\*/'
-            ur'|//[^\n]*[\n]'
-            ur')'
+            r'('
+            r'[\r\n\t\ ]+'
+            r'|/\*.*?\*/'
+            r'|//[^\n]*[\n]'
+            r')'
             , re.VERBOSE + re.DOTALL)
-openBrace = re.compile(ur'{')
-closeBrace = re.compile(ur'}')
-openSquare = re.compile(ur'\[')
-closeSquare = re.compile(ur'\]')
+openBrace = re.compile(r'{')
+closeBrace = re.compile(r'}')
+openSquare = re.compile(r'\[')
+closeSquare = re.compile(r'\]')
 
 class StringTokenizer(object):
     """
@@ -70,7 +70,7 @@ true = re.compile(u'true')
 false = re.compile(u'false')
 null = re.compile(u'null')
 undefined = re.compile(u'undefined')
-floatNumber = re.compile(ur'-?([1-9][0-9]*|0)(\.[0-9]+)([eE][-+]?[0-9]+)?')
+floatNumber = re.compile(r'-?([1-9][0-9]*|0)(\.[0-9]+)([eE][-+]?[0-9]+)?')
 longNumber = re.compile(u'-?([1-9][0-9]*|0)([eE][-+]?[0-9]+)?')
 
 class StringToken(compat.unicode):
@@ -150,11 +150,11 @@ def parseValue(tokens):
 
 
 _stringExpr = re.compile(
-    ur'(?:\\x(?P<unicode>[a-fA-F0-9]{2})) # Match hex-escaped unicode' '\n'
-    ur'|' '\n'
-    ur'(?:\\u(?P<unicode2>[a-fA-F0-9]{4})) # Match hex-escaped high unicode' '\n'
-    ur'|' '\n'
-    ur'(?P<control>\\[fbntr\\"]) # Match escaped control characters' '\n',
+    r'(?:\\x(?P<unicode>[a-fA-F0-9]{2})) # Match hex-escaped unicode' '\n'
+    r'|' '\n'
+    r'(?:\\u(?P<unicode2>[a-fA-F0-9]{4})) # Match hex-escaped high unicode' '\n'
+    r'|' '\n'
+    r'(?P<control>\\[fbntr\\"]) # Match escaped control characters' '\n',
     re.VERBOSE)
 
 _controlMap = {
@@ -246,12 +246,12 @@ _translation = dict([(o, '\\x%02x' % (o,)) for o in range(0x20)])
 # Characters which cannot appear as literals in the output
 _translation.update({
     ord('\\'): u'\\\\',
-    ord('"'): ur'\"',
-    ord('\f'): ur'\f',
-    ord('\b'): ur'\b',
-    ord('\n'): ur'\n',
-    ord('\t'): ur'\t',
-    ord('\r'): ur'\r',
+    ord('"'): r'\"',
+    ord('\f'): r'\f',
+    ord('\b'): r'\b',
+    ord('\n'): r'\n',
+    ord('\t'): r'\t',
+    ord('\r'): r'\r',
     # The next two are sneaky, see
     # http://timelessrepo.com/json-isnt-a-javascript-subset
     ord('\u2028'): '\\u2028',
