@@ -74,11 +74,13 @@ from twisted.python.components import registerAdapter
 from nevow import flat
 from nevow.util import _namedAnyWithBuiltinTranslation
 
+
 # Python2.2 has a stupidity where instance methods have name
 # 'builtins.instance method' instead of 'builtins.instancemethod'
 # Workaround this error.
+
 def clean(o):
-    if o == 'builtins.instancemethod' and sys.version_info < (2,3):
+    if o == 'builtins.instancemethod' and sys.version_info < (2, 3):
         return 'builtins.instance method'
     return o
 
@@ -95,15 +97,14 @@ def load(S):
 
 def loadFlatteners(S):
     for line in S.split('\n'):
-        line = line.strip()
-        if line and not line.startswith('#'):
+        line = line.split('#', 1)[0].strip()
+        if line:
             f, o = line.split()
             flat.registerFlattener(f, clean(o))
 
 
+# The xml namespace of the nevow elements and attributes
 namespace = "http://nevow.com/ns/nevow/0.1"
-'''The xml namespace of the nevow elements and attributes.'''
-
 
 basic_adapters = """
 formless.annotate.Group                   formless.annotate.MetaTypedInterface        formless.iformless.ITyped
@@ -222,11 +223,12 @@ nevow.flat.flatstan.StringSerializer              builtins.str
 nevow.flat.flatstan.NoneWarningSerializer         builtins.NoneType
 nevow.flat.flatstan.StringCastSerializer          builtins.int
 nevow.flat.flatstan.StringCastSerializer          builtins.float
-nevow.flat.flatstan.BooleanSerializer          builtins.bool
+nevow.flat.flatstan.BooleanSerializer             builtins.bool
 nevow.flat.flatstan.ListSerializer                builtins.list
 nevow.flat.flatstan.StringCastSerializer          builtins.dict
 nevow.flat.flatstan.ListSerializer                builtins.tuple
-nevow.flat.flatstan.FunctionSerializer            builtins.type
+nevow.flat.flatstan.FunctionSerializer            builtins.type  # @ex: tag(...render=str) -> type(str) -> <class 'type'>
+nevow.flat.flatstan.FunctionSerializer            builtins.function
 nevow.flat.flatstan.RendererSerializer            nevow.inevow.IRenderer
 nevow.flat.flatstan.DirectiveSerializer           nevow.stan.directive
 nevow.flat.flatstan.SlotSerializer                nevow.stan.slot

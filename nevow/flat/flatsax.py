@@ -104,7 +104,6 @@ class ToStan(handler.ContentHandler, handler.EntityResolver):
         self.prefixMap = self.prefixMap.parent
 
     def startElementNS(self, ns_and_name, qname, attrs):
-
         filename = self.sourceFilename
         lineNumber = self.locator.getLineNumber()
         columnNumber = self.locator.getColumnNumber()
@@ -134,19 +133,24 @@ class ToStan(handler.ContentHandler, handler.EntityResolver):
         specials = {}
         attributes = self.attributeList
         directives = self.directiveMapping
+
         for k, v in list(attrs.items()):
             att_ns, nons = k
+
             if att_ns != nevow.namespace:
                 continue
+
             if nons in directives:
                 ## clean this up by making the names more consistent
                 specials[directives[nons]] = directive(v)
                 del attrs[k]
+
             if nons in attributes:
                 specials[nons] = v
                 del attrs[k]
 
         no_ns_attrs = {}
+
         for (attrNs, attrName), v in list(attrs.items()):
             nsPrefix = self.prefixMap.get(attrNs)
             if nsPrefix is None:

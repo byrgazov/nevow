@@ -32,19 +32,20 @@ class Base(TestCase):
         ctx = context.WovenContext(parent=ctx, precompile=precompile)
         return ctx
 
-    def render(self, tag, precompile=False, data=None, setupRequest=lambda r: r, setupContext=lambda c:c, wantDeferred=False):
+    def render(self, tag, precompile=False, data=None, setupRequest=lambda r: r, setupContext=lambda c: c, wantDeferred=False):
         ctx = self.setupContext(precompile, setupRequest)
         ctx = setupContext(ctx)
+
         if precompile:
             return flat.precompile(tag, ctx)
-        else:
-            if wantDeferred:
-                L = []
-                D = twist.deferflatten(tag, ctx, L.append)
-                D.addCallback(lambda igresult: ''.join(L))
-                return D
-            else:
-                return flat.flatten(tag, ctx)
+
+        if wantDeferred:
+            L = []
+            D = twist.deferflatten(tag, ctx, L.append)
+            D.addCallback(lambda igresult: ''.join(L))
+            return D
+
+        return flat.flatten(tag, ctx)
 
 
 class TestSimpleSerialization(Base):
@@ -312,7 +313,11 @@ class TestComplexSerialization(Base):
         self.assertEqual(self.render(tag), "<html><body><table><tr><td>col1</td><td>col2</td><td>col3</td></tr><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>4</td><td>5</td><td>6</td></tr></table></body></html>")
 
     def test_cloning(self):
-        def data_foo(context, data):  return [{'foo':'one'}, {'foo':'two'}]
+        def data_foo(context, data):
+            return [
+                {'foo': 'one'},
+                {'foo': 'two'},
+            ]
 
       # tests nested lists without precompilation (precompilation flattens the lists)
         def render_test(context, data):
@@ -333,7 +338,9 @@ class TestComplexSerialization(Base):
                 render_test
             ]
         ]
-        document=self.render(document, precompile=True)
+
+        document = self.render(document, precompile=True)
+
         self.assertEqual(self.render(document), '<html><body><ul><li><a href="test/one">link</a></li><li><a href="test/two">link</a></li></ul><ul><li>fooone</li><li>footwo</li></ul></body></html>')
 
     def test_singletons(self):
@@ -446,7 +453,6 @@ class TestEntity(Base):
 
 
 class TestNoneAttribute(Base):
-
     def test_simple(self):
         val = self.render(tags.html(foo=None)["Bar"])
         self.assertEqual(val, "<html>Bar</html>")
@@ -471,32 +477,29 @@ class TestNoneAttribute(Base):
 class TestKey(Base):
     def test_nested(self):
         val = []
+
         def appendKey(ctx, data):
             val.append(ctx.key)
             return ctx.tag
+
         self.render(
             tags.div(key="one", render=appendKey)[
                 tags.div(key="two", render=appendKey)[
                     tags.div(render=appendKey)[
                         tags.div(key="four", render=appendKey)]]])
+
         self.assertEqual(val, ["one", "one.two", "one.two", "one.two.four"])
 
 
-
 class TestDeferFlatten(Base):
-
     def flatten(self, obj):
-        """
-        Flatten the given object using L{twist.deferflatten} and a simple context.
+        """Flatten the given object using L{twist.deferflatten} and a simple context.
+        Return the Deferred returned by L{twist.deferflatten}."""
 
-        Return the Deferred returned by L{twist.deferflatten}.
-        it.
-        """
         # Simple context with None IData
         ctx = context.WovenContext()
         ctx.remember(None, inevow.IData)
         return twist.deferflatten(obj, ctx, lambda bytes: None)
-
 
     def test_errorPropogation(self):
         # A generator that raises an error
@@ -520,7 +523,6 @@ class TestDeferFlatten(Base):
         d.addErrback(error)
         d.addBoth(checker)
         return d
-
 
     def test_failurePropagation(self):
         """

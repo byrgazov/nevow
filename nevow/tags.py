@@ -31,13 +31,13 @@ from nevow.stan import Proto, Tag, directive, raw, xml, CommentProto, invisible,
 comment = CommentProto()
 
 tags = [
-'a','abbr','acronym','address','applet','area','b','base','basefont','bdo','big','blockquote',
-'body','br','button','caption','center','cite','code','col','colgroup','dd','dfn','div',
-'dl','dt','em','fieldset','font','form','frame','frameset','h1','h2','h3','h4','h5','h6','head',
-'hr','html','i','iframe','img','input','ins','isindex','kbd','label','legend','li','link','menu',
-'meta','noframes','noscript','ol','optgroup','option','p','param','pre','q','s','samp',
-'script','select','small','span','strike','strong','style','sub','sup','table','tbody','td','textarea',
-'tfoot','th','thead','title','tr','tt','u','ul','var'
+    'a','abbr','acronym','address','applet','area','b','base','basefont','bdo','big','blockquote',
+    'body','br','button','caption','center','cite','code','col','colgroup','dd','dfn','div',
+    'dl','dt','em','fieldset','font','form','frame','frameset','h1','h2','h3','h4','h5','h6','head',
+    'hr','html','i','iframe','img','input','ins','isindex','kbd','label','legend','li','link','menu',
+    'meta','noframes','noscript','ol','optgroup','option','p','param','pre','q','s','samp',
+    'script','select','small','span','strike','strong','style','sub','sup','table','tbody','td','textarea',
+    'tfoot','th','thead','title','tr','tt','u','ul','var'
 ]
 
 
@@ -48,9 +48,9 @@ _map = Proto('map')
 
 
 globs = globals()
+
 for t in tags:
     globs[t] = Proto(t)
-
 
 for x in range(100):
     globs['_%s' % x] = directive(x)

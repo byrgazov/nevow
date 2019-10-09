@@ -21,11 +21,16 @@ code. See nevow.stan.Tag for details, and nevow.tags for tag
 prototypes for all of the XHTML element types.
 """
 
+import re
+
 from twisted.python import compat
 
 from zope.interface import implementer
 
 from nevow import inevow
+
+
+mask_tagname = re.compile('^([a-z]+[\_\-\.0-9]*)+$', re.I)
 
 
 class Proto(str):
@@ -242,27 +247,141 @@ class Tag(object):
     lineNumber = None
     columnNumber = None
 
+    tagName    = 'INVALID-TAG-NAME'
+    attributes = None
+    _specials  = None
+    children   = None
+
     def __init__(self, tag, attributes=None, children=None, specials=None, filename=None, lineNumber=None, columnNumber=None):
-        self.tagName = tag
+        if tag is invisible:
+            self.tagName = tag
+        elif mask_tagname.match(tag):
+            self.tagName = str(tag)
+        else:
+            raise ValueError('Invalid tag name', tag)
+
         if attributes is None:
             self.attributes = {}
         else:
             self.attributes = attributes
+
         if children is None:
             self.children = []
         else:
             self.children = children
+
         if specials is None:
             self._specials = {}
         else:
             self._specials = specials
+
         if filename is not None:
             self.filename = filename
+
         if lineNumber is not None:
             self.lineNumber = lineNumber
+
         if columnNumber is not None:
             self.columnNumber = columnNumber
 
+    def __repr__(self):
+        rstr = ''
+        if self.attributes:
+            rstr += ', attributes=%r' % self.attributes
+        if self._specials:
+            rstr += ', specials=%r' % self._specials
+        if self.children:
+            rstr += ', children=%r' % self.children
+        return "Tag(%r%s)" % (self.tagName, rstr)
+
+    def __call__(self, **kw):
+        """Change attributes of this tag. This is implemented using
+        __call__ because it then allows the natural syntax::
+
+          table(width="100%", height="50%", border="1")
+
+        Attributes may be 'invisible' tag instances (so that
+        C{a(href=invisible(data="foo", render=myhrefrenderer))} works),
+        strings, functions, or any other object which has a registered
+        flattener.
+
+        If the attribute is a python keyword, such as 'class', you can
+        add an underscore to the name, like 'class_'.
+
+        A few magic attributes have values other than these, as they
+        are not serialized for output but rather have special purposes
+        of their own:
+
+         - data: The value is saved on the context stack and passed to
+           render functions.
+
+         - render: A function to call that may modify the tag in any
+           way desired.
+
+         - remember: Remember the value on the context stack with
+           context.remember(value) for later lookup with
+           context.locate()
+
+         - pattern: Value should be a key that can later be used to
+           locate this tag with context.patternGenerator() or
+           context.allPatterns()
+
+         - key: A string used to give the node a unique label.  This
+           is automatically namespaced, so in C{span(key="foo")[span(key="bar")]}
+           the inner span actually has a key of 'foo.bar'.  The key is
+           intended for use as e.g. an html 'id' attribute, but will
+           is not automatically output.
+
+         - macro - A function which will be called once in the lifetime
+           of the template, when the template is loaded. The return
+           result from this function will replace this Tag in the template.
+        """
+
+        if kw:
+            for name in self.specials:
+                if name in kw:
+                    setattr(self, name, kw[name])
+                    del kw[name]
+
+            for k, v in kw.items():
+                if k[-1] == '_':
+                    k = k[:-1]
+                elif k[0] == '_':
+                    k = k[1:]
+                self.attributes[k] = v
+
+        return self
+
+    def __getitem__(self, children):
+        """Add children to this tag. Multiple children may be added by
+        passing a tuple or a list. Children may be other tag instances,
+        strings, functions, or any other object which has a registered
+        flatten.
+
+        This is implemented using __getitem__ because it then allows
+        the natural syntax::
+
+          html[
+              head[
+                  title["Hello World!"]
+              ],
+              body[
+                  "This is a page",
+                  h3["How are you!"],
+                  div(style="color: blue")["I hope you are fine."]
+              ]
+          ]
+        """
+        if not isinstance(children, (list, tuple)):
+            children = [children]
+        self.children.extend(children)
+        return self
+
+    def __iter__(self):
+        """Prevent an infinite loop if someone tries to do
+            for x in stantaginstance:
+        """
+        raise NotImplementedError("Stan tag instances are not iterable.")
 
     def fillSlots(self, slotName, slotValue):
         """Remember the stan 'slotValue' with the name 'slotName' at this position
@@ -324,96 +443,6 @@ class Tag(object):
                 'pattern')
         return result.clone(deep=False, clearPattern=True)
 
-
-    def __call__(self, **kw):
-        """Change attributes of this tag. This is implemented using
-        __call__ because it then allows the natural syntax::
-
-          table(width="100%", height="50%", border="1")
-
-        Attributes may be 'invisible' tag instances (so that
-        C{a(href=invisible(data="foo", render=myhrefrenderer))} works),
-        strings, functions, or any other object which has a registered
-        flattener.
-
-        If the attribute is a python keyword, such as 'class', you can
-        add an underscore to the name, like 'class_'.
-
-        A few magic attributes have values other than these, as they
-        are not serialized for output but rather have special purposes
-        of their own:
-
-         - data: The value is saved on the context stack and passed to
-           render functions.
-
-         - render: A function to call that may modify the tag in any
-           way desired.
-
-         - remember: Remember the value on the context stack with
-           context.remember(value) for later lookup with
-           context.locate()
-
-         - pattern: Value should be a key that can later be used to
-           locate this tag with context.patternGenerator() or
-           context.allPatterns()
-
-         - key: A string used to give the node a unique label.  This
-           is automatically namespaced, so in C{span(key="foo")[span(key="bar")]}
-           the inner span actually has a key of 'foo.bar'.  The key is
-           intended for use as e.g. an html 'id' attribute, but will
-           is not automatically output.
-
-         - macro - A function which will be called once in the lifetime
-           of the template, when the template is loaded. The return
-           result from this function will replace this Tag in the template.
-        """
-        if not kw:
-            return self
-
-        for name in self.specials:
-            if name in kw:
-                setattr(self, name, kw[name])
-                del kw[name]
-
-        for k, v in kw.items():
-            if k[-1] == '_':
-                k = k[:-1]
-            elif k[0] == '_':
-                k = k[1:]
-            self.attributes[k] = v
-        return self
-
-    def __getitem__(self, children):
-        """Add children to this tag. Multiple children may be added by
-        passing a tuple or a list. Children may be other tag instances,
-        strings, functions, or any other object which has a registered
-        flatten.
-
-        This is implemented using __getitem__ because it then allows
-        the natural syntax::
-
-          html[
-              head[
-                  title["Hello World!"]
-              ],
-              body[
-                  "This is a page",
-                  h3["How are you!"],
-                  div(style="color: blue")["I hope you are fine."]
-              ]
-          ]
-        """
-        if not isinstance(children, (list, tuple)):
-            children = [children]
-        self.children.extend(children)
-        return self
-
-    def __iter__(self):
-        """Prevent an infinite loop if someone tries to do
-            for x in stantaginstance:
-        """
-        raise NotImplementedError("Stan tag instances are not iterable.")
-
     def _clearSpecials(self):
         """Clears all the specials in this tag. For use by flatstan.
         """
@@ -438,11 +467,11 @@ class Tag(object):
     def _clone(self, obj, deep):
         if hasattr(obj, 'clone'):
             return obj.clone(deep)
-        elif isinstance(obj, (list, tuple)):
-            return [self._clone(x, deep)
-                    for x in obj]
-        else:
-            return obj
+
+        if isinstance(obj, (list, tuple)):
+            return [self._clone(x, deep) for x in obj]
+
+        return obj
 
     def clone(self, deep=True, clearPattern=False):
         """Return a clone of this tag. If deep is True, clone all of this
@@ -453,11 +482,14 @@ class Tag(object):
             newchildren = [self._clone(x, True) for x in self.children]
         else:
             newchildren = self.children[:]
+
         newattrs = self.attributes.copy()
+
         for key in newattrs:
             newattrs[key]=self._clone(newattrs[key], True)
 
         newslotdata = None
+
         if self.slotData:
             newslotdata = self.slotData.copy()
             for key in newslotdata:
@@ -471,7 +503,9 @@ class Tag(object):
             filename=self.filename,
             lineNumber=self.lineNumber,
             columnNumber=self.columnNumber)
+
         newtag.slotData = newslotdata
+
         if clearPattern:
             newtag.pattern = None
 
@@ -484,16 +518,6 @@ class Tag(object):
         self.children = []
         return self
 
-    def __repr__(self):
-        rstr = ''
-        if self.attributes:
-            rstr += ', attributes=%r' % self.attributes
-        if self._specials:
-            rstr += ', specials=%r' % self._specials
-        if self.children:
-            rstr += ', children=%r' % self.children
-        return "Tag(%r%s)" % (self.tagName, rstr)
-
     def freeze(self):
         """Freeze this tag so that making future calls to __call__ or __getitem__ on the
         return value will result in clones of this tag.
@@ -503,6 +527,7 @@ class Tag(object):
                 yield self.clone()
         return PatternTag(forever())
 
+
 class UnsetClass:
     def __bool__(self):
         return False
@@ -510,7 +535,9 @@ class UnsetClass:
 
     def __repr__(self):
         return "Unset"
-Unset=UnsetClass()
+
+Unset = UnsetClass()
+
 
 def makeAccessors(special):
     def getSpecial(self):
@@ -521,10 +548,10 @@ def makeAccessors(special):
 
     return getSpecial, setSpecial
 
+
 for name in Tag.specials:
     setattr(Tag, name, property(*makeAccessors(name)))
 del name
-
 
 
 def visit(root, visitor):
@@ -541,15 +568,16 @@ def visit(root, visitor):
                 visit(ch, visitor)
 
 
-
 ### Pattern machinery
 class NodeNotFound(KeyError):
     def __str__(self):
         return "The %s named %r wasn't found in the template." % tuple(self.args[:2])
 
+
 class TooManyNodes(Exception):
     def __str__(self):
         return "More than one %r with the name %r was found." % tuple(self.args[:2])
+
 
 class PatternTag(object):
     '''A pseudotag created by Tag.patternGenerator() which loops
@@ -571,8 +599,10 @@ class PatternTag(object):
 def makeForwarder(name):
     return lambda self, *args, **kw: getattr(next(self), name)(*args, **kw)
 
+
 for forward in ['__call__', '__getitem__', 'fillSlots']:
     setattr(PatternTag, forward, makeForwarder(forward))
+
 
 def _locatePatterns(tag, pattern, default, loop=True):
     """
@@ -666,6 +696,7 @@ class CommentProto(Proto):
 class Comment(Tag):
     def __call__(self, **kw):
         raise NotImplementedError('comments are not callable')
+
 
 invisible = Proto('')
 

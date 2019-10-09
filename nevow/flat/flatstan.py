@@ -46,20 +46,23 @@ def TagSerializer(original, context, contextIsMine=False):
 
     if context.precompile and original.macro:
         toBeRenderedBy = original.macro
+
         ## Special case for directive; perhaps this could be handled some other way with an interface?
         if isinstance(toBeRenderedBy, directive):
             toBeRenderedBy = IMacroFactory(context).macro(context, toBeRenderedBy.name)
+
         original.macro = Unset
         newContext = WovenContext(context, original)
-        yield serialize(toBeRenderedBy(newContext), newContext)
-        return
 
-    ## TODO: Do we really need to bypass precompiling for *all* specials?
-    ## Perhaps just render?
-    if context.precompile and (
-        [x for x in list(original._specials.values())
-        if x is not None and x is not Unset]
-        or original.slotData):
+        yield serialize(toBeRenderedBy(newContext), newContext)
+
+        ## TODO: Do we really need to bypass precompiling for *all* specials?
+        ## Perhaps just render?
+
+    elif context.precompile and (
+            [x for x in list(original._specials.values())
+            if x is not None and x is not Unset]
+            or original.slotData):
         ## The tags inside this one get a "fresh" parent chain, because
         ## when the context yielded here is serialized, the parent
         ## chain gets reconnected to the actual parents at that
@@ -78,59 +81,62 @@ def TagSerializer(original, context, contextIsMine=False):
         context.tag.children = precompile(context.tag.children, nestedcontext)
 
         yield context
-        return
 
     ## Don't render patterns
-    if original.pattern is not Unset and original.pattern is not None:
-        return
+    elif original.pattern is not Unset and original.pattern is not None:
+        pass
 
-    if not contextIsMine:
-        if original.render:
-            ### We must clone our tag before passing to a render function
-            original = original.clone(deep=False)
-        context = WovenContext(context, original)
-
-    if original.data is not Unset:
-        newdata = convertToData(original.data, context)
-        if isinstance(newdata, util.Deferred):
-            yield newdata.addCallback(lambda newdata: _datacallback(newdata, context))
-        else:
-            _datacallback(newdata, context)
-
-    if original.render:
-        ## If we have a render function we want to render what it returns,
-        ## not our tag
-        toBeRenderedBy = original.render
-        # erase special attribs so if the renderer returns the tag,
-        # the specials won't be on the context twice.
-        original._clearSpecials()
-        yield serialize(toBeRenderedBy, context)
-        return
-
-    if not visible:
-        for child in original.children:
-            yield serialize(child, context)
-        return
-
-    yield '<%s' % original.tagName
-    if original.attributes:
-        attribContext = WovenContext(parent=context, precompile=context.precompile, isAttrib=True)
-        for (k, v) in sorted(original.attributes.items()):
-            if v is None:
-                continue
-            yield ' %s="' % k
-            yield serialize(v, attribContext)
-            yield '"'
-    if not original.children:
-        if original.tagName in allowSingleton:
-            yield ' />'
-        else:
-            yield '></%s>' % original.tagName
     else:
-        yield '>'
-        for child in original.children:
-            yield serialize(child, context)
-        yield '</%s>' % original.tagName
+        if not contextIsMine:
+            if original.render:
+                ### We must clone our tag before passing to a render function
+                original = original.clone(deep=False)
+            context = WovenContext(context, original)
+
+        if original.data is not Unset:
+            newdata = convertToData(original.data, context)
+
+            if isinstance(newdata, util.Deferred):
+                yield newdata.addCallback(lambda newdata: _datacallback(newdata, context))
+            else:
+                _datacallback(newdata, context)
+
+        if original.render:
+            ## If we have a render function we want to render what it returns,
+            ## not our tag
+            toBeRenderedBy = original.render
+            # erase special attribs so if the renderer returns the tag,
+            # the specials won't be on the context twice.
+            original._clearSpecials()
+            yield serialize(toBeRenderedBy, context)
+
+        elif not visible:
+            for child in original.children:
+                yield serialize(child, context)
+
+        else:
+            yield '<%s' % original.tagName
+
+            if original.attributes:
+                attribContext = WovenContext(parent=context, precompile=context.precompile, isAttrib=True)
+                for (k, v) in sorted(original.attributes.items()):
+                    if v is None:
+                        continue
+                    yield ' %s="' % k
+                    yield serialize(v, attribContext)
+                    yield '"'
+
+            if not original.children:
+                if original.tagName in allowSingleton:
+                    yield ' />'
+                else:
+                    yield '></%s>' % original.tagName
+
+            else:
+                yield '>'
+                for child in original.children:
+                    yield serialize(child, context)
+                yield '</%s>' % original.tagName
 
 
 def EntitySerializer(original, context):
@@ -214,35 +220,48 @@ PASS_SELF = object()
 
 
 def FunctionSerializer_nocontext(original):
-    code = getattr(original, 'func_code', None)
+    # @xxx: [bw] переделать с использованием C{inspect}
+
+    code = getattr(original, '__code__', None)
+
+    if code is None:
+        code = getattr(original, 'func_code', None)
+
     if code is None:
         return True
+
     argcount = code.co_argcount
+
     if argcount == 1:
         return True
+
     if argcount == 3:
         return PASS_SELF
+
     return False
 
 
 def FunctionSerializer(original, context, nocontextfun=FunctionSerializer_nocontext):
     if context.precompile:
         return WovenContext(tag=invisible(render=original))
-    else:
-        data = convertToData(context.locate(IData), context)
-        try:
-            nocontext = nocontextfun(original)
-            if nocontext is True:
-                result = original(data)
-            else:
-                if nocontext is PASS_SELF:
-                    renderer = context.locate(IRenderer)
-                    result = original(renderer, context, data)
-                else:
-                    result = original(context, data)
-        except StopIteration:
-            raise RuntimeError("User function %r raised StopIteration." % original)
-        return serialize(result, context)
+
+    data = convertToData(context.locate(IData), context)
+
+    try:
+        nocontext = nocontextfun(original)
+
+        if nocontext is True:
+            result = original(data)
+        elif nocontext is PASS_SELF:
+            renderer = context.locate(IRenderer)
+            result = original(renderer, context, data)
+        else:
+            result = original(context, data)
+
+    except StopIteration:
+        raise RuntimeError("User function %r raised StopIteration." % original)
+
+    return serialize(result, context)
 
 
 def MethodSerializer(original, context):

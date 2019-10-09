@@ -29,8 +29,8 @@ def registerFlattener(flattener, forType):
     is encountered in the stan dom. This function should return or yield strings, or objects
     for which there is also a flattener registered.
 
-    flattener should take (original, ctx) where original is the object to flatten.
-    """
+    flattener should take (original, ctx) where original is the object to flatten."""
+
     if type(flattener) is str or type(forType) is str:
         assert type(flattener) is str and type(forType) is str, "Must pass both strings or no strings to registerFlattener"
         flattener = util._namedAnyWithBuiltinTranslation(flattener)
@@ -41,10 +41,11 @@ def registerFlattener(flattener, forType):
 
     tpc.globalRegistry.register([forType], ISerializable, 'nevow.flat', flattener)
 
+
 def getFlattener(original):
-    """Get a flattener function with signature (ctx, original) for the object original.
-    """
+    """Get a flattener function with signature (ctx, original) for the object original."""
     return tpc.globalRegistry.lookup1(declarations.providedBy(original), ISerializable, 'nevow.flat')
+
 
 def getSerializer(obj):
     warnings.warn('getSerializer is deprecated; It has been renamed getFlattener.', stacklevel=2)
@@ -55,15 +56,14 @@ def partialflatten(context, obj):
     """Run a flattener on the object 'obj' in the context 'context'.
 
     The return results from this function will not necessarily be a string, but will probably
-    need further processing.
-    """
+    need further processing."""
+
     flattener = getFlattener(obj)
+
     if flattener is not None:
         return flattener(obj, context)
 
-    raise NotImplementedError(
-        'There is no flattener function registered for object %r of type %s.' %
-        (obj, type(obj)))
+    raise NotImplementedError('There is no flattener function registered for object %r of type %s' % (obj, type(obj)))
 
 
 def serialize(obj, context):
@@ -73,44 +73,49 @@ def serialize(obj, context):
 
 def iterflatten(stan, ctx, writer, shouldYieldItem=None):
     """This is the main meat of the nevow renderer. End-user programmers should
-    instead use either flatten or precompile.
-    """
+    instead use either flatten or precompile."""
+
     # 'rest' is a list of generators.
     # initialize as one-element list of a one-element generator of
     rest = [ iter([partialflatten(ctx, stan)]) ]
     straccum = []
+
     while rest:
         gen = rest.pop()
+
         for item in gen:
             if isinstance(item, bytes):
                 straccum.append(item.decode('utf-8'))
+
             elif isinstance(item, compat.unicode):
                 straccum.append(item)
+
             elif isinstance(item, (list, types.GeneratorType)):
                 # stop iterating this generator and put it back on the stack
                 # and start iterating the new item instead.
                 rest.append(gen)
                 rest.append(iter(item))
                 break
+
             else:
                 if straccum:
                     writer(tags.raw(u''.join(straccum)))
                     del straccum[:]
+
                 if shouldYieldItem is not None and shouldYieldItem(item):
                     replacement = []
                     yield item, replacement.append
                     rest.append(gen)
                     rest.append(iter([replacement]))
                     break
+                elif ctx.precompile:
+                    ## We're precompiling and this is an item which can't be calculated until render time
+                    ## add it to the list in 'precompile'
+                    writer(item)
                 else:
-                    if ctx.precompile:
-                        ## We're precompiling and this is an item which can't be calculated until render time
-                        ## add it to the list in 'precompile'
-                        writer(item)
-                    else:
-                        rest.append(gen)
-                        rest.append(iter([partialflatten(ctx, item)]))
-                        break
+                    rest.append(gen)
+                    rest.append(iter([partialflatten(ctx, item)]))
+                    break
 
     if straccum:
         writer(tags.raw(u''.join(straccum)))
