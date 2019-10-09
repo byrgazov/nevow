@@ -36,7 +36,7 @@ class QueryList(tpc.Adapter):
         produced = []
         for item in self.original:
             try:
-                for x in inevow.IQ(stan.Tag("")[item])._locatePatterns(pattern, None, loop=False):
+                for x in inevow.IQ(stan.Tag('')[item])._locatePatterns(pattern, None, loop=False):
                     produced.append(x)
                     yield x.clone(deep=False, clearPattern=True)
             except stan.NodeNotFound:
@@ -48,7 +48,7 @@ class QueryList(tpc.Adapter):
                     yield x.clone(deep=False, clearPattern=True)
 
         if default is None:
-            raise stan.NodeNotFound("pattern", pattern)
+            raise stan.NodeNotFound('pattern', pattern)
         if hasattr(default, 'clone'):
             while True: yield default.clone(deep=False)
         else:

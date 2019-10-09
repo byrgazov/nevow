@@ -30,7 +30,7 @@ from zope.interface import implementer
 from nevow import inevow
 
 
-mask_tagname = re.compile('^([a-z]+[\_\-\.0-9]*)+$', re.I)
+mask_tagname = re.compile('^[a-z]([\_\-\.\:]*[a-z0-9]+)*$', re.I)  # @xxx: сделать правильно
 
 
 class Proto(str):
@@ -255,10 +255,10 @@ class Tag(object):
     def __init__(self, tag, attributes=None, children=None, specials=None, filename=None, lineNumber=None, columnNumber=None):
         if tag is invisible:
             self.tagName = tag
-        elif mask_tagname.match(tag):
+        elif tag == '' or mask_tagname.match(tag):
             self.tagName = str(tag)
         else:
-            raise ValueError('Invalid tag name', tag)
+            raise ValueError('Invalid tag name', tag, type(tag))
 
         if attributes is None:
             self.attributes = {}
