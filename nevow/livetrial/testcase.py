@@ -140,11 +140,13 @@ class TestLoader(runner.TestLoader):
     modulePrefix = 'livetest_'
 
     def __init__(self):
-        runner.TestLoader.__init__(self)
+        super(TestLoader, self).__init__()
         self.suiteFactory = TestSuite
 
 
     def loadByName(self, name, recurse=False):
+        if runner._PY3:
+            return self.findByName(name, recurse=recurse)
         thing = self.findByName(name)
         return self.loadAnything(thing, recurse)
 

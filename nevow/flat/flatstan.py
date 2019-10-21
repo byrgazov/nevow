@@ -266,16 +266,14 @@ def FunctionSerializer(original, context, nocontextfun=FunctionSerializer_nocont
 
 def MethodSerializer(original, context):
     def nocontext(original):
-        func = getattr(original, 'im_func', None)
-        code = getattr(func, 'func_code', None)
+        code = getattr(original, '__code__', None)
         return code is None or code.co_argcount == 2
     return FunctionSerializer(original, context, nocontext)
 
 
 def RendererSerializer(original, context):
     def nocontext(original):
-        func = getattr(original, 'im_func', None)
-        code = getattr(func, 'func_code', None)
+        code = getattr(original, '__code__', None)
         return code is None or code.co_argcount == 2
     return FunctionSerializer(original.rend, context, nocontext)
 

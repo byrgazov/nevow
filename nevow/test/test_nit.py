@@ -15,8 +15,8 @@ from nevow.livetrial.testcase import TestSuite, TestError
 from nevow.livetrial.runner import TestFrameworkRoot
 from nevow.scripts import nit
 
-MESSAGE = 'I am an error'
 
+MESSAGE = 'I am an error'
 
 
 class _DummyErrorHolder(object):
@@ -32,10 +32,8 @@ class _DummyErrorHolder(object):
         except Exception:
             return Failure()
 
-
     def run(self, thing):
         thing.addError(self, self.createFailure())
-
 
 
 class _DummySuite(TestSuite):
@@ -49,9 +47,7 @@ class _DummySuite(TestSuite):
         self.tests = [holder]
 
 
-
 class NevowInteractiveTesterTest(TestCase):
-
     def test_gatherError(self):
         """
         Attempt collection of tests in the presence of an Failure that has
@@ -62,12 +58,10 @@ class NevowInteractiveTesterTest(TestCase):
         te = instances[0]
         self.assertIdentical(type(te), TestError)
 
-
     def test_errorRendering(self):
         te = TestError(_DummyErrorHolder())
         return renderLivePage(FragmentWrapper(te)).addCallback(
             lambda output: self.assertIn(MESSAGE, output))
-
 
     def test_portOption(self):
         """
@@ -78,7 +72,6 @@ class NevowInteractiveTesterTest(TestCase):
         options.parseOptions(['--port', '1234'])
         self.assertEqual(options['port'], 1234)
 
-
     def test_portOptionDefault(self):
         """
         If no I{--port} option is given, a default port number is used.
@@ -87,7 +80,6 @@ class NevowInteractiveTesterTest(TestCase):
         options.parseOptions([])
         self.assertEqual(options['port'], 8080)
 
-
     def test_testModules(self):
         """
         All extra positional arguments are interpreted as test modules.
@@ -95,7 +87,6 @@ class NevowInteractiveTesterTest(TestCase):
         options = nit.NitOptions()
         options.parseOptions(['foo', 'bar'])
         self.assertEqual(options['testmodules'], ('foo', 'bar'))
-
 
     def test_getSuite(self):
         """
@@ -106,14 +97,12 @@ class NevowInteractiveTesterTest(TestCase):
         suite = nit._getSuite(['nevow.test.livetest_athena'])
         self.assertTrue(suite.tests[0].tests)
 
-
     def test_runInvalidOptions(self):
         """
         L{nit.run} raises L{SystemExit} if invalid options are used.
         """
         self.patch(sys, 'argv', ["nit", "--foo"])
         self.assertRaises(SystemExit, nit.run)
-
 
     def test_runWithoutModules(self):
         """
@@ -122,7 +111,6 @@ class NevowInteractiveTesterTest(TestCase):
         """
         self.patch(sys, 'argv', ['nit'])
         self.assertRaises(SystemExit, nit.run)
-
 
     def test_run(self):
         """
