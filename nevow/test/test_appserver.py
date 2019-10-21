@@ -183,7 +183,7 @@ class TestSiteAndRequest(testutil.TestCase):
             def renderHTTP(self, context):
                 return util.succeed("hello")
 
-        return self.renderResource(Deferreder(), 'foo').addCallback(
+        return self.renderResource(Deferreder(), b'foo').addCallback(
             lambda result: self.assertEqual(result, "hello"))
 
     def test_regularRender(self):
@@ -191,7 +191,7 @@ class TestSiteAndRequest(testutil.TestCase):
             def renderHTTP(self, context):
                 return "world"
 
-        return self.renderResource(Regular(), 'bar').addCallback(
+        return self.renderResource(Regular(), b'bar').addCallback(
             lambda result: self.assertEqual(result, 'world'))
 
     def test_returnsResource(self):
@@ -203,7 +203,7 @@ class TestSiteAndRequest(testutil.TestCase):
             def renderHTTP(self, ctx):
                 return Res2()
 
-        return self.renderResource(Res1(), 'bar').addCallback(
+        return self.renderResource(Res1(), b'bar').addCallback(
             lambda result: self.assertEqual(result, 'world'))
 
     def test_connectionLost(self):
@@ -243,7 +243,7 @@ class TestSiteAndRequest(testutil.TestCase):
         r.path = b'/'
         r.content = BytesIO(b'foo=bar')
         self.successResultOf(r.process())
-        self.assertEqual(r.fields[b'foo'].value, b'bar')
+        self.assertEqual(r.fields['foo'].value, 'bar')
 
 
 
@@ -310,7 +310,7 @@ class Logging(testutil.TestCase):
         logLines = proto.site.logFile.getvalue().splitlines()
         self.assertEqual(len(logLines), 1)
         self.assertEqual(
-            split(logLines[0]),
+            split(logLines[0].decode('ascii')),
             ['fakeaddress2', '-', '-', 'faketime', 'GET /foo HTTP/1.0', '200', '6',
              'fakerefer', 'fakeagent'])
 
@@ -417,7 +417,7 @@ class OldResourceAdapterTests(TestCase):
         L{Deferred} to render a response.
         """
         def makeResource(expected):
-            resource = Data(expected, b"text/plain")
+            resource = Data(expected, "text/plain")
             return DeferredResource(succeed(resource))
         return self._deferredResourceTest(makeResource, b"")
 
@@ -429,8 +429,8 @@ class OldResourceAdapterTests(TestCase):
         then rendered.
         """
         def makeResource(expected):
-            resource = Data(expected, b"text/plain")
-            intermediate = Data(b"incorrect intermediate", b"text/plain")
+            resource = Data(expected, "text/plain")
+            intermediate = Data(b"incorrect intermediate", "text/plain")
             intermediate.putChild(b"child", resource)
             return DeferredResource(succeed(intermediate))
         return self._deferredResourceTest(makeResource, b"/child")
@@ -460,12 +460,12 @@ class GuardTests(TestCase):
         self.child_content = b"child content"
         self.grandchild_content = b"grandchild content"
 
-        grandchild = Data(self.grandchild_content, b"text/plain")
+        grandchild = Data(self.grandchild_content, "text/plain")
 
-        child = Data(self.child_content, b"text/plain")
+        child = Data(self.child_content, "text/plain")
         child.putChild(b"grandchild", grandchild)
 
-        self.avatar = Data(self.avatar_content, b"text/plain")
+        self.avatar = Data(self.avatar_content, "text/plain")
         self.avatar.putChild(b"child", child)
 
         self.realm = OneIResourceAvatarRealm(self.avatar)

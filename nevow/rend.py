@@ -25,7 +25,9 @@ import warnings
 from zope.interface import implementer, providedBy
 
 import twisted.python.components as tpc
+
 from twisted.python.reflect import qual, accumulateClassList
+from twisted.python import compat
 
 from nevow.context import WovenContext, NodeNotFound, PageContext
 from nevow import inevow, tags, flat, util, url
@@ -481,7 +483,7 @@ class ChildLookupMixin(FreeformChildMixin):
             if r is not None:
                 return r, segments[1:]
 
-        w = getattr(self, 'child_%s'%segments[0], None)
+        w = getattr(self, 'child_' + compat.nativeString(segments[0]), None)
         if w is not None:
             if inevow.IResource(w, None) is not None:
                 return w, segments[1:]

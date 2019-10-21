@@ -9,24 +9,14 @@ A web application server built using twisted.web
 import cgi
 import warnings
 from collections import MutableMapping
-try:
-	from urllib.parse import unquote
-except ImportError:
-	# python2 compatibility
-	from urlparse import unquote
 
 from zope.interface import implementer, classImplements
 
 import twisted.python.components as tpc
-from twisted.web import server
 
-try:
-    from twisted.web import http
-except ImportError:
-    from twisted.protocols import http
-
-from twisted.python import log
-from twisted.python import compat
+from twisted.web      import http, server
+from twisted.python   import log
+from twisted.python   import compat
 from twisted.internet import defer
 
 from nevow import context
@@ -226,7 +216,8 @@ class NevowRequest(server.Request, tpc.Componentized):
 
     def process(self):
         # extra request parsing
-        if self.method == 'POST':
+        if self.method == b'POST':
+            # @see: (!!!) L{twisted.web.http.Request.requestReceived} -> C{self.args}
             t = self.content.tell()
             self.content.seek(0)
             self.fields = cgi.FieldStorage(
@@ -245,7 +236,7 @@ class NevowRequest(server.Request, tpc.Componentized):
 
         # Resource Identification
         self.prepath = []
-        self.postpath = list(map(unquote, self.path[1:].split('/')))
+        self.postpath = list(map(http.unquote, self.path[1:].split(b'/')))
         self.sitepath = []
 
         self.deferred = defer.Deferred()
