@@ -45,6 +45,7 @@ class FakeSession(Componentized):
         Componentized.__init__(self)
         self.avatar = avatar
         self.uid = 12345
+
     def getLoggedInRoot(self):
         return self.avatar
 
@@ -194,7 +195,10 @@ class FakeRequest(Componentized):
         self.responseHeaders.setRawHeaders(key, [val])
 
     def redirect(self, url):
-        self.redirected_to = url
+        if type(url) is bytes:
+            self.redirected_to = url
+        else:
+            self.redirected_to = compat.networkString(url)
 
     def processingFailed(self, f):
         self.failure = f

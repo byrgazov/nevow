@@ -6,10 +6,11 @@
 """
 
 # System Imports
-import os, string, time
+import os, time
 import io
 import traceback
 import warnings
+
 from zope.interface import implementer
 
 try:
@@ -22,11 +23,13 @@ try:
     from twisted.web import http
 except ImportError:
     from twisted.protocols import http
-from twisted.python import threadable, log, components, filepath
+
 from twisted.internet import abstract
 from twisted.spread import pb
 from twisted.python.util import InsensitiveDict
 from twisted.python.runtime import platformType
+from twisted.python import threadable, log, components, filepath
+from twisted.python import compat
 
 from nevow import appserver, dirlist, inevow, rend
 
@@ -43,9 +46,10 @@ class Data:
     This is a static, in-memory resource.
     """
 
-    def __init__(self, data, type, expires=None):
+    def __init__(self, data, ctype, expires=None):
+        assert type(data) is bytes, type(data)
         self.data = data
-        self.type = type
+        self.type = ctype
         self.expires = expires
 
 
@@ -74,15 +78,16 @@ class Data:
             return ''
         return self.data
 
+
 def staticHTML(someString):
-    return Data(someString, 'text/html')
+    return Data(compat.networkString(someString), 'text/html')  # @todo: [bw] charset
 
 
 def addSlash(request):
     return "http%s://%s%s/" % (
         request.isSecure() and 's' or '',
         request.getHeader("host"),
-        (string.split(request.uri,'?')[0]))
+        (request.uri.split(b'?')[0]))
 
 class Registry(components.Componentized):
     """
@@ -292,7 +297,7 @@ class File:
         # size is the length of the part actually transmitted
         fsize = size = self.getFileSize()
 
-        request.setHeader('accept-ranges','bytes')
+        request.setHeader('accept-ranges', 'bytes')
 
         if self.type:
             request.setHeader('content-type', self.type)
@@ -316,10 +321,9 @@ class File:
 
             if range is not None:
                 # This is a request for partial data...
-                bytesrange = string.split(range, '=')
-                assert bytesrange[0] == 'bytes',\
-                       "Syntactically invalid http range header!"
-                start, end = string.split(bytesrange[1],'-')
+                bytesrange = range.split('=')
+                assert bytesrange[0] == 'bytes', "Syntactically invalid http range header!"
+                start, end = bytesrange[1].split('-')
                 if start:
                     f.seek(int(start))
                 if end:
@@ -327,15 +331,16 @@ class File:
                 else:
                     end = fsize-1
                 request.setResponseCode(http.PARTIAL_CONTENT)
-                request.setHeader('content-range',"bytes %s-%s/%s" % (
-                    str(start), str(end), str(fsize)))
+                request.setHeader('content-range', "bytes %s-%s/%s" % (str(start), str(end), str(fsize)))
                 #content-length should be the actual size of the stuff we're
                 #sending, not the full size of the on-server entity.
                 size = 1 + end - int(start)
 
             request.setHeader('content-length', str(size))
-        except:
-            traceback.print_exc(file=log.logfile)
+        except Exception:
+            # [bw]
+#           traceback.print_exc(file=log.logfile)
+            raise
 
         if request.method == 'HEAD':
             return ''

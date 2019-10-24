@@ -56,7 +56,6 @@ def _getPreprocessors(inst):
 
 @implementer(inevow.IRendererFactory)
 class RenderFactory(object):
-
     def renderer(self, context, name):
         """Return a renderer with the given name.
         """
@@ -91,7 +90,6 @@ class RenderFactory(object):
 
 @implementer(inevow.IMacroFactory)
 class MacroFactory(object):
-
     def macro(self, ctx, name):
         """Return a macro with the given name.
         """
@@ -121,7 +119,6 @@ class DataNotFoundError(Exception):
 
 @implementer(inevow.IContainer)
 class DataFactory(object):
-
     def child(self, context, n):
         args = []
         if n.find(' ') != -1:
@@ -137,9 +134,8 @@ class DataFactory(object):
             container = inevow.IContainer(self.original, None)
             if container is None:
                 raise DataNotFoundError("The data named %r was not found in %r." % (name, self))
-            else:
-                ## And delegate to it if so.
-                return container.child(context, n)
+            ## And delegate to it if so.
+            return container.child(context, n)
 
         if args:
             return callable(*args)
@@ -662,6 +658,7 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
         def redirectAfterPost(aspects):
             hand = aspects.get(inevow.IHand)
             refpath = None
+
             if hand is not None:
                 if isinstance(hand, Page):
                     refpath = url.here
@@ -688,13 +685,15 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
                 magicCookie = '%s%s%s' % (now(), request.getClientIP(), random.random())
                 refpath = refpath.replace('_nevow_carryover_', magicCookie)
                 _CARRYOVER[magicCookie] = C = tpc.Componentized()
+
                 for k, v in aspects.items():
                     C.setComponent(k, v)
 
             destination = flat.flatten(refpath, ctx)
             request.redirect(destination)
+
             from nevow import static
-            return static.Data('You posted a form to %s' % bindingName, 'text/plain'), ()
+            return static.Data(compat.networkString('You posted a form to %s' % bindingName), 'text/plain'), ()
 
         return util.maybeDeferred(
             configurable.postForm, ctx, bindingName, args

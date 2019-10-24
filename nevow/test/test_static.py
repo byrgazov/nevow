@@ -10,20 +10,20 @@ def deferredRender(res, req):
                 tag=req)))
 
     def done(result):
-        if isinstance(result, (unicode, bytes)):
+        if isinstance(result, bytes):
             req.write(result)
         return req
-    d.addCallback(done)
-    return d
+
+    return d.addCallback(done)
+
 
 class Range(unittest.TestCase):
     def setUp(self):
         self.tmpdir = self.mktemp()
         os.mkdir(self.tmpdir)
         name = os.path.join(self.tmpdir, 'junk')
-        f = open(name, 'w')
-        f.write(800 * '0123456789')
-        f.close()
+        with open(name, 'w') as f:
+            f.write(800 * '0123456789')
         self.file = static.File(name)
         self.request = testutil.FakeRequest()
 
@@ -35,7 +35,7 @@ class Range(unittest.TestCase):
     def testBodyContent(self):
         self.request.requestHeaders.setRawHeaders('range', ['bytes=0-1999'])
         return deferredRender(self.file, self.request).addCallback(
-            lambda r: self.assertEqual(r.v, 200 * '0123456789'))
+            lambda r: self.assertEqual(r.v, 200 * b'0123456789'))
 
     def testContentLength(self):
         """Content-Length of a request is correct."""
@@ -60,7 +60,7 @@ class Range(unittest.TestCase):
     def testBodyContent_offset(self):
         self.request.requestHeaders.setRawHeaders('range', ['bytes=3-10'])
         return deferredRender(self.file, self.request).addCallback(
-            lambda r: self.assertEqual(r.v, '34567890'))
+            lambda r: self.assertEqual(r.v, b'34567890'))
 
     def testContentLength_offset(self):
         """Content-Length of a request is correct."""
@@ -85,7 +85,7 @@ class Range(unittest.TestCase):
     def testBodyContent_end(self):
         self.request.requestHeaders.setRawHeaders('range', ['bytes=7991-7999'])
         return deferredRender(self.file, self.request).addCallback(
-            lambda r: self.assertEqual(r.v, '123456789'))
+            lambda r: self.assertEqual(r.v, b'123456789'))
 
     def testContentLength_end(self):
         self.request.requestHeaders.setRawHeaders('range', ['bytes=7991-7999'])
@@ -108,7 +108,7 @@ class Range(unittest.TestCase):
     def testBodyContent_openEnd(self):
         self.request.requestHeaders.setRawHeaders('range', ['bytes=7991-'])
         return deferredRender(self.file, self.request).addCallback(
-            lambda r: self.assertEqual(r.v, '123456789'))
+            lambda r: self.assertEqual(r.v, b'123456789'))
 
     def testContentLength_openEnd(self):
         self.request.requestHeaders.setRawHeaders('range', ['bytes=7991-'])
@@ -131,7 +131,7 @@ class Range(unittest.TestCase):
     def testBodyContent_fullRange(self):
         self.request.requestHeaders.setRawHeaders('range', ['bytes=0-'])
         return deferredRender(self.file, self.request).addCallback(
-            lambda r: self.assertEqual(r.v, 800 * '0123456789'))
+            lambda r: self.assertEqual(r.v, 800 * b'0123456789'))
 
     def testContentLength_fullRange(self):
         self.request.requestHeaders.setRawHeaders('range', ['bytes=0-'])

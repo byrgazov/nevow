@@ -229,6 +229,7 @@ nevow.flat.flatstan.BooleanSerializer             builtins.bool
 nevow.flat.flatstan.ListSerializer                builtins.list
 nevow.flat.flatstan.StringCastSerializer          builtins.dict
 nevow.flat.flatstan.ListSerializer                builtins.tuple
+nevow.flat.flatstan.ListSerializer                types.GeneratorType
 nevow.flat.flatstan.FunctionSerializer            builtins.type  # @ex: tag(...render=str) -> type(str) -> <class 'type'>
 nevow.flat.flatstan.FunctionSerializer            builtins.function
 nevow.flat.flatstan.MethodSerializer              types.MethodType
