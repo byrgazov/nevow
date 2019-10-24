@@ -56,7 +56,6 @@ def renderResource(uri, notFoundHandler=None):
 
 
 class Test404(testutil.TestCase):
-
     def test_standard404(self):
         """Test the standard 404 handler.
         """
@@ -67,16 +66,15 @@ class Test404(testutil.TestCase):
                 (code, html) = xxx_todo_changeme
                 self.assertEqual(rend.FourOhFour.notFound, html)
                 self.assertEqual(code, 404)
-            return renderResource('/foo').addCallback(morelater)
-        return getResource(root, '/foo').addCallback(later)
+            return renderResource(b'/foo').addCallback(morelater)
+        return getResource(root, b'/foo').addCallback(later)
 
     def test_remembered404Handler(self):
         def later(xxx_todo_changeme1):
             (code, html) = xxx_todo_changeme1
             self.assertEqual(html, NotFoundHandler.html)
             self.assertEqual(code, 404)
-
-        return renderResource('/foo', notFoundHandler=NotFoundHandler()).addCallback(later)
+        return renderResource(b'/foo', notFoundHandler=NotFoundHandler()).addCallback(later)
 
     def test_keyErroringNotFoundHandler(self):
         def later(xxx_todo_changeme2):
@@ -85,5 +83,4 @@ class Test404(testutil.TestCase):
             self.assertEqual(code, 404)
             fe = self.flushLoggedErrors(BrokenException)
             self.assertEqual(len(fe), 1)
-        return renderResource('/foo', notFoundHandler=BadNotFoundHandler()).addCallback(later)
-
+        return renderResource(b'/foo', notFoundHandler=BadNotFoundHandler()).addCallback(later)

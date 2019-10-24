@@ -6,6 +6,7 @@ Tests for parts of L{nevow.loaders}.
 """
 
 from twisted.internet import defer
+from twisted.python import compat
 
 from nevow import context
 from nevow import flat
@@ -37,26 +38,22 @@ def setContent(name, content):
 
 
 class TestHTMLRenderer(testutil.TestCase):
-    
-    '''Test basic rendering behaviour'''
+    """Test basic rendering behaviour"""
 
     xhtml = '''<html><head><title>Test</title></head><body><p>Hello!</p></body></html>'''
 
     def test_stringTemplate(self):
         r = rend.Page(docFactory=loaders.htmlstr(self.xhtml))
-        return deferredRender(r).addCallback(
-            lambda result: self.assertEqual(result, self.xhtml))
+        return deferredRender(r).addCallback(self.assertEqual, compat.networkString(self.xhtml))
 
     def test_diskTemplate(self):
         temp = self.mktemp()
         setContent(temp, self.xhtml)
         r = rend.Page(docFactory=loaders.htmlfile(temp))
-        return deferredRender(r).addCallback(
-            lambda result: self.assertEqual(result, self.xhtml))
+        return deferredRender(r).addCallback(self.assertEqual, compat.networkString(self.xhtml))
 
 
 class TestStandardRenderers(testutil.TestCase):
-
     def test_diskTemplate(self):
         temp = self.mktemp()
         setContent(temp, """<html>
@@ -99,11 +96,8 @@ class TestStandardRenderers(testutil.TestCase):
 
         tr = TemplateRenderer(docFactory=loaders.htmlfile(temp))
 
-        return deferredRender(tr).addCallback(
-            lambda result: self.assertEqual(
-            result,
-            '<html><head><title>THE TITLE</title></head><body><h3>THE HEADER</h3>SOME DUMMY TEXT</body></html>'
-            ))
+        return deferredRender(tr)\
+            .addCallback(self.assertEqual, b'<html><head><title>THE TITLE</title></head><body><h3>THE HEADER</h3>SOME DUMMY TEXT</body></html>')
 
     def test_sequence(self):
         """Test case provided by mg
@@ -117,12 +111,8 @@ class TestStandardRenderers(testutil.TestCase):
 
         tr = TemplateRenderer(docFactory=loaders.htmlfile(temp))
 
-        return deferredRender(tr).addCallback(
-            lambda result:
-            self.assertEqual(
-            result, '<ol><li>one</li><li>two</li><li>three</li></ol>',
-            "Whoops. We didn't get what we expected!"
-            ))
+        return deferredRender(tr)\
+            .addCallback(self.assertEqual, b'<ol><li>one</li><li>two</li><li>three</li></ol>')
 
     def test_sequence2(self):
         """Test case provided by radix
@@ -136,13 +126,8 @@ class TestStandardRenderers(testutil.TestCase):
 
         tr = TemplateRenderer(docFactory=loaders.htmlfile(temp))
 
-        return deferredRender(tr).addCallback(
-            lambda result:
-            self.assertEqual(
-            result, '<ol><li><span>one</span></li><li><span>two</span></li><li><span>three</span></li></ol>',
-            "Whoops. We didn't get what we expected!"
-            ))
-
+        return deferredRender(tr)\
+            .addCallback(self.assertEqual, b'<ol><li><span>one</span></li><li><span>two</span></li><li><span>three</span></li></ol>')
 
     def test_slots(self):
         """test case provided by mg! thanks
@@ -153,7 +138,7 @@ class TestStandardRenderers(testutil.TestCase):
         <tr><td><nevow:slot name="1" /></td><td><nevow:slot name="2" /></td></tr>
         <tr><td><nevow:slot name="3" /></td><td><nevow:slot name="4" /></td></tr>
         </table>""")
-    
+
         class Renderer(rend.Page):
             def data_aDict(self,context,data):
                 return {'1':'one','2':'two','3':'three','4':'four'}
@@ -162,20 +147,16 @@ class TestStandardRenderers(testutil.TestCase):
                     context.fillSlots(name, value)
                 return context.tag
 
-        return deferredRender(Renderer(docFactory=loaders.htmlfile(temp))).addCallback(
-            lambda result:
-            self.assertEqual(
-            result,
-            "<table><tr><td>one</td><td>two</td></tr><tr><td>three</td><td>four</td></tr></table>",
-            "Whoops. We didn't get what we expected!"))
+        return deferredRender(Renderer(docFactory=loaders.htmlfile(temp)))\
+            .addCallback(self.assertEqual, b"<table><tr><td>one</td><td>two</td></tr><tr><td>three</td><td>four</td></tr></table>")
 
     def test_patterns(self):
         temp = self.mktemp()
         setContent(temp, """<span nevow:render="foo">
-			<span nevow:pattern="one">ONE</span>
-			<span nevow:pattern="two">TWO</span>
-			<span nevow:pattern="three">THREE</span>
-		</span>""")
+            <span nevow:pattern="one">ONE</span>
+            <span nevow:pattern="two">TWO</span>
+            <span nevow:pattern="three">THREE</span>
+        </span>""")
 
         class Mine(rend.Page):
             def render_foo(self, context, data):
@@ -183,39 +164,39 @@ class TestStandardRenderers(testutil.TestCase):
 
         return defer.DeferredList([
             deferredRender(Mine("one", docFactory=loaders.htmlfile(temp))).addCallback(
-            lambda result: self.assertEqual(result, '<span>ONE</span>')),
+            lambda result: self.assertEqual(result, b'<span>ONE</span>')),
             deferredRender(Mine("two", docFactory=loaders.htmlfile(temp))).addCallback(
-            lambda result: self.assertEqual(result, '<span>TWO</span>')),
+            lambda result: self.assertEqual(result, b'<span>TWO</span>')),
             deferredRender(Mine("three", docFactory=loaders.htmlfile(temp))).addCallback(
-            lambda result: self.assertEqual(result, '<span>THREE</span>'))
+            lambda result: self.assertEqual(result, b'<span>THREE</span>'))
             ], fireOnOneErrback=True)
-
 
 
 class TestSubclassAsRenderAndDataFactory(testutil.TestCase):
     def test_rendererSubclass(self):
         from nevow import tags
+
         class Subclass(rend.Page):
             docFactory = loaders.stan(tags.html[
-                tags.div(data=tags.directive("hello"))[
-                    str
-                ],
+                tags.div(data=tags.directive("hello"))[str],
                 tags.span(render=tags.directive("world"))
             ])
+
             def data_hello(self, context, data):
                 self.helloCalled = True
                 return "hello"
-    
+
             def render_world(self, context, data):
                 return "world"
 
         sr = Subclass()
         D = deferredRender(sr)
+
         def after(result):
-            self.assertSubstring('hello', result)
-            self.assertSubstring('world', result)
-            self.assertEqual(result,
-                              "<html><div>hello</div>world</html>")
+            self.assertSubstring(b'hello', result)
+            self.assertSubstring(b'world', result)
+            self.assertEqual(result, b"<html><div>hello</div>world</html>")
+
         return D.addCallback(after)
 
 
@@ -225,7 +206,6 @@ class TestXmlFileWithSlots(testutil.TestCase):
         loaded"""
         template = '<p xmlns:nevow="http://nevow.com/ns/nevow/0.1"><nevow:slot name="foo">stuff</nevow:slot></p>'
         doc = loaders.xmlstr(template).load()
-
 
 
 class TestAttrReplacement(testutil.TestCase):
@@ -243,7 +223,6 @@ class TestAttrReplacement(testutil.TestCase):
         ctx.fillSlots('href', 'href')
         result = flat.flatten(precompiled, ctx)
         self.assertEqual(result, '<a href="href">label</a>')
-
 
     def testHTML(self):
         t = '<a href="#"><nevow:attr name="href">href</nevow:attr>label</a>'
