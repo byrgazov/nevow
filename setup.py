@@ -24,6 +24,7 @@ if __name__ == '__main__':
         version=versioneer.get_version(),
         cmdclass=versioneer.get_cmdclass(),
         packages=find_packages(),
+        py_modules=["twisted.plugins.nevow_widget"],
         include_package_data=True,
         author='Divmod, Inc.',
         author_email='support@divmod.org',

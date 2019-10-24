@@ -20,7 +20,7 @@ from nevow.url import here, URL
 from nevow.page import Element, renderer
 
 ATHENA_XMLNS_URI = "http://divmod.org/ns/athena/0.7"
-ATHENA_RECONNECT = "__athena_reconnect__"
+ATHENA_RECONNECT = b"__athena_reconnect__"
 
 expose = util.Expose(
     """
@@ -1733,14 +1733,12 @@ class _LiveMixin(_HasJSClass, _HasCSSModule):
         del children[0]
 
         self._structuredCache = {
-            'requiredModules': [(name, flat.flatten(url).decode('utf-8'))
-                                 for (name, url) in requiredModules],
-            'requiredCSSModules': [flat.flatten(url).decode('utf-8')
-                                    for url in requiredCSSModules],
+            'requiredModules'   : [(name, flat.flatten(url)) for (name, url) in requiredModules],
+            'requiredCSSModules': [flat.flatten(url) for url in requiredCSSModules],
             'class': self.jsClass,
-            'id': self._athenaID,
+            'id'   : self._athenaID,
             'initArguments': tuple(self.getInitialArguments()),
-            'markup': markup,
+            'markup'  : markup,
             'children': children}
         return self._structuredCache
 

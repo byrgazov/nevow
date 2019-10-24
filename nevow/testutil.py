@@ -105,7 +105,9 @@ class FakeRequest(Componentized):
 
         for key, value in (args or {}).items():
             assert type(key)   is bytes, (type(key),   key)
-            assert type(value) is bytes, (type(value), value)
+            assert type(value) is list,  (type(value), value)
+            for item in value:
+                assert type(item) is bytes, (type(item), item)
 
         Componentized.__init__(self)
         self.uri = uri

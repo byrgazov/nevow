@@ -1624,8 +1624,8 @@ class LivePageTests(unittest.TestCase, CSSModuleTestMixin):
         URL, and Nevow.Athena.bootstrap with the name of the client-side Page
         class to instantiate and the URL to instantiate it with.
         """
-        SEG = "'" + '"'
-        req = FakeRequest(uri='/' + SEG, currentSegments=[SEG])
+        SEG = b"'" + b'"'
+        req = FakeRequest(uri=b'/' + SEG, currentSegments=[SEG])
         ctx = WovenContext()
         ctx.remember(req, IRequest)
         self.page.clientID = 'asdf'
@@ -1646,7 +1646,7 @@ class LivePageTests(unittest.TestCase, CSSModuleTestMixin):
         clientID rather than a rendered version of its template when provided
         with a special __athena_reconnect__ parameter.
         """
-        req = FakeRequest(args={athena.ATHENA_RECONNECT: ["1"]})
+        req = FakeRequest(args={athena.ATHENA_RECONNECT: [b"1"]})
         ctx = WovenContext()
         ctx.remember(req, IRequest)
         string = self.page.renderHTTP(ctx)
