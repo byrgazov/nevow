@@ -220,6 +220,7 @@ nevow.flat.flatstan.CommentSerializer             nevow.stan.Comment
 nevow.flat.flatstan.XmlSerializer                 nevow.stan.xml
 nevow.flat.flatstan.RawSerializer                 nevow.stan.raw
 nevow.flat.flatstan.StringSerializer              builtins.str
+nevow.flat.flatstan.StringSerializer              builtins.bytes
 nevow.flat.flatstan.NoneWarningSerializer         builtins.NoneType
 nevow.flat.flatstan.StringCastSerializer          builtins.int
 nevow.flat.flatstan.StringCastSerializer          builtins.float

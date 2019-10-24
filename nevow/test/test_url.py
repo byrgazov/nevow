@@ -12,6 +12,8 @@ except ImportError:
 	from urllib import unquote, unquote_plus, quote
 	from urlparse import urlsplit
 
+from twisted.python import compat
+
 from nevow import context, url, inevow, util, loaders
 from nevow import tags
 from nevow.testutil import TestCase, FakeRequest
@@ -20,7 +22,7 @@ from nevow.flat import flatten
 theurl = "http://www.foo.com:80/a/nice/path/?zot=23&zut"
 
 # RFC1808 relative tests. Not all of these pass yet.
-rfc1808_relative_link_base='http://a/b/c/d;p?q#f'
+rfc1808_relative_link_base = 'http://a/b/c/d;p?q#f'
 rfc1808_relative_link_tests = [
     # "Normal"
     ('g:h', 'g:h'),
@@ -110,30 +112,30 @@ class TestURL(TestCase):
             "http://example.com/foo!%40%24bar?b!%40z=123",
             "http://localhost/asd?a=asd%20sdf%2F345",
             "http://localhost/#%7F",
-            )
+        )
+
         for test in tests:
             result = str(url.URL.fromString(test))
             self.assertEqual(test, result)
 
     def test_fromRequest(self):
-        request = FakeRequest(uri='/a/nice/path/?zot=23&zut',
-                              currentSegments=["a", "nice", "path", ""],
+        request = FakeRequest(uri=b'/a/nice/path/?zot=23&zut',
+                              currentSegments=[b"a", b"nice", b"path", b""],
                               headers={'host': 'www.foo.com:80'})
         urlpath = url.URL.fromRequest(request)
         self.assertEqual(theurl, str(urlpath))
 
     def test_fromContext(self):
-
-        r = FakeRequest(uri='/a/b/c')
+        r = FakeRequest(uri=b'/a/b/c')
         urlpath = url.URL.fromContext(context.RequestContext(tag=r))
         self.assertEqual('http://localhost/', str(urlpath))
 
-        r.prepath = ['a']
+        r.prepath = [b'a']
         urlpath = url.URL.fromContext(context.RequestContext(tag=r))
         self.assertEqual('http://localhost/a', str(urlpath))
 
-        r = FakeRequest(uri='/a/b/c?foo=bar')
-        r.prepath = ['a','b']
+        r = FakeRequest(uri=b'/a/b/c?foo=bar')
+        r.prepath = [b'a', b'b']
         urlpath = url.URL.fromContext(context.RequestContext(tag=r))
         self.assertEqual('http://localhost/a/b?foo=bar', str(urlpath))
 
@@ -621,16 +623,13 @@ class Serialization(TestCase):
         tag.fillSlots('href', url.URL.fromString('http://localhost/').add('foo', 'bar').add('baz', 'spam'))
         self.assertEqual(flatten(tag), '<a href="http://localhost/?foo=bar&amp;baz=spam"></a>')
 
-
     def test_rfc1808(self):
         """Test the relative link resolving stuff I found in rfc1808 section 5.
         """
         base = url.URL.fromString(rfc1808_relative_link_base)
         for link, result in rfc1808_relative_link_tests:
-            #print link
             self.assertEqual(result, flatten(base.click(link)))
-    test_rfc1808.todo = 'Many of these fail miserably at the moment; often with a / where there shouldn\'t be'
-
+    test_rfc1808.skip = 'Many of these fail miserably at the moment; often with a / where there shouldn\'t be'
 
     def test_unicode(self):
         """
@@ -639,8 +638,7 @@ class Serialization(TestCase):
         """
         iri = u'http://localhost/expos\xe9?doppelg\xe4nger=Bryan O\u2019Sullivan#r\xe9sum\xe9'
         uri = b'http://localhost/expos%C3%A9?doppelg%C3%A4nger=Bryan%20O%E2%80%99Sullivan#r%C3%A9sum%C3%A9'
-        self.assertEqual(flatten(url.URL.fromString(iri)), uri)
-
+        self.assertEqual(compat.networkString(flatten(url.URL.fromString(iri))), uri)
 
 
 class RedirectResource(TestCase):
@@ -655,7 +653,7 @@ class RedirectResource(TestCase):
 
 
     def test_urlRedirect(self):
-        u = "http://localhost/"
+        u = b"http://localhost/"
         D = self.renderResource(url.URL.fromString(u))
         def after(xxx_todo_changeme):
             (html, redirected_to) = xxx_todo_changeme
@@ -668,8 +666,8 @@ class RedirectResource(TestCase):
         D = self.renderResource(url.URL.fromString("http://localhost/").child('child').add('foo', 'bar'))
         def after(xxx_todo_changeme1):
             (html, redirected_to) = xxx_todo_changeme1
-            self.assertIn("http://localhost/child?foo=bar", html)
-            self.assertEqual("http://localhost/child?foo=bar", redirected_to)
+            self.assertIn(b"http://localhost/child?foo=bar", html)
+            self.assertEqual(b"http://localhost/child?foo=bar", redirected_to)
         return D.addCallback(after)
 
 
@@ -680,8 +678,8 @@ class RedirectResource(TestCase):
             )
         def after(xxx_todo_changeme2):
             (html, redirected_to) = xxx_todo_changeme2
-            self.assertIn("http://localhost/child?foo=bar", html)
-            self.assertEqual("http://localhost/child?foo=bar", redirected_to)
+            self.assertIn(b"http://localhost/child?foo=bar", html)
+            self.assertEqual(b"http://localhost/child?foo=bar", redirected_to)
         return D.addCallback(after)
 
 
@@ -689,7 +687,7 @@ class RedirectResource(TestCase):
         D = self.renderResource(url.here.child(util.succeed('child')).add('foo',util.succeed('bar')))
         def after(xxx_todo_changeme3):
             (html, redirected_to) = xxx_todo_changeme3
-            self.assertIn("http://localhost/child?foo=bar", html)
-            self.assertEqual("http://localhost/child?foo=bar", redirected_to)
+            self.assertIn(b"http://localhost/child?foo=bar", html)
+            self.assertEqual(b"http://localhost/child?foo=bar", redirected_to)
         return D.addCallback(after)
 

@@ -24,6 +24,10 @@ from nevow.stan import raw
 from nevow.flat import serialize
 from nevow.context import WovenContext
 
+
+default_url_context = WovenContext(inURL=True)
+
+
 def _uqf(query):
     for x in query.split('&'):
         if '=' in x:
@@ -64,27 +68,26 @@ class URL(object):
     """
 
     def __init__(self, scheme='http', netloc='localhost', pathsegs=None, querysegs=None, fragment=None):
-
         self.scheme = scheme  # <str>
         self.netloc = netloc  # <str>
 
         if pathsegs is None:
             pathsegs = ['']
-        else:
-            # @xxx: [bw]
-            for item in pathsegs:
-                assert type(item) is not bytes, pathsegs
+#       else:
+#           # @xxx: [bw]
+#           for item in pathsegs:
+#               assert type(item) is not bytes, pathsegs
 
-        self._qpathlist = pathsegs   # [<str> | <xml>]
+        self._qpathlist = pathsegs   # [<serializable>]
 
         if querysegs is None:
             querysegs = []
-        else:
-            # @xxx: [bw]
-            for item in querysegs:
-                assert type(item) is not str, querysegs
+#       else:
+#           # @xxx: [bw]
+#           for item in querysegs:
+#               assert type(item) is not str, querysegs
 
-        self._querylist = querysegs  # [<str>]
+        self._querylist = querysegs   # [(<str>, <str> | None)]
 
         if fragment is None:
             fragment = ''
@@ -98,12 +101,25 @@ class URL(object):
                     # It is this particular set in order to match that used by
                     # nevow.flat.flatstan.StringSerializer, so that url.path
                     # will give something which is contained by flatten(url).
-                    quote(seg, safe="-_.!*'()") for seg in self._qpathlist])
+                    quote(seg, safe=";-_.!*'()") for seg in self._qpathlist])
         doc = """
         The path portion of the URL.
         """
         return get, None, None, doc
     path = property(*path())
+
+    def __str__(self):
+        return str(flat.flatten(self))
+
+    def __repr__(self):
+        return (
+            '%s(scheme=%r, netloc=%r, pathsegs=%r, querysegs=%r, fragment=%r)'
+            % (self.__class__,
+               self.scheme,
+               self.netloc,
+               self._qpathlist,
+               self._querylist,
+               self.fragment))
 
     def __cmp__(self, other):
         raise NotImplementedError
@@ -112,6 +128,7 @@ class URL(object):
         if not isinstance(other, self.__class__):
             return NotImplemented
         for attr in ['scheme', 'netloc', '_qpathlist', '_querylist', 'fragment']:
+            # @todo: [bw] (?) привести к единому виду (сериализовать)
             if getattr(self, attr) != getattr(other, attr):
                 return False
         return True
@@ -126,10 +143,10 @@ class URL(object):
         # keys.
         return hash(str(self))
 
-    query = property(
-        lambda self: [y is None and x or '='.join((x,y))
-            for (x,y) in self._querylist]
-        )
+    query = property(lambda self: [
+        key if value is None else '='.join((key, value))
+        for (key, value) in self._querylist
+    ])
 
     def _pathMod(self, newpathsegs, newqueryparts):
         return self.cloneURL(self.scheme,
@@ -148,13 +165,18 @@ class URL(object):
     ## class methods used to build URL objects ##
 
     def fromString(klass, st):
-        st = compat.nativeString(st)
+#       st = compat.nativeString(st)
+        if isinstance(st, bytes):
+            st = st.decode('ascii')  # @xxx: [bw] ???
+
         scheme, netloc, path, query, fragment = urlsplit(st)
-        u = klass(
+
+        return klass(
             scheme, netloc,
             [unquote(seg) for seg in path.split('/')[1:]],
-            unquerify(query), unquote(fragment))
-        return u
+            unquerify(query),
+            unquote(fragment)
+        )
     fromString = classmethod(fromString)
 
     def fromRequest(klass, request):
@@ -198,6 +220,7 @@ class URL(object):
 
     def child(self, path):
         """Construct a url where the given path segment is a child of this url"""
+#       assert type(path) is not bytes, path  # @xxx: [bw]
         l = self.pathList()
         if l[-1] == '':
             l[-1] = path
@@ -265,6 +288,7 @@ class URL(object):
         Return a path which is the URL where a browser would presumably
         take you if you clicked on a link with an 'href' as given.
         """
+
         scheme, netloc, path, query, fragment = urlsplit(href)
 
         if (scheme, netloc, path, query, fragment) == ('', '', '', '', ''):
@@ -275,30 +299,31 @@ class URL(object):
         if scheme:
             if path and path[0] == '/':
                 path = path[1:]
-            return self.cloneURL(
-                scheme, netloc, list(map(raw, path.split('/'))), query, fragment)
-        else:
-            scheme = self.scheme
+            return self.cloneURL(scheme, netloc, list(map(raw, path.split('/'))), query, fragment)
+
+        scheme = self.scheme
 
         if not netloc:
             netloc = self.netloc
+
             if not path:
                 path = self.path
                 if not query:
                     query = self._querylist
                     if not fragment:
                         fragment = self.fragment
+
+            elif path[0] == '/':
+                path = path[1:]
+
             else:
-                if path[0] == '/':
-                    path = path[1:]
-                else:
-                    l = self.pathList()
-                    l[-1] = path
-                    path = '/'.join(l)
+                l = self.pathList()
+                l[-1] = path
+                path = '/'.join(l)
 
         path = normURLPath(path)
-        return self.cloneURL(
-            scheme, netloc, list(map(raw, path.split('/'))), query, fragment)
+
+        return self.cloneURL(scheme, netloc, list(map(raw, path.split('/'))), query, fragment)
 
     ## query manipulation ##
 
@@ -386,21 +411,6 @@ class URL(object):
         return self.cloneURL(
             self.scheme, self.netloc, self._qpathlist, self._querylist, anchor)
 
-    ## object protocol override ##
-
-    def __str__(self):
-        return str(flat.flatten(self))
-
-    def __repr__(self):
-        return (
-            '%s(scheme=%r, netloc=%r, pathsegs=%r, querysegs=%r, fragment=%r)'
-            % (self.__class__,
-               self.scheme,
-               self.netloc,
-               self._qpathlist,
-               self._querylist,
-               self.fragment))
-
 
 def normURLPath(path):
     """
@@ -419,7 +429,7 @@ def normURLPath(path):
         else:
             segs.append(seg)
 
-    if pathSegs[-1:] in (['.'],['..']):
+    if pathSegs[-1:] in (['.'], ['..']):
         segs.append('')
 
     return '/'.join(segs)
@@ -531,32 +541,50 @@ def URLSerializer(original, context):
     Unicode path, query and fragment components are handled according to the
     IRI standard (RFC 3987).
     """
+
     urlContext = WovenContext(parent=context, precompile=context.precompile, inURL=True)
+
+    # @todo: handle Unicode (see #2409)
+
     if original.scheme:
-        # TODO: handle Unicode (see #2409)
-        yield "%s://%s" % (original.scheme, original.netloc)
-    for pathsegment in original._qpathlist:
-        yield '/'
-        yield serialize(pathsegment, urlContext)
+        yield original.scheme + ':'
+
+    if original.netloc:
+        yield '//' + original.netloc
+
+    path = original._qpathlist
+
+    if path:
+        if original.netloc:
+            yield '/'
+
+        yield serialize(path[0], urlContext)
+
+        for pathsegment in path[1:]:
+            yield '/'
+            yield serialize(pathsegment, urlContext)
+
     query = original._querylist
+
     if query:
         yield '?'
         first = True
+
         for key, value in query:
             if not first:
                 # xhtml can't handle unescaped '&'
-                if context.isAttrib is True:
-                    yield '&amp;'
-                else:
-                    yield '&'
+                yield '&amp;' if context.isAttrib else '&'
             else:
                 first = False
+
             yield serialize(key, urlContext)
+
             if value is not None:
                 yield '='
                 yield serialize(value, urlContext)
+
     if original.fragment:
-        yield "#"
+        yield '#'
         yield serialize(original.fragment, urlContext)
 
 

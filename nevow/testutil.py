@@ -109,13 +109,16 @@ class FakeRequest(Componentized):
 
         Componentized.__init__(self)
         self.uri = uri
+
         if not uri.startswith(b'/'):
             raise ValueError('uri must be relative with absolute path')
+
         self.path = uri
         self.prepath = []
         postpath = uri.split(b'?')[0]
         assert postpath.startswith(b'/')
         self.postpath = postpath[1:].split(b'/')
+
         if currentSegments is not None:
             for seg in currentSegments:
                 assert type(seg) is bytes, (type(seg), seg)
@@ -123,6 +126,7 @@ class FakeRequest(Componentized):
                 self.prepath.append(self.postpath.pop(0))
         else:
             self.prepath.append(b'')
+
         self.responseHeaders = Headers()
         self.args = args or {}  # @todo: assert keys/values is bytes
         self.sess = FakeSession(avatar)
@@ -205,8 +209,9 @@ class FakeRequest(Componentized):
 
         @rtype: C{str}.
         """
-        return b'http://%s/%s' % (compat.networkString(self.getHeader('host') or 'localhost'),
-                                 b'/'.join(self.prepath))
+        return b'http://%s/%s' % (
+            compat.networkString(self.getHeader('host') or 'localhost'),
+            b'/'.join(self.prepath))
 
     def getClientIP(self):
         return b'127.0.0.1'
