@@ -87,8 +87,8 @@ def clean(o):
 
 def load(S):
     for line in S.split('\n'):
-        line = line.strip()
-        if line and not line.startswith('#'):
+        line = line.split('#', 1)[0].strip()
+        if line:
             (a, o, i) = line.split()
             registerAdapter(_namedAnyWithBuiltinTranslation(a),
                             _namedAnyWithBuiltinTranslation(clean(o)),
@@ -175,6 +175,7 @@ nevow.rend.defaultsFactory   nevow.context.RequestContext    formless.iformless.
 nevow.rend.errorsFactory   nevow.context.RequestContext    formless.iformless.IFormErrors
 nevow.rend.originalFactory  nevow.context.RequestContext   nevow.inevow.IRequest
 nevow.appserver.defaultExceptionHandlerFactory   nevow.context.SiteContext    nevow.inevow.ICanHandleException
+nevow.appserver.defaultExceptionHandlerFactory   nevow.context.WebContext     nevow.inevow.ICanHandleException  # @xxx: [bw] ?
 
 nevow.rend.originalFactory  nevow.context.PageContext   nevow.inevow.IRenderer
 nevow.rend.originalFactory  nevow.context.PageContext   nevow.inevow.IRendererFactory

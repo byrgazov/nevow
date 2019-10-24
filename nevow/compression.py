@@ -147,7 +147,7 @@ class CompressingRequestWrapper(_makeBase()):
         Finish off gzip stream.
         """
         if self._gzipFile is None:
-            self.write('')
+            self.write(b'')
         self._gzipFile.close()
         self.underlying.finishRequest(success)
 
@@ -189,10 +189,15 @@ class CompressingResourceWrapper(object):
         ctx.remember(req, IRequest)
 
         def _cbDoneRendering(html):
-            if isinstance(html, (str, bytes)):
+            if type(html) is bytes:
                 req.write(html)
                 req.finishRequest(True)
                 return errorMarker
+
+            # @todo: [bw] (?) str
+            if type(html) is str:
+                raise NotImplementedError
+
             return html
 
         return maybeDeferred(self.underlying.renderHTTP, ctx).addCallback(_cbDoneRendering)

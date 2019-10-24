@@ -81,7 +81,7 @@ class FakeRequest(Componentized):
     method = 'GET'
     code = http.OK
     deferred = None
-    accumulator = ''
+    accumulator = b''
     _appRootURL = None
 
     def __init__(self, headers=None, args=None, avatar=None,
@@ -171,16 +171,16 @@ class FakeRequest(Componentized):
         return get,
     v = property(*v())
 
-    def write(self, bytes):
+    def write(self, data):
         """
         Accumulate the given bytes as part of the response body.
 
-        @type bytes: C{str}
+        @type data: C{bytes}
         """
-        self.accumulator += bytes
-
+        self.accumulator += data
 
     finished = False
+
     def finishRequest(self, success):
         self.finished = True
 
@@ -387,8 +387,7 @@ class FragmentWrapper(athena.LivePage):
         return self.f
 
 
-def renderLivePage(res, topLevelContext=context.WebContext,
-                   reqFactory=FakeRequest):
+def renderLivePage(res, topLevelContext=context.WebContext, reqFactory=FakeRequest):
     """
     Render the given LivePage resource, performing LivePage-specific cleanup.
     Return a Deferred which fires when it has rendered.
@@ -397,8 +396,7 @@ def renderLivePage(res, topLevelContext=context.WebContext,
     return D.addCallback(lambda x: (res._messageDeliverer.close(), x)[1])
 
 
-def renderPage(res, topLevelContext=context.WebContext,
-               reqFactory=FakeRequest):
+def renderPage(res, topLevelContext=context.WebContext, reqFactory=FakeRequest):
     """
     Render the given resource.  Return a Deferred which fires when it has
     rendered.
@@ -428,18 +426,17 @@ class TestProtocolLineReceiverServer(LineReceiver):
     Subunit protocol which is also a Twisted LineReceiver so that it
     includes line buffering logic.
     """
-    delimiter = '\n'
+    delimiter = b'\n'
 
     def __init__(self, proto):
         self.proto = proto
-
 
     def lineReceived(self, line):
         """
         Forward the line on to the subunit protocol's lineReceived method,
         which expects it to be newline terminated.
         """
-        self.proto.lineReceived(line + '\n')
+        self.proto.lineReceived(line + b'\n')
 
 
 

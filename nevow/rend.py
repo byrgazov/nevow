@@ -155,21 +155,32 @@ class FreeformChildMixin:
         bindingName = None
 
         name = segments[0]
-        if isinstance(name, bytes):
-            name = name.decode('utf-8')
-        if name.startswith('freeform_post!'):
-            configurableName, bindingName = name.split('!')[1:3]
-        elif name.startswith('freeform-action-post!'):
-            configurableName, request.args['freeform-actee'] = name.split('!')[1:3]
-            bindingName = request.args['freeform-action'][0]
+
+#       if isinstance(name, bytes):
+#           name = name.decode('utf-8')
+
+        if name.startswith(b'freeform_post!'):
+            configurableName, bindingName = name.split(b'!')[1:3]
+
+        elif name.startswith(b'freeform-action-post!'):
+            configurableName, request.args[b'freeform-actee'] = name.split(b'!')[1:3]
+            bindingName = request.args[b'freeform-action'][0]
+
         if bindingName:
+            configurableName = compat.nativeString(configurableName)  # @xxx: [bw] charset
+            bindingName      = compat.nativeString(bindingName)       # @xxx: [bw] charset
+
             ctx.remember(self, inevow.IResource)
             ctx.remember(request, inevow.IRequest)
+
             cf = iformless.IConfigurableFactory(self)
+
             def checkC(c):
                 if c is not None:
                     return self.webFormPost(request, self, c, ctx, bindingName, request.args)
+
             return util.maybeDeferred(cf.locateConfigurable, ctx, configurableName).addCallback(checkC)
+
         return NotFound
 
     def child_freeform_hand(self, ctx):
@@ -547,20 +558,27 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
         self.rememberStuff(ctx)
 
         def finishRequest():
-            carryover = request.args.get('_nevow_carryover_', [None])[0]
+            carryover = request.args.get(b'_nevow_carryover_', [None])[0]
+
             if carryover is not None and carryover in _CARRYOVER:
                 del _CARRYOVER[carryover]
+
             if self.afterRender is not None:
                 return util.maybeDeferred(self.afterRender,ctx)
 
         if self.buffered:
             io = StringIO()
             writer = io.write
+
             def finisher(result):
-                request.write(io.getvalue())
+                # @todo: [bw] charset
+                request.write(compat.networkString(io.getvalue()))
                 return util.maybeDeferred(finishRequest).addCallback(lambda r: result)
+
         else:
-            writer = request.write
+            # @todo: [bw] charset
+            writer = lambda data: request.write(compat.networkString(data))
+
             def finisher(result):
                 return util.maybeDeferred(finishRequest).addCallback(lambda r: result)
 
@@ -667,7 +685,7 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
                     refpath = url.URL.fromString(ref)
 
             if hand is not None or aspects.get(iformless.IFormErrors) is not None:
-                magicCookie = '%s%s%s' % (now(),request.getClientIP(),random.random())
+                magicCookie = '%s%s%s' % (now(), request.getClientIP(), random.random())
                 refpath = refpath.replace('_nevow_carryover_', magicCookie)
                 _CARRYOVER[magicCookie] = C = tpc.Componentized()
                 for k, v in aspects.items():

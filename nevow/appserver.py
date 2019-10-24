@@ -118,16 +118,15 @@ class UninformativeExceptionHandler:
 
 @implementer(inevow.ICanHandleException)
 class DefaultExceptionHandler:
-
     def renderHTTP_exception(self, ctx, reason):
         log.err(reason)
         request = inevow.IRequest(ctx)
         request.setResponseCode(http.INTERNAL_SERVER_ERROR)
-        request.write("<html><head><title>Exception</title></head><body>")
+        request.write(b"<html><head><title>Exception</title></head><body>")
         from nevow import failure
         result = failure.formatFailure(reason)
-        request.write(''.join(flat.flatten(result)))
-        request.write("</body></html>")
+        request.write(compat.networkString(''.join(flat.flatten(result))))  # @todo: [bw] charset
+        request.write(b"</body></html>")
 
         request.finishRequest( False )
 

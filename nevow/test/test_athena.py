@@ -5,12 +5,13 @@ import binascii
 from xml.dom.minidom import parseString
 
 from twisted.trial import unittest
-from twisted.python import util
 from twisted.internet.defer import Deferred
 from twisted.application.service import IServiceMaker
 from twisted.application.internet import TCPServer
 from twisted.python.reflect import qual
 from twisted.python.usage import UsageError
+from twisted.python import util
+from twisted.python import compat
 from twisted.plugin import IPlugin
 
 from nevow import athena, rend, tags, flat, loaders, url
@@ -591,6 +592,7 @@ class UtilitiesTests(unittest.TestCase):
         element.setFragmentParent(page)
 
         def _verifyRendering(result):
+            result = compat.nativeString(result)
             self.assertIn('<input id="athenaid:%s-foo"' % (element._athenaID,), result)
             self.assertIn('<label for="athenaid:%s-foo"' % (element._athenaID,), result)
             self.assertIn('<th headers=""', result)
@@ -668,7 +670,7 @@ class UtilitiesTests(unittest.TestCase):
         d = renderPage(page, reqFactory=lambda: req)
         d.addCallback(
             self.assertEqual,
-            flat.flatten(page.unsupportedBrowserLoader))
+            compat.networkString(flat.flatten(page.unsupportedBrowserLoader)))
         return d
 
 
@@ -1478,7 +1480,7 @@ class LiveMixinTestsMixin(CSSModuleTestMixin):
                 page.getStylesheetStan(
                     [page.getCSSModuleURL('TestCSSModuleDependencies.Dependee'),
                      page.getCSSModuleURL('TestCSSModuleDependencies.Dependor')]))
-            self.assertIn(expected, result)
+            self.assertIn(expected, compat.nativeString(result))
         D.addCallback(cbRendered)
         return D
 
@@ -1505,7 +1507,7 @@ class LiveMixinTestsMixin(CSSModuleTestMixin):
                 page.getStylesheetStan(
                     [page.getCSSModuleURL('TestCSSModuleDependencies.Dependee'),
                      page.getCSSModuleURL('TestCSSModuleDependencies.Dependor')]))
-            self.assertIn(expected, result)
+            self.assertIn(expected, compat.nativeString(result))
         D.addCallback(cbRendered)
         return D
 
@@ -1930,8 +1932,9 @@ class WidgetSubcommandTests(unittest.TestCase):
         element = DummyLiveElement()
         element.jsClass = 'Dummy.ClassName'
         element.docFactory = stan('the element')
+
         page = ElementRenderingLivePage(element)
-        renderDeferred = renderLivePage(page)
+
         def cbRendered(result):
             document = parseString(result)
             titles = document.getElementsByTagName('title')
@@ -1940,8 +1943,9 @@ class WidgetSubcommandTests(unittest.TestCase):
             divs = document.getElementsByTagName('div')
             self.assertEqual(len(divs), 1)
             self.assertEqual(divs[0].firstChild.nodeValue, 'the element')
-        renderDeferred.addCallback(cbRendered)
-        return renderDeferred
+
+        return renderLivePage(page)\
+            .addCallback(cbRendered)
 
 
     def test_multipleRendersMultipleWidgets(self):

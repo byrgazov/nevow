@@ -83,7 +83,7 @@ def activeChannel(request):
     header and flushing all headers immediately.
     """
     request.setHeader("Connection", "close")
-    request.write('')
+    request.write(b'')
 
 
 @implementer(inevow.IResource)
@@ -1243,15 +1243,18 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         @raise RuntimeError: if the page has already been rendered, or this
         page has not been given a factory.
         """
+
         if self._rendered:
             raise RuntimeError("Cannot render a LivePage more than once")
+
         if self.factory is None:
             raise RuntimeError("Cannot render a LivePage without a factory")
 
         self._rendered = True
         request = inevow.IRequest(ctx)
+
         if not self._supportedBrowser(request):
-            request.write(self.renderUnsupported(ctx))
+            request.write(compat.networkString(self.renderUnsupported(ctx)))  # @todo: [bw] charset
             return ''
 
         self._becomeLive(URL.fromString(flat.flatten(here, ctx)))
