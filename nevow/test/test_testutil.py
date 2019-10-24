@@ -23,7 +23,7 @@ class TestFakeRequest(TestCase):
     Bad tests for L{FakeRequest}.
 
     These tests verify that L{FakeRequest} has some behavior, but not that
-    that behavior is the same as the behavior of an actual request object. 
+    that behavior is the same as the behavior of an actual request object.
     In other words, these tests do not actually verify the fake.  They
     should be replaced with something which verifies that L{FakeRequest} and
     L{NevowRequest} actually have the same behavior.
@@ -40,8 +40,8 @@ class TestFakeRequest(TestCase):
         Verify that L{FakeRequest.prePathURL} returns the prepath of the
         requested URL.
         """
-        req = FakeRequest(currentSegments=['a'], uri='/a/b')
-        self.assertEqual(req.prePathURL(), 'http://localhost/a')
+        req = FakeRequest(currentSegments=[b'a'], uri=b'/a/b')
+        self.assertEqual(req.prePathURL(), b'http://localhost/a')
 
 
     def test_prePathURLHost(self):
@@ -49,10 +49,10 @@ class TestFakeRequest(TestCase):
         Verify that L{FakeRequest.prePathURL} will turn the C{Host} header of
         the request into the netloc of the returned URL, if it's present.
         """
-        req = FakeRequest(currentSegments=['a', 'b'],
-                          uri='/a/b/c/',
+        req = FakeRequest(currentSegments=[b'a', b'b'],
+                          uri=b'/a/b/c/',
                           headers={'host': 'foo.bar'})
-        self.assertEqual(req.prePathURL(), 'http://foo.bar/a/b')
+        self.assertEqual(req.prePathURL(), b'http://foo.bar/a/b')
 
 
     def test_getRootURL(self):
@@ -149,9 +149,8 @@ class TestFakeRequest(TestCase):
         """
         Test that the path attribute of a fake request is set.
         """
-        req = FakeRequest(uri='/foo')
-        self.assertEqual(req.path, '/foo')
-
+        req = FakeRequest(uri=b'/foo')
+        self.assertEqual(req.path, b'/foo')
 
 
 class JavaScriptTests(TestCase):

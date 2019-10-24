@@ -63,20 +63,33 @@ class URL(object):
     @ivar fragment: The fragment portion of the URL, decoded.
     """
 
-    def __init__(self, scheme='http', netloc='localhost', pathsegs=None,
-                 querysegs=None, fragment=None):
-        self.scheme = scheme
-        self.netloc = netloc
+    def __init__(self, scheme='http', netloc='localhost', pathsegs=None, querysegs=None, fragment=None):
+
+        self.scheme = scheme  # <str>
+        self.netloc = netloc  # <str>
+
         if pathsegs is None:
             pathsegs = ['']
-        self._qpathlist = pathsegs
+        else:
+            # @xxx: [bw]
+            for item in pathsegs:
+                assert type(item) is not bytes, pathsegs
+
+        self._qpathlist = pathsegs   # [<str> | <xml>]
+
         if querysegs is None:
             querysegs = []
-        self._querylist = querysegs
+        else:
+            # @xxx: [bw]
+            for item in querysegs:
+                assert type(item) is not str, querysegs
+
+        self._querylist = querysegs  # [<str>]
+
         if fragment is None:
             fragment = ''
-        self.fragment = fragment
 
+        self.fragment = fragment     # <str>
 
     def path():
         def get(self):
@@ -125,7 +138,6 @@ class URL(object):
                              newqueryparts,
                              self.fragment)
 
-
     def cloneURL(self, scheme, netloc, pathsegs, querysegs, fragment):
         """
         Make a new instance of C{self.__class__}, passing along the given
@@ -133,10 +145,10 @@ class URL(object):
         """
         return self.__class__(scheme, netloc, pathsegs, querysegs, fragment)
 
-
     ## class methods used to build URL objects ##
 
     def fromString(klass, st):
+        st = compat.nativeString(st)
         scheme, netloc, path, query, fragment = urlsplit(st)
         u = klass(
             scheme, netloc,
@@ -152,8 +164,8 @@ class URL(object):
         already been processed.
         """
         uri = request.prePathURL()
-        if '?' in request.uri:
-            uri += '?' + request.uri.split('?')[-1]
+        if b'?' in request.uri:
+            uri += b'?' + request.uri.split(b'?')[-1]
         return klass.fromString(uri)
     fromRequest = classmethod(fromRequest)
 
@@ -162,8 +174,8 @@ class URL(object):
         process.'''
         request = inevow.IRequest(context)
         uri = request.prePathURL()
-        if '?' in request.uri:
-            uri += '?' + request.uri.split('?')[-1]
+        if b'?' in request.uri:
+            uri += b'?' + request.uri.split(b'?')[-1]
         return klass.fromString(uri)
     fromContext = classmethod(fromContext)
 
@@ -185,8 +197,7 @@ class URL(object):
         return self._pathMod(l, self.queryList(0))
 
     def child(self, path):
-        """Construct a url where the given path segment is a child of this url
-        """
+        """Construct a url where the given path segment is a child of this url"""
         l = self.pathList()
         if l[-1] == '':
             l[-1] = path
@@ -638,5 +649,5 @@ class URLRedirectAdapter:
             # It might also be relative so resolve it against the current URL
             # and flatten it again.
             u = flat.flatten(URL.fromContext(ctx).click(u), ctx)
-            return redirectTo(bytes(u), inevow.IRequest(ctx))
+            return redirectTo(compat.networkString(u), inevow.IRequest(ctx))
         return flat.flattenFactory(self.original, ctx, bits.append, flattened)

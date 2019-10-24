@@ -25,7 +25,7 @@ class Base(TestCase):
         return lambda context, data: ""
 
     def setupContext(self, precompile=False, setupRequest=lambda r:r):
-        fr = setupRequest(FakeRequest(uri='/', currentSegments=['']))
+        fr = setupRequest(FakeRequest(uri=b'/', currentSegments=[b'']))
         ctx = context.RequestContext(tag=fr)
         ctx.remember(fr, inevow.IRequest)
         ctx.remember(None, inevow.IData)

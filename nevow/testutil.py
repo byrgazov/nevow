@@ -16,6 +16,7 @@ except ImportError:
 
 from twisted.python.log import msg
 from twisted.trial.unittest import TestCase as TrialTestCase
+from twisted.python import compat
 from twisted.python.components import Componentized
 from twisted.internet import defer
 from twisted.web import http
@@ -84,7 +85,7 @@ class FakeRequest(Componentized):
     _appRootURL = None
 
     def __init__(self, headers=None, args=None, avatar=None,
-                 uri='/', currentSegments=None, cookies=None,
+                 uri=b'/', currentSegments=None, cookies=None,
                  user="", password="", isSecure=False):
         """
         Create a FakeRequest instance.
@@ -99,23 +100,31 @@ class FakeRequest(Componentized):
         @param password: password (like in http auth)
         @param isSecure: whether this request represents an HTTPS url
         """
+
+        assert type(uri) is bytes, (type(uri), uri)
+
+        for key, value in (args or {}).items():
+            assert type(key)   is bytes, (type(key),   key)
+            assert type(value) is bytes, (type(value), value)
+
         Componentized.__init__(self)
         self.uri = uri
-        if not uri.startswith('/'):
+        if not uri.startswith(b'/'):
             raise ValueError('uri must be relative with absolute path')
         self.path = uri
         self.prepath = []
-        postpath = uri.split('?')[0]
-        assert postpath.startswith('/')
-        self.postpath = postpath[1:].split('/')
+        postpath = uri.split(b'?')[0]
+        assert postpath.startswith(b'/')
+        self.postpath = postpath[1:].split(b'/')
         if currentSegments is not None:
             for seg in currentSegments:
-                assert seg == self.postpath[0]
+                assert type(seg) is bytes, (type(seg), seg)
+                assert seg == self.postpath[0], (seg, self.postpath[0])
                 self.prepath.append(self.postpath.pop(0))
         else:
-            self.prepath.append('')
+            self.prepath.append(b'')
         self.responseHeaders = Headers()
-        self.args = args or {}
+        self.args = args or {}  # @todo: assert keys/values is bytes
         self.sess = FakeSession(avatar)
         self.site = FakeSite()
         self.requestHeaders = Headers()
@@ -196,11 +205,11 @@ class FakeRequest(Componentized):
 
         @rtype: C{str}.
         """
-        return 'http://%s/%s' % (self.getHeader('host') or 'localhost',
-                                 '/'.join(self.prepath))
+        return b'http://%s/%s' % (compat.networkString(self.getHeader('host') or 'localhost'),
+                                 b'/'.join(self.prepath))
 
     def getClientIP(self):
-        return '127.0.0.1'
+        return b'127.0.0.1'
 
     def addCookie(self, k, v, expires=None, domain=None, path=None, max_age=None, comment=None, secure=None):
         """

@@ -354,14 +354,14 @@ class HandleSegment(TestCase):
         I{postpath}, L{NevowSite.handleSegment} should silently not update
         I{prepath}.
         """
-        request = FakeRequest(currentSegments=('',))
+        request = FakeRequest(currentSegments=(b'',))
         context = RequestContext(tag=request)
         rootResource = Page()
         childResource = Page()
         site = NevowSite(rootResource)
         result = site.handleSegment(
             (childResource, ()), request, ('foo', 'bar'), context)
-        self.assertEqual(request.prepath, [''])
+        self.assertEqual(request.prepath, [b''])
         self.assertEqual(request.postpath, [])
 
 

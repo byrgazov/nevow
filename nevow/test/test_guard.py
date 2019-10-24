@@ -14,8 +14,8 @@ from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse, Allow
 from twisted.cred.portal import Portal, IRealm
 from twisted.cred.credentials import IUsernamePassword, IAnonymous
 from twisted.internet import address
-from twisted.python import compat
-from twisted.trial.unittest import TestCase
+from twisted.python   import compat
+from twisted.trial.unittest   import TestCase
 from twisted.web.http_headers import Headers
 
 from nevow import rend
@@ -44,12 +44,14 @@ class FakeHTTPChannel:
     # 'transport' attribute needs this
     def getPeer(self):
         return address.IPv4Address("TCP", "fake", 12345)
+
     def getHost(self):
         return address.IPv4Address("TCP", "fake", 80)
 
     def write(self, data):
         # print data
         pass
+
     def writeSequence(self, datas):
         for data in datas:
             self.write(data)
@@ -72,16 +74,16 @@ class FakeHTTPChannel:
 
     # Utility for testing.
 
-    def makeFakeRequest(self, path, username='',password='',
-                        requestClass=None):
+    def makeFakeRequest(self, path, username='', password='', requestClass=None):
+        assert type(path) is bytes, (type(path), path)
+        assert not username and not password, (username, password)
         if requestClass is None:
             requestClass = FakeHTTPRequest
         req = requestClass(self, queued=0)
         req.user = username
         req.password = password
         req.received_cookies.update(self.received_cookies)
-        print(path)
-        req.requestReceived(b"GET", path.encode('ascii'), b"HTTP/1.0")
+        req.requestReceived(b"GET", path, b"HTTP/1.0")
         return req
 
 
@@ -103,8 +105,7 @@ class FakeHTTPRequest(appserver.NevowRequest):
             nexturi = '/'.join(urlist)
         else:
             nexturi = L
-        return self._pchn.makeFakeRequest(nexturi,
-                                          requestClass=self.__class__)
+        return self._pchn.makeFakeRequest(compat.networkString(nexturi), requestClass=self.__class__)
 
     def followAllRedirects(self):
         R = self
@@ -131,9 +132,11 @@ class FakeHTTPRequest(appserver.NevowRequest):
     def processingFailed(self, fail):
         raise fail
 
+
 class FakeHTTPRequest_noCookies(FakeHTTPRequest):
     def addCookie(self, k, v, *args,**kw):
         pass
+
 
 class FakeHTTPRequest_forceSSL(FakeHTTPRequest):
     _forceSSL = True
@@ -152,10 +155,10 @@ class InspectfulPage(rend.Page):
     @ivar renders: A C{list} to which fields of the request will be appended
         when this page is rendered.
     """
+
     def __init__(self, renders):
         self.renders = renders
         rend.Page.__init__(self)
-
 
     def child_(self, context):
         """
@@ -164,19 +167,21 @@ class InspectfulPage(rend.Page):
         """
         return self
 
-
     def renderHTTP(self, context):
         request = inevow.IRequest(context)
+
         try:
             content = request.content.read()
         except ValueError:
             content = None
+
         self.renders.append((
                 request.args,
                 request.fields,
                 content,
                 request.method,
                 request.requestHeaders))
+
         return ''
 
 
@@ -239,6 +244,7 @@ class GuardTestSuper(TestCase):
         c.site = s
         return c
 
+
 def getGuard(channel):
     resource = channel.site.resource
     while isinstance(resource, ParentPage):
@@ -250,6 +256,7 @@ def getGuard(channel):
 class GetLoggedInAvatar(rend.Page):
     def child_(self, ctx):
         return self
+
     def renderHTTP(self, ctx):
         session = inevow.ISession(ctx)
         assert isinstance(session, guard.GuardSession)
@@ -259,7 +266,9 @@ class GetLoggedInAvatar(rend.Page):
 
 
 class GetLoggedInAnonymous(rend.Page):
-    def child_(self, ctx): return self
+    def child_(self, ctx):
+        return self
+
     def renderHTTP(self, ctx):
         raise RuntimeError("We weren't supposed to get here.")
 
@@ -269,25 +278,27 @@ class GetLoggedInRealm:
     def requestAvatar(self, avatarId, mind, *interfaces):
         if avatarId == ANONYMOUS:
             return inevow.IResource, GetLoggedInAnonymous(), lambda: None
-        else:
-            return inevow.IResource, GetLoggedInAvatar(), lambda: None
+        return inevow.IResource, GetLoggedInAvatar(), lambda: None
 
 
 class GuardTestFuncs:
     def createGuard(self, portal):
         if not self.guardPath:
             root = self.createSessionWrapper(portal)
+
         else:
             root = ParentPage('root')
-            cur = root
+            cur  = root
+
             for segment in self.guardPath[:-1]:
                 new = ParentPage(segment)
                 cur.putChild(segment, new)
                 cur = new
+
             cur.putChild(self.guardPath[-1],
                          self.createSessionWrapper(portal))
-        chan = self.createChannel(root)
-        return chan
+
+        return self.createChannel(root)
 
     def getGuardPath(self):
         """
@@ -295,9 +306,8 @@ class GuardTestFuncs:
         otherwise guaranteed to start with a slash and end with a non-slash.
         """
         if not self.guardPath:
-            return ''
-        else:
-            return '/' + '/'.join(self.guardPath)
+            return b''
+        return b'/' + b'/'.join(self.guardPath)
 
     def test_httpAuthInit(self):
         """
@@ -308,15 +318,15 @@ class GuardTestFuncs:
         """
         p = self.createPortal()
         chan = self.createGuard(p)
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
 
         # Make the request three times.  The same resource should come back
         # each time, and there should only ever be one session.
         for x in range(3):
-            req = chan.makeFakeRequest('%s/' % self.getGuardPath(), "test", "test")
-            self.assertEqual(req.written.getvalue(), "Yes")
+            req = chan.makeFakeRequest(b'%s/' % self.getGuardPath(), "test", "test")
+            self.assertEqual(req.written.getvalue(), b"Yes")
             self.assertEqual(len(self.sessions), 1)
-
+    test_httpAuthInit.skip = 'HTTP AUTH been dropped by schwabe'
 
     def test_sessionInit(self):
         """
@@ -332,30 +342,30 @@ class GuardTestFuncs:
 
         # The first thing that happens when we attempt to browse with no session
         # is a cookie being set and a redirect being issued to the session url
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath())
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath())
         self.assertEqual( len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
         # The redirect is set immediately and should have a path segment at the beginning matching our cookie
         self.assertTrue(req.responseHeaders.hasHeader('location'))
         cookie = list(req._cookieCache.values())[0][0]
 
         # The URL should have the cookie segment in it and the correct path segments at the end
-        self.assertEqual(req.responseHeaders.getRawHeaders('location')[0],
-            'http://fake.com%s/%s/xxx/yyy/' % (self.getGuardPath(), guard.SESSION_KEY+cookie, ))
+        self.assertEqual(
+            compat.networkString(req.responseHeaders.getRawHeaders('location')[0]),
+            b'http://fake.com%s/%s/xxx/yyy/' % (self.getGuardPath(), guard.SESSION_KEY+cookie, ))
 
         # Now, let's follow the redirect
         req = req.followRedirect()
         # Our session should now be set up and we will be redirected to our final destination
         self.assertEqual(
-            req.responseHeaders.getRawHeaders('location')[0].split('?')[0],
-            'http://fake.com%s/xxx/yyy/' % self.getGuardPath())
+            compat.networkString(req.responseHeaders.getRawHeaders('location')[0].split('?')[0]),
+            b'http://fake.com%s/xxx/yyy/' % self.getGuardPath())
 
         # Let's follow the redirect to the final page
         req = req.followRedirect()
         self.assertFalse(req.responseHeaders.hasHeader('location'))
 
         # We should have the final resource, which is an anonymous resource
-        self.assertEqual(req.written.getvalue(), "No")
-
+        self.assertEqual(req.written.getvalue(), b'No')
 
     def test_sessionInit_noCookies(self):
         """
@@ -372,55 +382,56 @@ class GuardTestFuncs:
 
         # The first thing that happens when we attempt to browse with no session
         # is a cookie being set and a redirect being issued to the session url
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath(), requestClass=FakeHTTPRequest_noCookies)
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath(), requestClass=FakeHTTPRequest_noCookies)
         # The redirect is set immediately and should have a path segment at the beginning matching our session id
         self.assertTrue(req.responseHeaders.hasHeader('location'))
 
         # The URL should have the session id segment in it and the correct path segments at the end
-        [location] = req.responseHeaders.getRawHeaders('location')
-        prefix = 'http://fake.com%s/%s' % (self.getGuardPath(), guard.SESSION_KEY)
-        suffix = '/xxx/yyy/'
+        [location] = map(compat.networkString, req.responseHeaders.getRawHeaders('location'))
+
+        prefix = b'http://fake.com%s/%s' % (self.getGuardPath(), guard.SESSION_KEY)
+        suffix = b'/xxx/yyy/'
+
         self.assertTrue(location.startswith(prefix))
         self.assertTrue(location.endswith(suffix))
+
         for c in location[len(prefix):-len(suffix)]:
-            self.assertTrue(c in '0123456789abcdef')
+            self.assertTrue(c in b'0123456789abcdef')
 
         # Now, let's follow the redirect
         req = req.followRedirect()
         self.assertFalse(req.responseHeaders.hasHeader('location'))
 
         # We should have the final resource, which is an anonymous resource
-        self.assertEqual(req.written.getvalue(), "No")
-
+        self.assertEqual(req.written.getvalue(), b'No')
 
     def testUsernamePassword(self):
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
         chan = self.createGuard(p)
 
         # Check the anonymous page
-        req = chan.makeFakeRequest('%s/' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), "No")
+        req = chan.makeFakeRequest(b'%s/' % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b'No')
 
         # Check the logged in page
-        req = chan.makeFakeRequest('%s/__login__/?username=test&password=test' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), "Yes")
+        req = chan.makeFakeRequest(b'%s/__login__/?username=test&password=test' % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b'Yes')
 
         # Log out
-        chan.makeFakeRequest("%s/__logout__" % self.getGuardPath()).followRedirect()
+        chan.makeFakeRequest(b'%s/__logout__' % self.getGuardPath()).followRedirect()
 
         # Get the anonymous page again
-        k = chan.makeFakeRequest("%s/" % self.getGuardPath())
-        self.assertEqual(k.written.getvalue(), "No")
-
+        k = chan.makeFakeRequest(b'%s/' % self.getGuardPath())
+        self.assertEqual(k.written.getvalue(), b'No')
 
     def testLoginWithNoSession(self):
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/__login__/?username=test&password=test' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), "Yes")
+        req = chan.makeFakeRequest(b'%s/__login__/?username=test&password=test' % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b"Yes")
 
 
     def test_sessionNegotiationSavesRequestParameters(self):
@@ -436,16 +447,15 @@ class GuardTestFuncs:
                 anonymousAvatarFactory=lambda: InspectfulPage(renders)))
         channel = self.createGuard(portal)
 
-        request = channel.makeFakeRequest(
-            '%s/?foo=1&bar=2' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(request.written.getvalue(), '')
-        self.assertEqual(
-            renders, [({'foo': ['1'], 'bar': ['2']},
-                       None,
-                       None,
-                       'GET',
-                       Headers({'host': ['fake.com']}))])
+        request = channel.makeFakeRequest(b'%s/?foo=1&bar=2' % self.getGuardPath()).followAllRedirects()
 
+        self.assertEqual(request.written.getvalue(), b'')
+        self.assertEqual(
+            renders, [({b'foo': [b'1'], b'bar': [b'2']},
+                       None,
+                       None,
+                       b'GET',
+                       Headers({'host': ['fake.com']}))])
 
     def test_loginRestoresRequestParameters(self):
         """
@@ -458,7 +468,7 @@ class GuardTestFuncs:
             lambda: SillyRealm(
                 authenticatedAvatarFactory=lambda: InspectfulPage(renders)))
         portal.registerChecker(
-            InMemoryUsernamePasswordDatabaseDontUse(test='test'),
+            InMemoryUsernamePasswordDatabaseDontUse(test=b'test'),
             IUsernamePassword)
         channel = self.createGuard(portal)
 
@@ -468,24 +478,23 @@ class GuardTestFuncs:
 
         # Pretend to be a resource before login which requires login and saves
         # request state.
-        request.session.args = {'foo': ['1'], 'bar': ['2']}
-        request.session.fields = None
-        request.session.method = 'GET'
+        request.session.args    = {b'foo': [b'1'], b'bar': [b'2']}
+        request.session.fields  = None
+        request.session.method  = b'GET'
         request.session.content = None
         request.session._requestHeaders = Headers({'host': ['fake.com'],
                                                    'extra': ['bar']})
 
         # Perform the login.
         request = channel.makeFakeRequest(
-            self.getGuardPath() + '/__login__?username=test&password=test')
+            self.getGuardPath() + b'/__login__?username=test&password=test')
         request = request.followAllRedirects()
 
-        self.assertEqual(request.written.getvalue(), '')
-        self.assertEqual(
-            renders, [({'foo': ['1'], 'bar': ['2']},
+        self.assertEqual(request.written.getvalue(), b'')
+        self.assertEqual(renders, [({b'foo': [b'1'], b'bar': [b'2']},
                        None,
                        None,
-                       'GET',
+                       b'GET',
                        Headers({'host': ['fake.com'], 'extra': ['bar']}))])
 
 
@@ -499,26 +508,26 @@ class GuardTestFuncs:
             lambda: SillyRealm(
                 authenticatedAvatarFactory=lambda: InspectfulPage(renders)))
         portal.registerChecker(
-            InMemoryUsernamePasswordDatabaseDontUse(test='test'),
+            InMemoryUsernamePasswordDatabaseDontUse(test=b'test'),
             IUsernamePassword)
         channel = self.createGuard(portal)
 
         # Negotiate a session using a request with some parameters.
         request = channel.makeFakeRequest(
-            self.getGuardPath() + "?foo=bar&bar=baz")
+            self.getGuardPath() + b"?foo=bar&bar=baz")
         request = request.followAllRedirects()
 
         # Perform the login.
         request = channel.makeFakeRequest(
-            self.getGuardPath() + '/__login__?username=test&password=test')
+            self.getGuardPath() + b'/__login__?username=test&password=test')
         request = request.followAllRedirects()
 
-        self.assertEqual(request.written.getvalue(), '')
+        self.assertEqual(request.written.getvalue(), b'')
         self.assertEqual(
-            renders, [({'username': ['test'], 'password': ['test']},
+            renders, [({b'username': [b'test'], b'password': [b'test']},
                        None,
-                       '',
-                       'GET',
+                       b'',
+                       b'GET',
                        Headers({'host': ['fake.com']}))])
 
 
@@ -527,31 +536,31 @@ class GuardTestFuncs:
         p = self.createPortal()
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/' % self.getGuardPath(), requestClass=FakeHTTPRequest_noCookies).followAllRedirects()
+        req = chan.makeFakeRequest(b'%s/' % self.getGuardPath(), requestClass=FakeHTTPRequest_noCookies).followAllRedirects()
         # We should have the final resource, which is an anonymous resource
-        self.assertEqual(req.written.getvalue(), "No")
+        self.assertEqual(req.written.getvalue(), b"No")
 
         # now try requesting just the guard path
-        self.assertTrue(req.path.startswith('%s/%s' % (self.getGuardPath(), guard.SESSION_KEY)))
-        self.assertTrue(req.path.endswith('/'))
+        self.assertTrue(req.path.startswith(b'%s/%s' % (self.getGuardPath(), guard.SESSION_KEY)))
+        self.assertTrue(req.path.endswith(b'/'))
         req = chan.makeFakeRequest(req.path[:-1], requestClass=FakeHTTPRequest_noCookies).followAllRedirects()
 
         # it should work just as well as with the slash
         # (not actually the same page, but SillyPage always says the same thing here)
-        self.assertEqual(req.written.getvalue(), "No")
+        self.assertEqual(req.written.getvalue(), b"No")
 
     def testTrailingSlashMatters_noCookies(self):
         class TrailingSlashPage(rend.Page):
             def locateChild(self, context, segments):
-                return self.__class__('%s/%s' % (self.original, segments[0])), segments[1:]
+                return type(self)(b'%s/%s' % (self.original, segments[0])), segments[1:]
 
         class TrailingSlashAvatar(TrailingSlashPage):
             def renderHTTP(self, context):
-                return 'Authenticated %s' % self.original
+                return b'Authenticated %s' % self.original
 
         class TrailingSlashAnonymous(TrailingSlashPage):
             def renderHTTP(self, ctx):
-                return 'Anonymous %s' % self.original
+                return b'Anonymous %s' % self.original
 
         @implementer(IRealm)
         class TrailingSlashRealm:
@@ -561,23 +570,22 @@ class GuardTestFuncs:
             def requestAvatar(self, avatarId, mind, *interfaces):
                 if avatarId == ANONYMOUS:
                     return inevow.IResource, TrailingSlashAnonymous(self.path), lambda: None
-                else:
-                    return inevow.IResource, TrailingSlashAvatar(self.path), lambda: None
+                return inevow.IResource, TrailingSlashAvatar(self.path), lambda: None
 
-        p = self.createPortal(realmFactory=lambda : TrailingSlashRealm(self.getGuardPath()))
+        p = self.createPortal(realmFactory=lambda: TrailingSlashRealm(self.getGuardPath()))
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/' % self.getGuardPath(), requestClass=FakeHTTPRequest_noCookies).followAllRedirects()
+        req = chan.makeFakeRequest(b'%s/' % self.getGuardPath(), requestClass=FakeHTTPRequest_noCookies).followAllRedirects()
         # We should have the final resource, which is an anonymous resource
-        self.assertEqual(req.written.getvalue(), "Anonymous %s/" % self.getGuardPath())
+        self.assertEqual(req.written.getvalue(), b"Anonymous %s/" % self.getGuardPath())
 
         # now try requesting just the guard path
-        self.assertTrue(req.path.startswith('%s/%s' % (self.getGuardPath(), guard.SESSION_KEY)))
-        self.assertTrue(req.path.endswith('/'))
+        self.assertTrue(req.path.startswith(b'%s/%s' % (self.getGuardPath(), guard.SESSION_KEY)))
+        self.assertTrue(req.path.endswith(b'/'))
         req = chan.makeFakeRequest(req.path[:-1], requestClass=FakeHTTPRequest_noCookies).followAllRedirects()
 
         # it should no longer have the trailing slash
-        self.assertEqual(req.written.getvalue(), "Anonymous %s" % self.getGuardPath())
+        self.assertEqual(req.written.getvalue(), b"Anonymous %s" % self.getGuardPath())
 
     def testTrailingSlashMatters_withCookies(self):
         # omitting the trailing slash when not using session keys can
@@ -587,44 +595,42 @@ class GuardTestFuncs:
 
         class TrailingSlashPage(rend.Page):
             def locateChild(self, context, segments):
-                return self.__class__('%s/%s' % (self.original, segments[0])), segments[1:]
+                return type(self)(b'%s/%s' % (self.original, segments[0])), segments[1:]
 
         class TrailingSlashAvatar(TrailingSlashPage):
             def renderHTTP(self, context):
-                return 'Authenticated %s' % self.original
+                return b'Authenticated %s' % self.original
 
         class TrailingSlashAnonymous(TrailingSlashPage):
             def renderHTTP(self, ctx):
-                return 'Anonymous %s' % self.original
+                return b'Anonymous %s' % self.original
 
         @implementer(IRealm)
         class TrailingSlashRealm:
-
             def __init__(self, path):
                 self.path = path
 
             def requestAvatar(self, avatarId, mind, *interfaces):
                 if avatarId == ANONYMOUS:
                     return inevow.IResource, TrailingSlashAnonymous(self.path), lambda: None
-                else:
-                    return inevow.IResource, TrailingSlashAvatar(self.path), lambda: None
+                return inevow.IResource, TrailingSlashAvatar(self.path), lambda: None
 
         p = self.createPortal(realmFactory=lambda : TrailingSlashRealm(self.getGuardPath()))
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/' % self.getGuardPath()).followAllRedirects()
+        req = chan.makeFakeRequest(b'%s/' % self.getGuardPath()).followAllRedirects()
         # We should have the final resource, which is an anonymous resource
-        self.assertEqual(req.written.getvalue(), "Anonymous %s/" % self.getGuardPath())
+        self.assertEqual(req.written.getvalue(), b"Anonymous %s/" % self.getGuardPath())
 
-        req = chan.makeFakeRequest('%s' % self.getGuardPath()).followAllRedirects()
+        req = chan.makeFakeRequest(b'%s' % self.getGuardPath()).followAllRedirects()
         # We should have the final resource, which is an anonymous resource
-        self.assertEqual(req.written.getvalue(), "Anonymous %s" % self.getGuardPath())
+        self.assertEqual(req.written.getvalue(), b"Anonymous %s" % self.getGuardPath())
 
     def testPlainTextCookie(self):
         """Cookies from non-SSL sites have no secure attribute."""
         p = self.createPortal()
         chan = self.createGuard(p)
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath())
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath())
         self.assertEqual( len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
         cookie, a, kw = list(req._cookieCache.values())[0]
         secure = kw.get('secure', None)
@@ -636,7 +642,7 @@ class GuardTestFuncs:
         chan = self.createGuard(p)
         gu = getGuard(chan)
         gu.secureCookies = False
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath())
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath())
         self.assertEqual( len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
         cookie, a, kw = list(req._cookieCache.values())[0]
         secure = kw.get('secure', None)
@@ -646,7 +652,7 @@ class GuardTestFuncs:
         """Cookies from SSL sites have secure=True."""
         p = self.createPortal()
         chan = self.createGuard(p)
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath(),
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath(),
                                    requestClass=FakeHTTPRequest_forceSSL)
         self.assertEqual( len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
         cookie, a, kw = list(req._cookieCache.values())[0]
@@ -659,7 +665,7 @@ class GuardTestFuncs:
         chan = self.createGuard(p)
         gu = getGuard(chan)
         gu.secureCookies = False
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath(),
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath(),
                                    requestClass=FakeHTTPRequest_forceSSL)
         self.assertEqual( len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
         cookie, a, kw = list(req._cookieCache.values())[0]
@@ -671,8 +677,8 @@ class GuardTestFuncs:
         p = self.createPortal()
         chan = self.createGuard(p)
         gu = getGuard(chan)
-        gu.persistentCookies = True
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath(),
+        gu.persistentCookies = True  # has no effect after schwabe changes
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath(),
                                    requestClass=FakeHTTPRequest)
         self.assertEqual( len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
         cookie, a, kw = list(req._cookieCache.values())[0]
@@ -683,28 +689,25 @@ class GuardTestFuncs:
         """Cookies from sites are not saved to disk because SessionWrapper.persistentCookies=False."""
         p = self.createPortal()
         chan = self.createGuard(p)
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath(),
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath(),
                                    requestClass=FakeHTTPRequest)
         self.assertEqual( len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
         cookie, a, kw = list(req._cookieCache.values())[0]
         expires = kw.get('expires', None)
         self.failUnlessIdentical(expires, None)
-
-
+    testPersistentCookie_noPersistentCookies.skip = '`persistentCookies` been dropped by schwabe'
 
     def testCookiePath(self):
         """Cookies get the correct path setting sites have no secure attribute."""
         p = self.createPortal()
         chan = self.createGuard(p)
-        req = chan.makeFakeRequest('%s/xxx/yyy/' % self.getGuardPath())
-        self.assertEqual( len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
+        req = chan.makeFakeRequest(b'%s/xxx/yyy/' % self.getGuardPath())
+        self.assertEqual(len(list(req._cookieCache.values())), 1, "Bad number of cookies in response.")
         cookie, a, kw = list(req._cookieCache.values())[0]
         path = kw.get('path', None)
-        wanted = self.getGuardPath()
-        if wanted == '':
-            wanted = '/'
+        path   = compat.nativeString(path)  # @note: path may bytes ot unicode, see L{twisted.web.http.Request.addCookie}
+        wanted = compat.nativeString(self.getGuardPath() or b'/')
         self.assertEqual(path, wanted)
-
 
     def test_defaultCookieDomain(self):
         """
@@ -712,10 +715,9 @@ class GuardTestFuncs:
         """
         portal = self.createPortal()
         channel = self.createGuard(portal)
-        request = channel.makeFakeRequest('%s/abc' % (self.getGuardPath(),))
+        request = channel.makeFakeRequest(b'%s/abc' % (self.getGuardPath(),))
         cookie, args, kwargs = list(request._cookieCache.values())[0]
         self.assertEqual(kwargs['domain'], None)
-
 
     def test_specifiedCookieDomain(self):
         """
@@ -734,149 +736,149 @@ class GuardTestFuncs:
         self.wrapperFactory = SpecialSessionWrapper
         channel = self.createGuard(portal)
 
-        request = channel.makeFakeRequest('%s/abc' % (self.getGuardPath(),))
+        request = channel.makeFakeRequest(b'%s/abc' % (self.getGuardPath(),))
         cookie, args, kwargs = list(request._cookieCache.values())[0]
         self.assertEqual(kwargs['domain'], 'example.com')
         self.assertEqual(requests, [request])
 
-
     def testLoginExtraPath(self):
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/__login__/sub/path?username=test&password=test' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), "Yes")
-        self.assertEqual(req.path, '%s/sub/path' % self.getGuardPath())
+        req = chan.makeFakeRequest(b'%s/__login__/sub/path?username=test&password=test' % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b"Yes")
+        self.assertEqual(req.path, b'%s/sub/path' % self.getGuardPath())
 
     def testLoginExtraPath_withSlash(self):
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/__login__/sub/path/?username=test&password=test' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), "Yes")
-        self.assertEqual(req.path, '%s/sub/path/' % self.getGuardPath())
+        req = chan.makeFakeRequest(b'%s/__login__/sub/path/?username=test&password=test' % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b"Yes")
+        self.assertEqual(req.path, b'%s/sub/path/' % self.getGuardPath())
 
     def testLogoutExtraPath(self):
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/__login__?username=test&password=test' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), "Yes")
+        req = chan.makeFakeRequest(b'%s/__login__?username=test&password=test' % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b"Yes")
 
         # Log out
-        req2 = chan.makeFakeRequest("%s/__logout__/sub/path" % self.getGuardPath()).followRedirect()
-        self.assertEqual(req2.written.getvalue(), "No")
-        self.assertEqual(req2.path, '%s/sub/path' % self.getGuardPath())
+        req2 = chan.makeFakeRequest(b"%s/__logout__/sub/path" % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req2.written.getvalue(), b"No")
+        self.assertEqual(req2.path, b'%s/sub/path' % self.getGuardPath())
 
     def testLogoutExtraPath_withSlash(self):
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/__login__?username=test&password=test' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), "Yes")
+        req = chan.makeFakeRequest(b'%s/__login__?username=test&password=test' % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b"Yes")
 
         # Log out
-        req2 = chan.makeFakeRequest("%s/__logout__/sub/path/" % self.getGuardPath()).followRedirect()
-        self.assertEqual(req2.written.getvalue(), "No")
-        self.assertEqual(req2.path, '%s/sub/path/' % self.getGuardPath())
+        req2 = chan.makeFakeRequest(b"%s/__logout__/sub/path/" % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req2.written.getvalue(), b"No")
+        self.assertEqual(req2.path, b'%s/sub/path/' % self.getGuardPath())
 
     def testGetLoggedInRoot_getLogin(self):
         p = self.createPortal(realmFactory=GetLoggedInRealm)
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
         chan = self.createGuard(p)
-
-        req = chan.makeFakeRequest('%s/__login__?username=test&password=test' % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), "GetLoggedInAvatar")
+        req  = chan.makeFakeRequest(b'%s/__login__?username=test&password=test' % self.getGuardPath()).followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b'GetLoggedInAvatar')
 
     def testGetLoggedInRoot_httpAuthLogin(self):
-
         p = self.createPortal(realmFactory=GetLoggedInRealm)
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'), IUsernamePassword)
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'), IUsernamePassword)
         chan = self.createGuard(p)
         for x in range(4):
-            req = chan.makeFakeRequest('%s/' % self.getGuardPath(), "test", "test")
-            self.assertEqual(req.written.getvalue(), "GetLoggedInAvatar")
+            req = chan.makeFakeRequest(b'%s/' % self.getGuardPath(), "test", "test")
+            self.assertEqual(req.written.getvalue(), b"GetLoggedInAvatar")
         self.assertEqual(len(self.sessions),1)
+    testGetLoggedInRoot_httpAuthLogin.skip = 'HTTP AUTH been dropped by schwabe'
 
     def testErrorPage_httpAuth(self):
         """Failed HTTP Auth results in a 403 error."""
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'),
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'),
                           IUsernamePassword)
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s' % self.getGuardPath(),
-                                   "test", "invalid-password")
+        req = chan.makeFakeRequest(b'%s' % self.getGuardPath(), "test", "invalid-password")
         self.assertFalse(req.responseHeaders.hasHeader('location'))
         self.assertEqual(req.code, 403)
         self.assertEqual(req.written.getvalue(),
-                          '<html><head><title>Forbidden</title></head>'
-                          +'<body><h1>Forbidden</h1>Request was forbidden.'
-                          +'</body></html>')
+                          b'<html><head><title>Forbidden</title></head>'\
+                          b'<body><h1>Forbidden</h1>Request was forbidden.'\
+                          b'</body></html>')
         self.assertEqual(req.path, self.getGuardPath())
+    testErrorPage_httpAuth.skip = 'HTTP AUTH been dropped by schwabe'
 
     def testErrorPage_httpAuth_deep(self):
         """Failed HTTP Auth results in a 403 error."""
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'),
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'),
                           IUsernamePassword)
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest('%s/quux/thud' % self.getGuardPath(),
+        req = chan.makeFakeRequest(b'%s/quux/thud' % self.getGuardPath(),
                                    "test", "invalid-password")
         self.assertFalse(req.responseHeaders.hasHeader('location'))
         self.assertEqual(req.code, 403)
         self.assertEqual(req.written.getvalue(),
-                          '<html><head><title>Forbidden</title></head>'
-                          +'<body><h1>Forbidden</h1>Request was forbidden.'
-                          +'</body></html>')
-        self.assertEqual(req.path, '%s/quux/thud' % self.getGuardPath())
+                          b'<html><head><title>Forbidden</title></head>'\
+                          b'<body><h1>Forbidden</h1>Request was forbidden.'\
+                          b'</body></html>')
+        self.assertEqual(req.path, b'%s/quux/thud' % self.getGuardPath())
+    testErrorPage_httpAuth_deep.skip = 'HTTP AUTH been dropped by schwabe'
 
     def testErrorPage_getLogin(self):
         """Failed normal login results in anonymous view of the same page."""
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'),
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'),
                           IUsernamePassword)
         chan = self.createGuard(p)
 
-        req = chan.makeFakeRequest(
-            '%s/__login__?username=test&password=invalid-password'
-            % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), 'No')
-        wanted = self.getGuardPath()
-        if wanted == '':
-            wanted = '/'
+        req = chan.makeFakeRequest(b'%s/__login__?username=test&password=invalid-password' % self.getGuardPath())\
+            .followAllRedirects()
+        self.assertEqual(req.written.getvalue(), b'No')
+        wanted = self.getGuardPath() or b'/'
         self.assertEqual(req.path, wanted)
 
     def testErrorPage_getLogin_deep(self):
         """Failed normal login results in anonymous view of the same page."""
         p = self.createPortal()
-        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test='test'),
+        p.registerChecker(InMemoryUsernamePasswordDatabaseDontUse(test=b'test'),
                           IUsernamePassword)
         chan = self.createGuard(p)
 
         req = chan.makeFakeRequest(
-            '%s/__login__/quux/thud?username=test&password=invalid-password'
+            b'%s/__login__/quux/thud?username=test&password=invalid-password'
             % self.getGuardPath()).followAllRedirects()
-        self.assertEqual(req.written.getvalue(), 'No')
-        self.assertEqual(req.path, '%s/quux/thud' % self.getGuardPath())
+        self.assertEqual(req.written.getvalue(), b'No')
+        self.assertEqual(req.path, b'%s/quux/thud' % self.getGuardPath())
 
 
 class ParentPage(rend.Page):
     addSlash = True
+
     def renderHTTP(self, context):
         request = context.locate(inevow.IRequest)
         return 'This is %s at %s' % (self.original, request.URLPath())
 
+
 class GuardTest(GuardTestSuper, GuardTestFuncs):
     guardPath = []
 
+
 class GuardTest_NotAtRoot_oneLevel(GuardTestSuper, GuardTestFuncs):
-    guardPath = ['foo']
+    guardPath = [b'foo']
+
 
 class GuardTest_NotAtRoot_manyLevels(GuardTestSuper, GuardTestFuncs):
-    guardPath = ['foo', 'bar', 'baz']
+    guardPath = [b'foo', b'bar', b'baz']
