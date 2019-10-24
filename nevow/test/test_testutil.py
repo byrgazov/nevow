@@ -109,7 +109,7 @@ class TestFakeRequest(TestCase):
                 root.child('foo'))
 
         def _checkForUrl(result):
-            return self.assertEqual('http://localhost/foo', result)
+            return self.assertEqual(b'http://localhost/foo', result)
 
         return renderPage(_URLPage()).addCallback(_checkForUrl)
 
