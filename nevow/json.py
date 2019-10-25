@@ -311,8 +311,7 @@ def _serialize(obj, w, seen):
     else:
         transportable = IAthenaTransportable(obj, None)
         if transportable is not None:
-            w(u'(new ' + compat.unicode(
-                transportable.jsClass.encode('ascii')) + u'(')
+            w(u'(new ' + compat.unicode(compat.nativeString(transportable.jsClass)) + u'(')
             arguments = transportable.getInitialArguments()
             for n, e in enumerate(arguments):
                 _serialize(e, w, seen)
@@ -321,7 +320,6 @@ def _serialize(obj, w, seen):
             w(u'))')
         else:
             raise TypeError("Unsupported type %r: %r" % (type(obj), obj))
-
 
 
 _undefined = object()

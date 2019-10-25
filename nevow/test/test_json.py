@@ -253,10 +253,9 @@ class JavascriptObjectNotationTestCase(unittest.TestCase):
             def __repr__(self):
                 return 'an unsupported object'
         exception = self.assertRaises(TypeError, json.serialize, Unsupported())
-        self.assertEqual(
-            str(exception),
-            "Unsupported type <class 'nevow.test.test_json.Unsupported'>: "
-            "an unsupported object")
+
+        self.assertIn('Unsupported type <class \'nevow.test.test_json.', str(exception))
+        self.assertIn('.Unsupported\'>: an unsupported object', str(exception))
 
 
     def test_customSerialization(self):
