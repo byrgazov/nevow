@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright (c) 2008 Divmod.
 # See LICENSE for details.
 
@@ -6,6 +8,7 @@ Tests for L{nevow._flat}.
 """
 
 import sys, traceback, io
+import traceback
 
 from zope.interface import implementer
 
@@ -195,7 +198,7 @@ class FlattenTests(TestCase, FlattenMixin):
         """
         self.assertStringEqual(self.flatten('bytes<>&"\0'), 'bytes<>&"\0')
         unich = "\N{LATIN CAPITAL LETTER E WITH GRAVE}"
-        self.assertStringEqual(self.flatten(unich), unich.encode('utf-8'))
+        self.assertStringEqual(self.flatten(unich), unich)
 
 
     def test_xml(self):
@@ -204,7 +207,7 @@ class FlattenTests(TestCase, FlattenMixin):
         """
         self.assertStringEqual(self.flatten(xml("foo")), "foo")
         unich = "\N{LATIN CAPITAL LETTER E WITH GRAVE}"
-        self.assertStringEqual(self.flatten(xml(unich)), unich.encode('utf-8'))
+        self.assertStringEqual(self.flatten(xml(unich)), unich)
 
 
     def test_entity(self):
@@ -896,7 +899,6 @@ class FlattenTests(TestCase, FlattenMixin):
         self.assertIdentical(context.locate(IRequest), request)
         self.assertIdentical(context.locate(IData), None)
 
-
     def test_legacySerializableReturnsSlot(self):
         """
         A slot returned by a flattener registered with L{registerFlattener} is
@@ -909,35 +911,39 @@ class FlattenTests(TestCase, FlattenMixin):
         tag.fillSlots("foo", "bar")
         self.assertEqual(self.flatten(tag, request), '<div foo="bar"></div>')
 
-
     def test_flattenExceptionStack(self):
         """
         If an exception is raised by a render method, L{FlattenerError} is
         raised with information about the stack between the flattener and the
         frame which raised the exception.
         """
+
         def broken():
             raise RuntimeError("foo")
 
         @implementer(IRenderable)
         class BrokenRenderable(object):
-
             def render(self, request):
                 # insert another stack frame before the exception
                 broken()
 
-
         request = object()
         renderable = BrokenRenderable()
-        exc = self.assertRaises(
-            FlattenerError, self.flatten, renderable, request)
-        self.assertEqual(
-            # There are probably some frames above this, but I don't care what
-            # they are.
-            exc._traceback[-2:],
-            [(HERE, 928, 'render', 'broken()'),
-             (HERE, 921, 'broken', 'raise RuntimeError("foo")')])
 
+        exc = self.assertRaises(FlattenerError, self.flatten, renderable, request)
+
+        tb_tuples = [
+            (HERE, 928, 'render', 'broken()'),
+            (HERE, 922, 'broken', 'raise RuntimeError("foo")')]
+
+        if compat._PY3:
+            tb_tuples = [traceback.FrameSummary(fn, lineno, name)
+                for fn, lineno, name, text in tb_tuples]
+
+        self.assertEqual(
+            # there are probably some frames above this, but I don't care what they are
+            exc._traceback[-2:],
+            tb_tuples)
 
 
 class FlattenerErrorTests(TestCase):
@@ -955,13 +961,13 @@ class FlattenerErrorTests(TestCase):
             "Exception while flattening:\n"
             "  'abc123xyz'\n"
             "RuntimeError: reason\n")
+
         self.assertEqual(
             str(FlattenerError(
                     RuntimeError("reason"), ['0123456789' * 10], [])),
             "Exception while flattening:\n"
-            "  '01234567890123456789<...>01234567890123456789'\n"
+            "  '01234567890123456789<...>1234567890123456789'\n"
             "RuntimeError: reason\n")
-
 
     def test_unicode(self):
         """
@@ -969,21 +975,22 @@ class FlattenerErrorTests(TestCase):
         characters from that string are included in the string representation
         of the exception.
         """
+
         self.assertEqual(
             str(FlattenerError(
                     RuntimeError("reason"), ['abc\N{SNOWMAN}xyz'], [])),
             "Exception while flattening:\n"
-            "  u'abc\\u2603xyz'\n" # Codepoint for SNOWMAN
+            "  'abc\u2603xyz'\n" # Codepoint for SNOWMAN
             "RuntimeError: reason\n")
+
         self.assertEqual(
             str(FlattenerError(
                     RuntimeError("reason"), ['01234567\N{SNOWMAN}9' * 10],
                     [])),
             "Exception while flattening:\n"
-            "  u'01234567\\u2603901234567\\u26039<...>01234567\\u2603901234567"
-            "\\u26039'\n"
+            "  '01234567\u2603901234567\u26039<...>1234567\u2603901234567"
+            "\u26039'\n"
             "RuntimeError: reason\n")
-
 
     def test_renderable(self):
         """
@@ -1048,9 +1055,10 @@ class FlattenerErrorTests(TestCase):
 
         try:
             f()
-        except RuntimeError as exc:
+        except RuntimeError:
+            exc, tb = sys.exc_info()[1:]
             # Get the traceback, minus the info for *this* frame
-            tbinfo = traceback.extract_tb(sys.exc_info()[2])[1:]
+            tbinfo = traceback.extract_tb(tb)[1:]
         else:
             self.fail("f() must raise RuntimeError")
 
