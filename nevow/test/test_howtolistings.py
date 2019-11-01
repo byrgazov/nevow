@@ -132,15 +132,14 @@ class Echo00(ExampleTestBase, TestCase):
         Rendering the echo example element should produce a very simple text area.
         """
         from echothing.echobox import EchoElement
-        TEXT = 'Echo Element'
-        eb = EchoElement()
+        eb   = EchoElement()
         erlp = ElementRenderingLivePage(eb)
         def checkContent(result):
             # The "liveElement" renderer inserts this, let's look for it to
             # make sure it rendered live:
-            self.assertIn('id="athena:'+str(eb._athenaID)+'"', result)
-            self.assertIn('athena:class="EchoThing.EchoWidget"', result)
-            self.assertIn(TEXT, result)
+            self.assertIn(b'id="athena:%d"' % eb._athenaID, result)
+            self.assertIn(b'athena:class="EchoThing.EchoWidget"', result)
+            self.assertIn(b'Echo Element', result)
         return renderLivePage(erlp).addCallback(checkContent)
 
 
@@ -186,15 +185,14 @@ class RenderAndChat01(ExampleTestBase, TestCase):
         Rendering the example element should produce a chat area.
         """
         from chatthing.chatterbox import ChatterElement, ChatRoom
-        PROMPT = 'Choose your username: '
-        cb = ChatterElement(ChatRoom())
+        cb   = ChatterElement(ChatRoom())
         erlp = ElementRenderingLivePage(cb)
         def checkContent(result):
             # The "liveElement" renderer inserts this, let's look for it to
             # make sure it rendered live:
-            self.assertIn('id="athena:'+str(cb._athenaID)+'"', result)
-            self.assertIn('athena:class="ChatThing.ChatterWidget"', result)
-            self.assertIn(PROMPT, result)
+            self.assertIn(b'id="athena:%d"' % cb._athenaID, result)
+            self.assertIn(b'athena:class="ChatThing.ChatterWidget"', result)
+            self.assertIn(b'Choose your username: ', result)
         return renderLivePage(erlp).addCallback(checkContent)
 
 

@@ -1,4 +1,6 @@
 
+import operator
+
 from twisted.python import compat
 
 from zope.interface import implementer
@@ -7,23 +9,32 @@ from nevow import inevow
 
 
 def languagesFactory(ctx):
+    langs  = []
     header = inevow.IRequest(ctx).getHeader('accept-language')
-    if header is None:
-        return []
-    langs = []
-    for lang in header.split(','):
-        quality = 1.0
-        if ';' in lang:
-            lang, quality = lang.split(';', 1)
-            if quality[:2] == 'q=':
-                try:
-                    quality = float(quality[2:])
-                except ValueError:
-                    pass
-        langs.append((quality, lang))
-        if '-' in lang:
-            langs.append((quality, lang.split('-')[0]))
-    langs.sort(lambda a,b: cmp(b[0], a[0]))
+
+    if header is not None:
+        for no, lang in enumerate(header.split(',')):
+            quality = 1.0
+
+            if ';' in lang:
+                lang, quality = lang.split(';', 1)
+                if quality[:2] == 'q=':
+                    try:
+                        quality = float(quality[2:])
+                    except ValueError:
+                        pass
+            if type(quality) in (int, float):
+                quality = (0, quality, -no)
+            else:
+                quality = (1, str(quality), -no)
+
+            langs.append((quality, lang))
+
+            if '-' in lang:
+                langs.append((quality, lang.split('-')[0]))
+
+        langs.sort(key=operator.itemgetter(0), reverse=True)
+
     return [lang for quality, lang in langs]
 
 
@@ -119,7 +130,7 @@ class Translator(object):
     args = None
     kwargs = None
 
-    gettextFunction = 'ugettext'
+    gettextFunction = 'gettext' if compat._PY3 else 'ugettext'
 
     def _gettextTranslation(self, *args, **kwargs):
         domain = kwargs.pop('domain', None)
@@ -132,8 +143,7 @@ class Translator(object):
             languages=languages,
             fallback=True,
             )
-        fn = getattr(translation,
-                     self.gettextFunction)
+        fn = getattr(translation, self.gettextFunction)
         return fn(*args, **kwargs)
 
     def __init__(self, **kwargs):
@@ -183,7 +193,7 @@ class Translator(object):
 
 _ = Translator()
 
-ungettext = Translator(gettextFunction='ungettext')
+ungettext = Translator(gettextFunction='ngettext' if compat._PY3 else 'ungettext')
 
 def render(translator=None):
     """
