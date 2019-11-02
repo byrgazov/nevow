@@ -3,12 +3,9 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-
-
-
 import warnings
-from zope.interface import implementer, Interface
 
+from zope.interface import implementer, Interface
 from twisted.python import components
 
 from nevow import inevow
@@ -20,8 +17,8 @@ from nevow.context import NodeNotFound
 from formless import iformless
 from formless.formutils import FormDefaults, FormErrors, calculatePostURL, keyToXMLID, getError
 
-
 from nevow.static import File
+
 
 defaultCSS = File(util.resource_filename('formless', 'freeform-default.css'), 'text/css')
 
@@ -42,7 +39,8 @@ class BaseInputRenderer(components.Adapter):
 
     def rend(self, context, data):
         defaults = context.locate(iformless.IFormDefaults)
-        value = defaults.getDefault(context.key, context)
+        value    = defaults.getDefault(context.key, context)
+
         context.remember(data.typedValue, iformless.ITyped)
 
         if data.typedValue.getAttribute('immutable'):
@@ -51,24 +49,25 @@ class BaseInputRenderer(components.Adapter):
             # value may be a deferred; make sure to wait on it properly before calling self.input
             # TODO: If flattening this results in an empty string, return an empty string
             inp = tags.invisible(
-                render=lambda c, value: self.input( context, tags.invisible(), data, data.name, value ),
+                render=lambda c, value: self.input(context, tags.invisible(), data, data.name, value),
                 data=value)
 
         if data.typedValue.getAttribute('hidden') or data.typedValue.getAttribute('compact'):
             return inp
 
-        context.fillSlots( 'label', data.label )
-        context.fillSlots( 'name', data.name )
-        context.fillSlots( 'input', inp )
-        context.fillSlots( 'error', getError(context) )
-        context.fillSlots( 'description', data.description )
-        context.fillSlots( 'id', keyToXMLID(context.key) )
-        context.fillSlots( 'value', value )
+        context.fillSlots('label', data.label)
+        context.fillSlots('name',  data.name)
+        context.fillSlots('input', inp)
+        context.fillSlots('error', getError(context))
+        context.fillSlots('description', data.description)
+        context.fillSlots('id',    keyToXMLID(context.key))
+        context.fillSlots('value', value)
 
         return context.tag
 
     def input(self, context, slot, data, name, value):
         raise NotImplementedError("Implement in subclass")
+
 
 class PasswordRenderer(BaseInputRenderer):
     def input(self, context, slot, data, name, value):
@@ -346,7 +345,7 @@ class MethodBindingRenderer(BaseBindingRenderer):
         content_pattern = None
         for argument in args:
             try:
-                content_pattern = context.tag.patternGenerator( 'argument!!%s' % argument.name )
+                content_pattern = context.tag.patternGenerator( 'argument!!' + argument.name )
             except NodeNotFound:
                 if default_content_pattern is None:
                     try:
@@ -361,7 +360,7 @@ class MethodBindingRenderer(BaseBindingRenderer):
                 data=argument,
                 render=renderer,
                 remember={iformless.ITyped: argument.typedValue})
-            context.fillSlots( 'argument!!%s' % argument.name, pat )
+            context.fillSlots( 'argument!!' + argument.name, pat )
             yield pat
 
 
@@ -375,7 +374,7 @@ class ButtonRenderer(components.Adapter):
 freeformDefaultForm = tags.div(_class="freeform-form").freeze()
 
 
-def renderForms(configurableKey='', bindingNames=None, bindingDefaults=None):
+def renderForms(configurableKey: str='', bindingNames=None, bindingDefaults=None):
     """Render forms for either the named configurable, or, if no configurableKey is given,
     the main configurable. If no bindingNames are given, forms will be
     rendered for all bindings described by the configurable.
@@ -390,15 +389,17 @@ def renderForms(configurableKey='', bindingNames=None, bindingDefaults=None):
     given the TypedInterface::
 
             >>> class IMyForm(annotate.TypedInterface):
+            ...     @annotate.autocallable
             ...     def doSomething(self, name=annotate.String()):
             ...         pass
-            ...     doSomething = annotate.autocallable(doSomething)
+            ...
+            ...     @annotate.autocallable
             ...     def doNothing(self name=annotate.String()):
             ...         pass
-            ...     doNothing = annotate.autocallable(doNothing)
+            ...
+            ...     @annotate.autocallable
             ...     def doMoreThings(self name=annotate.String(), things=annotate.String()):
             ...         pass
-            ...     doMoreThings = annotate.autocallable(doMoreThings)
 
         One might call renderForms() like this::
 
@@ -422,50 +423,50 @@ def renderForms(configurableKey='', bindingNames=None, bindingDefaults=None):
 
     def formRenderer(ctx, data):
         cf = ctx.locate(iformless.IConfigurableFactory)
-        return util.maybeDeferred(cf.locateConfigurable, ctx, configurableKey
-                                  ).addCallback(_formRenderIt)
+        return util.maybeDeferred(cf.locateConfigurable, ctx, configurableKey)\
+            .addCallback(_formRenderIt)
 
     def _formRenderIt(configurable):
         def _innerFormRenderIt(context, data):
             tag = context.tag
             # Remember the key for when the form post URL is generated.
             context.remember(configurableKey, iformless.IConfigurableKey)
+
             if configurable is None:
-                warnings.warn(
-                    "No configurable was found which provides enough type information for freeform to be able to render forms")
+                warnings.warn('No configurable was found which provides enough type information '\
+                    'for freeform to be able to render forms')
                 yield ''
-                return
-            context.remember(configurable, iformless.IConfigurable)
-
-            formDefaults = iformless.IFormDefaults(context)
-
-            if bindingDefaults is None:
-                available = configurable.getBindingNames(context)
             else:
-                available = iter(bindingDefaults.keys())
+                context.remember(configurable, iformless.IConfigurable)
 
-            def _callback(binding):
-                renderer = iformless.IBindingRenderer(binding, defaultBindingRenderer)
-                try:
-                    binding_pattern = tag.patternGenerator( 'freeform-form!!%s' % name )
-                except NodeNotFound:
+                formDefaults = iformless.IFormDefaults(context)
+
+                if bindingDefaults is None:
+                    available = configurable.getBindingNames(context)
+                else:
+                    available = iter(bindingDefaults.keys())
+
+                def _callback(binding, name):
+                    renderer = iformless.IBindingRenderer(binding, defaultBindingRenderer)
                     try:
-                        binding_pattern = tag.patternGenerator( 'freeform-form' )
+                        binding_pattern = tag.patternGenerator('freeform-form!!' + name)
                     except NodeNotFound:
-                        binding_pattern = freeformDefaultForm
+                        try:
+                            binding_pattern = tag.patternGenerator('freeform-form')
+                        except NodeNotFound:
+                            binding_pattern = freeformDefaultForm
 
-                if binding_pattern is freeformDefaultForm:
-                    renderer.needsSkin = True
-                return binding_pattern(data=binding, render=renderer, key=name)
+                    if binding_pattern is freeformDefaultForm:
+                        renderer.needsSkin = True
+                    return binding_pattern(data=binding, render=renderer, key=name)
 
-            for name in available:
-                if bindingDefaults is not None:
-                    defs = formDefaults.getAllDefaults(name)
-                    defs.update(bindingDefaults[name])
+                for name in available:
+                    if bindingDefaults is not None:
+                        defs = formDefaults.getAllDefaults(name)
+                        defs.update(bindingDefaults[name])
 
-                d = util.maybeDeferred(configurable.getBinding, context, name)
-                d.addCallback(_callback)
-                yield d
+                    yield util.maybeDeferred(configurable.getBinding, context, name)\
+                        .addCallback(_callback, name)
 
         return _innerFormRenderIt
     return tags.invisible(render=formRenderer)

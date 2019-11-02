@@ -1,7 +1,7 @@
-
 from zope.interface import implementer
 
-from twisted.cred import portal, checkers, credentials
+from twisted.cred   import portal, checkers, credentials
+from twisted.python import compat
 
 from nevow import inevow, rend, tags, guard, loaders
 
@@ -14,7 +14,7 @@ class NotLoggedIn(rend.Page):
     tags.html[
         tags.head[tags.title["Not Logged In"]],
         tags.body[
-            tags.form(action=guard.LOGIN_AVATAR, method='post')[
+            tags.form(action=compat.nativeString(guard.LOGIN_AVATAR), method='post')[
                 tags.table[
                     tags.tr[
                         tags.td[ "Username:" ],
@@ -41,7 +41,7 @@ class LoggedIn(rend.Page):
         tags.head[tags.title["Logged In"]],
         tags.body[
             tags.h3(render=tags.directive("welcome")),
-            tags.a(href=guard.LOGOUT_AVATAR)["Logout"]
+            tags.a(href=compat.nativeString(guard.LOGOUT_AVATAR))["Logout"]
         ]
     ]
 )
@@ -74,10 +74,10 @@ class MyRealm:
                     resc = NotLoggedIn()
                     resc.realm = self
                     return (inevow.IResource, resc, noLogout)
-                else:
-                    resc = LoggedIn(avatarId)
-                    resc.realm = self
-                    return (inevow.IResource, resc, resc.logout)
+
+                resc = LoggedIn(avatarId)
+                resc.realm = self
+                return (inevow.IResource, resc, resc.logout)
 
         raise NotImplementedError("Can't support that interface.")
 
@@ -89,10 +89,10 @@ def createResource():
     porta = portal.Portal(realm)
 
     myChecker = checkers.InMemoryUsernamePasswordDatabaseDontUse()
-    myChecker.addUser("user","password")
-    myChecker.addUser("fred", "flintstone")
+    myChecker.addUser(b"user", b"password")
+    myChecker.addUser(b"fred", b"flintstone")
     porta.registerChecker(checkers.AllowAnonymousAccess(), credentials.IAnonymous)
     porta.registerChecker(myChecker)
     res = guard.SessionWrapper(porta)
-    
+
     return res

@@ -14,14 +14,15 @@
 <p>Fixed name, singleton resource: <a href="foo">foo</a></p>
 <p>Fixed name, created per-request: <a href="bar">bar</a></p>
 <p>
-   Dynamically named resources, located via childFactory: 
+   Dynamically named resources, located via childFactory:
    <a href="1">1</a> <a href="2">2</a> <a href="3">3</a>
 </p>
 <p>
-   Dynamically named resources, located via locateChild: 
+   Dynamically named resources, located via locateChild:
    <a href="4">4</a>
    <a href="5">5</a>
+   <!-- [bw] в stan-версии это будет href="6%27", что соотв. тестам -->
    <a href="6/7">6/7</a>
 </p>
 </body>
-</html>	
+</html>

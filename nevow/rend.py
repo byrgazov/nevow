@@ -19,8 +19,11 @@ Mostly, you'll use the renderers:
 
 from time import time as now
 from io import StringIO
+
 import random
 import warnings
+import typing
+import codecs
 
 from zope.interface import implementer, providedBy
 
@@ -171,11 +174,12 @@ class FreeformChildMixin:
 
             cf = iformless.IConfigurableFactory(self)
 
-            def checkC(c):
-                if c is not None:
-                    return self.webFormPost(request, self, c, ctx, bindingName, request.args)
+            def checkC(configurable):
+                if configurable is not None:
+                    return self.webFormPost(request, self, configurable, ctx, bindingName, request.args)
 
-            return util.maybeDeferred(cf.locateConfigurable, ctx, configurableName).addCallback(checkC)
+            return util.maybeDeferred(cf.locateConfigurable, ctx, configurableName)\
+                .addCallback(checkC)
 
         return NotFound
 
@@ -226,13 +230,11 @@ class ConfigurableMixin(object):
 
         def _convert_list(binding):
             if isinstance(binding, list):
-                binding = annotate.MethodBinding(
-                    name, annotate.Method(arguments=[
-                    annotate.Argument(n, v, v.id)
-                    for (n, v) in binding]))
+                binding = annotate.MethodBinding(name, annotate.Method(
+                    arguments=[annotate.Argument(n, v, v.id) for (n, v) in binding]))
             return binding
 
-        binding = util.maybeDeferred(getattr, self, 'bind_%s' % name)
+        binding = util.maybeDeferred(getattr, self, 'bind_' + name)
         return binding.addCallback(_get_binding).addCallback(_convert_list)
 
     def getDefault(self, forBinding):
@@ -247,9 +249,9 @@ class ConfigurableMixin(object):
                 return getattr(self, forBinding.name)
         return forBinding.default
 
-    def postForm(self, ctx, bindingName, args):
+    def postForm(self, ctx, bindingName: str, params: typing.Dict[str, typing.Any]):
         """Accept a form post to the given bindingName.
-        The post arguments are given in args.
+        The post arguments are given in params.
 
         This will invoke the IInputProcessor for the
         binding with the given name. If it succeeds, the
@@ -257,15 +259,19 @@ class ConfigurableMixin(object):
         been called. If it fails, a ValidateError exception
         will be raised.
         """
+
         def _callback(binding):
             ctx.remember(binding, iformless.IBinding)
             ctx.remember(self, iformless.IConfigurable)
-            rv = iformless.IInputProcessor(binding).process(ctx, self, args)
+
+            rv = iformless.IInputProcessor(binding).process(ctx, self, params)
             ctx.remember(rv, inevow.IHand)
-            ctx.remember('%r success.' % bindingName, inevow.IStatusMessage)
+            ctx.remember('{:s} success.'.format(bindingName), inevow.IStatusMessage)
+
             return rv
-        return util.maybeDeferred(self.getBinding, ctx,
-                                  bindingName).addCallback(_callback)
+
+        return util.maybeDeferred(self.getBinding, ctx, bindingName)\
+            .addCallback(_callback)
 
 
 @implementer(iformless.IConfigurableFactory)
@@ -285,8 +291,8 @@ class ConfigurableFactory:
         This default implementation of locateConfigurable looks for a configurable_* method
         corresponding to the name which was passed.
         """
-        return util.maybeDeferred(getattr(self, 'configurable_%s'%name),
-                                  context).addCallback(iformless.IConfigurable)
+        return util.maybeDeferred(getattr(self, 'configurable_' + name), context)\
+            .addCallback(iformless.IConfigurable)
 
     def configurable_(self, context):
         """Configurable factory for use when self is a configurable;
@@ -329,44 +335,75 @@ class ConfigurableFactory:
         """
         return self.original
 
+
 _CARRYOVER = {}
 
 
 def defaultsFactory(ctx):
-    co = _CARRYOVER.get(
-        ctx.tag.args.get('_nevow_carryover_', [None])[0], None)
+    # @todo: tests
+
     from formless import webform
     defaults = webform.FormDefaults()
-    if co is not None:
-        e = iformless.IFormErrors(co, {})
-        for k, v in list(e.items()):
-            defaults.getAllDefaults(k).update(v.partialForm)
+
+    cokey = ctx.tag.args.get(b'_nevow_carryover_', [None])[0]
+
+    if cokey is not None:
+        cokey = compat.nativeString(cokey)
+        coval = _CARRYOVER.get(cokey, None)
+
+        if coval is not None:
+            #e = iformless.IFormErrors(coval, {})
+            df = iformless.IFormDefaults(coval, {})
+            #for k, v in list(e.items()):
+            for k, v in df.items():
+                defaults.getAllDefaults(k).update(v.partialForm)
+
     return defaults
 
 
 def errorsFactory(ctx):
-    co = _CARRYOVER.get(
-        ctx.tag.args.get('_nevow_carryover_', [None])[0], None)
+    # @todo: tests
+
     from formless import webform
     errs = webform.FormErrors()
-    if co is not None:
-        e = iformless.IFormErrors(co, {})
-        for k, v in list(e.items()):
-            errs.updateErrors(k, v.errors)
-            errs.setError(k, v.formErrorMessage)
+
+    cokey = ctx.tag.args.get(b'_nevow_carryover_', [None])[0]
+
+    if cokey is not None:
+        cokey = compat.nativeString(cokey)
+        coval = _CARRYOVER.get(cokey, None)
+
+        if coval is not None:
+            e = iformless.IFormErrors(coval, {})
+            for k, v in list(e.items()):
+                errs.updateErrors(k, v.errors)
+                errs.setError(k, v.formErrorMessage)
+
     return errs
 
 
 def handFactory(ctx):
-    co = _CARRYOVER.get(
-        ctx.tag.args.get('_nevow_carryover_', [None])[0], None)
-    return inevow.IHand(co, None)
+    # @todo: tests
+
+    cokey = ctx.tag.args.get(b'_nevow_carryover_', [None])[0]
+
+    if cokey is not None:
+        cokey = compat.nativeString(cokey)
+        coval = _CARRYOVER.get(cokey, None)
+        if coval is not None:
+            return inevow.IHand(coval, None)
 
 
 def statusFactory(ctx):
-    co = _CARRYOVER.get(
-        ctx.tag.args.get('_nevow_carryover_', [None])[0], None)
-    return inevow.IStatusMessage(co, None)
+    # @todo: tests
+
+    cokey = ctx.tag.args.get(b'_nevow_carryover_', [None])[0]
+
+    if cokey is not None:
+        cokey = compat.nativeString(cokey)
+        coval = _CARRYOVER.get(cokey, None)
+        if coval is not None:
+            return inevow.IStatusMessage(coval, None)
 
 
 def originalFactory(ctx):
@@ -463,7 +500,8 @@ class ChildLookupMixin(FreeformChildMixin):
     ##
 
     children = None
-    def locateChild(self, ctx, segments):
+
+    def locateChild(self, ctx, segments: typing.List[bytes]):
         """Locate a child page of this one. ctx is a
         nevow.context.PageContext representing the parent Page, and segments
         is a tuple of each element in the URI. An tuple (page, segments) should be
@@ -485,12 +523,16 @@ class ChildLookupMixin(FreeformChildMixin):
            to IResource.
         """
 
+        name = compat.nativeString(segments[0])
+
         if self.children is not None:
-            r = self.children.get(segments[0], None)
+            r = self.children.get(segments[0])
+            if r is None and compat._PY3:
+                r = self.children.get(name)
             if r is not None:
                 return r, segments[1:]
 
-        w = getattr(self, 'child_' + compat.nativeString(segments[0]), None)
+        w = getattr(self, 'child_' + name, None)
         if w is not None:
             if inevow.IResource(w, None) is not None:
                 return w, segments[1:]
@@ -498,13 +540,13 @@ class ChildLookupMixin(FreeformChildMixin):
             if r is not None:
                 return r, segments[1:]
 
-        r = self.childFactory(ctx, segments[0])
+        r = self.childFactory(ctx, name)
         if r is not None:
             return r, segments[1:]
 
         return FreeformChildMixin.locateChild(self, ctx, segments)
 
-    def childFactory(self, ctx, name):
+    def childFactory(self, ctx, name: str):
         """Used by locateChild to return children which are generated
         dynamically. Note that higher level interfaces use only locateChild,
         and only nevow.rend.Page.locateChild uses this.
@@ -516,7 +558,7 @@ class ChildLookupMixin(FreeformChildMixin):
         to be overridden."""
         return None
 
-    def putChild(self, name, child):
+    def putChild(self, name: str, child):
         if self.children is None:
             self.children = {}
         self.children[name] = child
@@ -545,7 +587,7 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
     def _renderHTTP(self, ctx):
         request = inevow.IRequest(ctx)
         ## XXX request is really ctx now, change the name here
-        if self.addSlash and inevow.ICurrentSegments(ctx)[-1] != '':
+        if self.addSlash and inevow.ICurrentSegments(ctx)[-1] != b'':
             request.redirect(str(request.URLPath().child('')))
             return ''
 
@@ -556,8 +598,9 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
         def finishRequest():
             carryover = request.args.get(b'_nevow_carryover_', [None])[0]
 
-            if carryover is not None and carryover in _CARRYOVER:
-                del _CARRYOVER[carryover]
+            if carryover is not None:
+                carryover = compat.nativeString(carryover)
+                _CARRYOVER.pop(carryover, None)
 
             if self.afterRender is not None:
                 return util.maybeDeferred(self.afterRender,ctx)
@@ -640,7 +683,7 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
             return self
         return None
 
-    def webFormPost(self, request, res, configurable, ctx, bindingName, args):
+    def webFormPost(self, request, res, configurable, ctx, bindingName: str, args: typing.List[bytes]):
         """Accept a web form post, either redisplaying the original form (with
         errors) if validation fails, or redirecting to the appropriate location after
         the post succeeds. This hook exists specifically for formless.
@@ -655,14 +698,15 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
         instance rendered at the post target URL with no redirects at all. Useful
         for multi-step wizards.
         """
+
         def redirectAfterPost(aspects):
-            hand = aspects.get(inevow.IHand)
+            hand    = aspects.get(inevow.IHand)
             refpath = None
 
             if hand is not None:
                 if isinstance(hand, Page):
                     refpath = url.here
-                    if 'freeform_hand' not in inevow.IRequest(ctx).prepath:
+                    if b'freeform_hand' not in inevow.IRequest(ctx).prepath:
                         refpath = refpath.child('freeform_hand')
                 if isinstance(hand, (url.URL, url.URLOverlay)):
                     refpath, hand = hand, None
@@ -682,8 +726,9 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
                     refpath = url.URL.fromString(ref)
 
             if hand is not None or aspects.get(iformless.IFormErrors) is not None:
-                magicCookie = '%s%s%s' % (now(), request.getClientIP(), random.random())
+                magicCookie = '{:f}.{:s}.{:f}'.format(now(), request.getClientIP(), random.random())
                 refpath = refpath.replace('_nevow_carryover_', magicCookie)
+
                 _CARRYOVER[magicCookie] = C = tpc.Componentized()
 
                 for k, v in aspects.items():
@@ -693,22 +738,37 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
             request.redirect(destination)
 
             from nevow import static
-            return static.Data(compat.networkString('You posted a form to %s' % bindingName), 'text/plain'), ()
+            return static.Data(compat.networkString('You posted a form to ' + bindingName), 'text/plain'), ()
 
-        return util.maybeDeferred(
-            configurable.postForm, ctx, bindingName, args
-        ).addCallback(
-            self.onPostSuccess, request, ctx, bindingName, redirectAfterPost
-        ).addErrback(
-            self.onPostFailure, request, ctx, bindingName, redirectAfterPost
-        )
+        params = {}
+
+        if args:
+            charset = compat.nativeString(args.get(b'_charset_', [b'ascii'])[0])
+            codec   = codecs.lookup(charset)
+
+            for key, value in args.items():
+                key = compat.nativeString(key)
+                value_type = type(value)
+
+                if value_type in (tuple, list):
+                    value = value_type(
+                        codec.decode(item)[0] if type(item) is bytes else item
+                        for item in value
+                    )
+                elif value_type is bytes:
+                    value = codec.decode(value)[0]
+
+                params[key] = value
+
+        return util.maybeDeferred(configurable.postForm, ctx, bindingName, params)\
+            .addCallback(self.onPostSuccess, request, ctx, bindingName, redirectAfterPost)\
+            .addErrback(self.onPostFailure, request, ctx, bindingName, redirectAfterPost)
 
     def onPostSuccess(self, result, request, ctx, bindingName, redirectAfterPost):
         if result is None:
-            message = "%s success." % formless.nameToLabel(bindingName)
+            message = '{:s} success.'.format(formless.nameToLabel(bindingName))
         else:
             message = result
-
         return redirectAfterPost({inevow.IHand: result, inevow.IStatusMessage: message})
 
     def onPostFailure(self, reason, request, ctx, bindingName, redirectAfterPost):

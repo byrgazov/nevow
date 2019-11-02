@@ -5,24 +5,24 @@
 from nevow import loaders, rend, tags as T, url
 
 
-SUBMIT = '_submit'
+SUBMIT = b'_submit'
 
 
 class Page(rend.Page):
-    
+
     addSlash = True
-    
+
     def locateChild(self, ctx, segments):
 
         # Handle the form post
         if segments[0] == SUBMIT:
             # Just print out the name
-            print('*** name:', ctx.arg('name'))
+            print('*** name:', ctx.arg(b'name'))
             # Redirect away from the POST
             return url.URL.fromContext(ctx), ()
-        
+
         return rend.Page.locateChild(self, ctx, segments)
-    
+
     docFactory = loaders.stan(
         T.html[
             T.body[

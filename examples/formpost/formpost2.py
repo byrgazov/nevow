@@ -24,6 +24,7 @@ radioChoices = annotate.Radio(["Old", "Tyme", "Radio"])
 
 ## An example of using custom valueToKey and keyToValue functions to serialize/deserialize items
 values = {0: dict(name="Zero", stuff=1234), 1: dict(name="One", stuff=1234), 2: dict(name="Two", stuff=2345435)}
+
 customValueToKey = annotate.Choice(
     [0, 1, 2], # Perhaps these are primary keys in a database
     stringify=lambda x: values[x]['name'], # Do a database lookup to render a nice label in the ui
@@ -34,15 +35,13 @@ customValueToKey = annotate.Choice(
 class IMyForm(annotate.TypedInterface):
     foo = annotate.Integer()
 
-    def bar(baz=annotate.Integer(),
-        slam=newChoicesWay, ham=deferChoicesWay, radio=radioChoices, custom=customValueToKey):
+    @annotate.autocallable
+    def bar(baz=annotate.Integer(), slam=newChoicesWay, ham=deferChoicesWay, radio=radioChoices, custom=customValueToKey):
         pass
-    bar = annotate.autocallable(bar)
 
 
 @implementer(IMyForm)
 class Implementation(object):
-
     foo = 5
 
     def bar(self, baz, slam, ham, radio, custom):
@@ -52,7 +51,6 @@ class Implementation(object):
 
 
 class FormPage(rend.Page):
-
     addSlash = True
 
     child_webform_css = webform.defaultCSS
@@ -63,21 +61,18 @@ class FormPage(rend.Page):
             return ctx.tag[hand]
         return ''
 
-    docFactory = loaders.stan(
-        tags.html[
-            tags.head[
-                tags.link(rel='stylesheet', type='text/css', href=url.here.child('webform_css')),
-                ],
-            tags.body[
-                tags.h3(render=render_hand, style="color: red; font-size: xx-large"),
-                "Hello! Here is a form:",
+    docFactory = loaders.stan(tags.html[
+        tags.head[
+            tags.link(rel='stylesheet', type='text/css', href=url.here.child('webform_css')),
+        ],
+        tags.body[
+            tags.h3(render=render_hand, style="color: red; font-size: xx-large"),
+            "Hello! Here is a form:",
 
-                # We want to render forms defined by the Implementation instance.
-                # When we pass the Implementation instance to FormPage below,
-                # rend.Page sets it as the .original attribute. To tell webform to render
-                # forms described by this object, we use the configurable name "original".
-                webform.renderForms('original'),
-                ],
-            ],
-        )
-
+            # We want to render forms defined by the Implementation instance.
+            # When we pass the Implementation instance to FormPage below,
+            # rend.Page sets it as the .original attribute. To tell webform to render
+            # forms described by this object, we use the configurable name "original".
+            webform.renderForms('original'),
+        ],
+    ])

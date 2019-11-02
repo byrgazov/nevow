@@ -2,6 +2,7 @@
 Simple example of how child resources are located.
 """
 
+from twisted.python import compat
 from nevow import loaders
 from nevow import rend
 from nevow import tags as T
@@ -75,7 +76,7 @@ class RootPage(rend.Page):
         """Create and return a dynamically named child resource if child_ or
         childFactory didn't help. However, this time we get the chance to
         consume multiple path segments (inluding the childOfChild link).
-        
+
         Note: locateChild is actually the main resource location API (see
         inevow.IReource) and it is actually rend.Page's implementation of the
         method that provides the child_ and childFactory functionality.
@@ -84,15 +85,15 @@ class RootPage(rend.Page):
         # Let parent class have a go first
         # WARNING: This 3 lines work well until you use formless in this page
         # because formless will make locateChild return only one return value
-        # (a deferred) on which you should add a callback that accepts a resource and 
+        # (a deferred) on which you should add a callback that accepts a resource and
         # an empty tuple that represents no remaining segments.
         child, remainingSegments = rend.Page.locateChild(self, ctx, segments)
         if child:
             return child, remainingSegments
 
         # Consume all remaining path segments for the name
-        return ChildPage('/'.join(segments)), []
-    
+        return ChildPage('/'.join(map(compat.nativeString, segments))), []
+
     docFactory = loaders.stan(
         T.html[
             T.body[

@@ -144,12 +144,14 @@ def EntitySerializer(original, context):
         return '&%s;' % original.name
     return '&#%s;' % original.num
 
+
 def _jsSingleQuoteQuote(quotable):
     return quotable.replace(
         "\\", "\\\\").replace(
         "'", r"\'").replace(
         "\n", "\\n").replace(
         "\r", "\\r")
+
 
 def RawSerializer(original, context):
     if context.inJSSingleQuoteString:
@@ -168,17 +170,23 @@ def StringSerializer(original, context):
         if isinstance(original, compat.unicode):
             original = original.encode("utf-8")
         return quote(original, safe="-_.!*'()")
+
+    if type(original) is not str:
+        raise ValueError(type(original), original)
+
     ## quote it
     if context.inJS:
         original = _jsSingleQuoteQuote(original)
         if not context.inJSSingleQuoteString:
-            original = "'%s'" % (original, )
+            original = "'{:s}'".format(original)
+
     if context.isAttrib:
         return original.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
-    elif context.inJS:
+
+    if context.inJS:
         return original
-    else:
-        return original.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    return original.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def NoneWarningSerializer(original, context):

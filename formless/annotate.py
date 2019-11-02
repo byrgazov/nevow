@@ -10,11 +10,12 @@ import os
 import sys
 import inspect
 import warnings
+
 from zope.interface import implementer
 from zope.interface.interface import InterfaceClass, Attribute
 
+from twisted.python import compat
 from nevow import util
-
 
 from formless import iformless
 
@@ -629,7 +630,7 @@ def nameToLabel(mname):
     labelList = []
     word = ''
     lastWasUpper = False
-    for letter in mname:
+    for letter in compat.nativeString(mname):
         if caps(letter) == lastWasUpper:
             # Continuing a word.
             word += letter

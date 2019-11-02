@@ -3,6 +3,7 @@
 
 from zope.interface import implementer
 
+from twisted.python import compat
 from twisted.python import components
 
 from nevow import inevow
@@ -113,17 +114,20 @@ class FormErrors(components.Adapter):
     def clearAll(self):
         self.errors = {}
 
-def calculatePostURL(context, data):
+
+def calculatePostURL(context, data) -> str:
     postLocation = inevow.ICurrentSegments(context)[-1]
-    if postLocation == '':
-        postLocation = '.'
+    postLocation = '.' if postLocation == b'' else compat.nativeString(postLocation)
+
     try:
         configurableKey = context.locate(iformless.IConfigurableKey)
     except KeyError:
         #print "IConfigurableKey was not remembered when calculating full binding name for %s in node %s" % (configurable, context.key)
         configurableKey = ''
+
     bindingName = context.key
-    return "%s/freeform_post!%s!%s" % (postLocation, configurableKey, bindingName)
+
+    return '{:s}/freeform_post!{:s}!{:s}'.format(postLocation, configurableKey, bindingName)
 
 
 def keyToXMLID(key):

@@ -4,7 +4,7 @@ Simple example of how child resources are located.
 
 from twisted.application import internet
 from twisted.application import service
-
+from twisted.python import compat
 from twisted.python import util
 
 from nevow import appserver
@@ -27,7 +27,7 @@ class ChildPage(rend.Page):
 
     def render_name(self, context, data):
         return context.tag[self.name]
-    
+
     def render_link(self, context, data):
         context.fillSlots('childLink', url.here.child('childOfChild'))
         return context.tag
@@ -69,7 +69,7 @@ class RootPage(rend.Page):
         """Create and return a dynamically named child resource if child_ or
         childFactory didn't help. However, this time we get the chance to
         consume multiple path segments (inluding the childOfChild link).
-        
+
         Note: locateChild is actually the main resource location API (see
         inevow.IReource) and it is actually rend.Page's implementation of the
         method that provides the child_ and childFactory functionality.
@@ -81,7 +81,7 @@ class RootPage(rend.Page):
             return child, remainingSegments
 
         # Consume all remaining path segments for the name
-        return ChildPage('/'.join(segments)), []
+        return ChildPage('/'.join(map(compat.nativeString, segments))), []
 
 
 application = service.Application('children')

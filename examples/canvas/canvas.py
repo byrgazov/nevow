@@ -3,7 +3,6 @@ import os, string, random
 from twisted.internet import task
 
 from nevow import canvas, rend
-import imp
 
 
 DEBUG = False
@@ -12,7 +11,10 @@ DEBUG = False
 try:
     words = open('/usr/share/dict/words').readlines()
 except:
-    words = open(os.path.join('.','files','words')).readlines()
+    words_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '..', 'files', 'words')
+    words = open(words_path).readlines()
 
 
 ## Some random helpers
@@ -104,7 +106,7 @@ class CanvasDemo(canvas.Canvas):
         canvas.S = S = canvas.sound('http://localhost/amen.mp3')
         S.play(timesLoop=5)
         for x in range(random.randint(1, 4)):
-            canvas.pen( 
+            canvas.pen(
                 random.randint(1, 10),
                 random.randint(0, 0xffffff),
                 random.randint(0, 100))

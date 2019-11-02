@@ -1,6 +1,8 @@
 # Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
+import typing
+
 from zope.interface import implementer, providedBy
 
 from formless.iformless import IConfigurable, IActionableType, IBinding
@@ -12,34 +14,34 @@ from nevow.context import WovenContext
 
 @implementer(IConfigurable)
 class Configurable(object):
-
     bindingDict = None
 
     def __init__(self, original):
         self.original = original
         self.boundTo = self
 
-    def getBindingNames(self, context):
+    def getBindingNames(self, context) -> typing.List[str]:
         ## Todo: remove this getattr
         ifs = providedBy(getattr(self, 'boundTo', self))
-        ifs = [
-            x for x in ifs if x is not IConfigurable and x is not TypedInterface
-        ]
+        ifs = [x for x in ifs
+            if x is not IConfigurable and x is not TypedInterface]
+
         bindingNames = []
-        self.bindingDict = bindingDict = {}
+        bindingDict  = self.bindingDict = {}
+
         for interface in ifs:
             ## TypedInterfaces have a __spec__ attribute which is a list of all Typed properties and
             ## autocallable methods
             for binding in getattr(interface, '__spec__', []):
                 bindingDict[binding.name] = binding
+
                 if binding.name not in bindingNames:
                     bindingNames.append(binding.name)
-                if IActionableType.providedBy(binding.typedValue):
-                    acts = binding.typedValue.actions
-                    if acts is None:
-                        acts = []
-                    for action in acts:
+
+                if IActionableType.providedBy(binding.typedValue) and binding.typedValue.actions:
+                    for action in binding.typedValue.actions:
                         bindingDict[action.name] = action
+
         return bindingNames
 
     def getDefault(self, forBinding):
@@ -55,12 +57,12 @@ class Configurable(object):
                 return getattr(self.original, name)
         return forBinding.default
 
-    def getBinding(self, context, name):
+    def getBinding(self, context, name: str):
         if self.bindingDict is None:
             self.getBindingNames(context)
         if self.bindingDict is None:
             self.bindingDict = {}
-        binding = getattr(self, 'bind_%s' % name, getattr(self.boundTo, 'bind_%s' % name, None))
+        binding = getattr(self, 'bind_' + name, getattr(self.boundTo, 'bind_' + name, None))
         if binding is not None:
             binding = binding(context)
         else:
@@ -71,58 +73,71 @@ class Configurable(object):
         binding.boundTo = self.boundTo
         return binding
 
-    def postForm(self, ctx, bindingName, args):
+    def postForm(self, ctx, bindingName: str, params: typing.Dict[str, typing.Any]):
         """Accept a form post to the given bindingName. The bindingName
         can be dotted to indicate an attribute of this Configurable, eg
-        addresses.0.changeEmail. The post arguments are given in args.
+        addresses.0.changeEmail. The post arguments are given in params.
         Return a Resource which will be rendered in response.
         """
         from formless import iformless
         from nevow.tags import invisible
-        request = ctx.locate(inevow.IRequest)
+
+        request  = ctx.locate(inevow.IRequest)
         pathSegs = bindingName.split('.')
         configurable = self
 
         cf = ctx.locate(iformless.IConfigurableFactory)
         ## Get the first binding
         firstSeg = pathSegs.pop(0)
-        binding = configurable.getBinding(ctx, firstSeg)
+        binding  = configurable.getBinding(ctx, firstSeg)
+
         ctx.remember(binding, IBinding)
         ctx.remember(configurable, IConfigurable)
+
         ## I don't think this works right now, it needs to be fixed.
         ## Most cases it won't be triggered, because we're just traversing a
         ## single binding name
+
         for seg in pathSegs:
-            assert 1 == 0, "Sorry, this doesn't work right now"
+            raise NotImplementedError('Sorry, this doesn\'t work right now')
+
             binding = configurable.getBinding(ctx, seg)
-            child = self.boundTo
+            child   = self.boundTo
+
             if not isinstance(binding, GroupBinding):
                 accessor = inevow.IContainer(configurable.boundTo, None)
                 if accessor is None:
                     child = getattr(configurable.boundTo, binding.name)
                 else:
                     child = accessor.child(ctx, binding.name)
+
             ## If it's a groupbinding, we don't do anything at all for this path segment
 
             ## This won't work right now. We need to push the previous configurable
             ## as the configurableFactory somehow and ask that for hte next binding
             ## we also need to support deferreds coming back from locateConfigurable
-            assert 'black' is 'white', "Deferred support is pending"
+
+            raise NotImplementedError('Deferred support is pending')
+
             configurable = cf.locateConfigurable(ctx, child)
+
             ctx = WovenContext(ctx, invisible(key=seg))
             ctx.remember(binding, IBinding)
             ctx.remember(configurable, IConfigurable)
 
         bindingProcessor = iformless.IInputProcessor(binding)
-        rv = bindingProcessor.process(ctx, binding.boundTo, args)
+        rv = bindingProcessor.process(ctx, binding.boundTo, params)
+
         ctx.remember(rv, inevow.IHand)
-        ctx.remember('%r success.' % bindingName, inevow.IStatusMessage)
+        ctx.remember('{:s} success.'.format(bindingName), inevow.IStatusMessage)
+
         return rv
 
     def summary(self):
         return "An instance of %s" % self.__class__.__name__
 
     postLocation = None
+
 
 class NotFoundConfigurable(Configurable):
     def getBinding(self, context, name):

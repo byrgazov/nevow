@@ -1,25 +1,26 @@
+
+import os, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+sys.path.insert(0, HERE)
+
+
 try:
     import zope.interface
 except ImportError:
-    print """ Please install ZopeInterface product from
+    print(""" Please install ZopeInterface product from
     http://www.zope.org/Products/ZopeInterface/
-to run Nevow """
+to run Nevow """)
     import sys
     sys.exit(1)
 
 
 from twisted.python import components
-import warnings
-warnings.filterwarnings(
-    'ignore',
-    category=components.ComponentsDeprecationWarning)
-
 from twisted.application import service, strports
 from twisted.python import util
 
 from nevow import inevow, rend, loaders, url, tags, appserver, static, guard, athena
-
-import sys
 
 try:
     from advanced_manualform import advanced_manualform
@@ -44,8 +45,7 @@ try:
     from manualform import manualform
     from guarded import guarded
     from guarded import guarded2
-    from xul import xul_nevow
-    from liveanimal import liveanimal
+#   from liveanimal import liveanimal
     from most_basic import most_basic
     from http_auth import http_auth
     from logout_guard import logout_guard
@@ -56,32 +56,16 @@ try:
     from macros import macros
     from i18n import i18n, xmli18n
     from cal import cal
-    from tabbed import tabbed
-    from progress import progress
+#   from tabbed import tabbed
+#   from progress import progress
+#   from tests import testformless
+#   from tests import testexamples
 
     from athenademo import calculator
     from athenademo import typeahead
     from athenademo import widgets
     from athenademo import benchmark
-except ImportError, e:
-    if str(e).find('No module named') != -1:
-        msg = """
-Original error message:
-%s
-=======================================
-Please check the following things:
-* You are not root
-* You are running examples.tac from examples directory or examples
-    directory is in the PYTHONPATH
-
-A possible fix could be to run examples.tac with the following
-command:
-    PYTHONPATH=/path/to/examples/ twistd -noy examples.tac
-=======================================
-""" % str(e)
-        raise Exception(msg)
-    raise e
-except AttributeError, e:
+except AttributeError as e:
     if str(e).find("'module' object has no attribute") != -1:
         msg = """
 Original error message:
@@ -119,51 +103,56 @@ class Sources(rend.Page):
 import os
 class Examples(rend.Page):
     addSlash = True ## This is a directory-like resource
-    docFactory = loaders.xmlfile(os.path.abspath('.')+'/index.html')
-    child_sources = static.File('.', defaultType='text/plain')
+    docFactory = loaders.xmlfile(os.path.join(HERE, 'index.html'))
+
+    child_sources = static.File(os.path.join(HERE), defaultType='text/plain')
     child_sources.processors['.py'] = Sources
     child_sources.contentTypes = {}
-    child_cssfile = static.File('index.css')
+    child_cssfile = static.File(os.path.join(HERE, 'index.css'))
+
     children = dict(
-        customform=customform.Root(),
-        disktemplates=disktemplates.Mine(),
-        disktemplates_stan=disktemplates_stan.Mine(),
-        simple=simple.Simple(),
+        most_basic=most_basic.root,
+        hellohtml =hellohtml.Page(),
+        hellostan =hellostan.Page(),
         simplehtml=simplehtml.Simple(),
+        simple    =simple.Simple(),
+        tablehtml =tablehtml.Table(),
+        disktemplates     =disktemplates.Mine(),
+        disktemplates_stan=disktemplates_stan.Mine(),
+        childrenhtml  =childrenhtml.RootPage(),
+        children      =children.RootPage(),
+        fragments     =fragments.Root(),
+        macros        =macros.Root(),
+        objcontainer  =objcontainer.createResource(),
+        nestedsequence=nestedsequence.Root(),
+        manualform    =manualform.Page(),
+        advanced_manualform=advanced_manualform.Page(),
+        formpost      =formpost.FormPage(),
+        formpost2     =formpost2.FormPage(formpost2.Implementation()),
+#       testformless  =testformless.NameWizard(),
+#       formless_redirector=testformless.Redirector(),
+#       formless_tests=testformless.formless_tests,
+        db       =db.DBBrowser(),
+        http_auth=http_auth.AuthorizationRequired(),
+        guarded  =guarded.createResource(),
+        guarded2 =guarded2.createResource(),
+
+        customform=customform.Root(),
         tree=tree.Tree('base', 'base'),
-        formpost2=formpost2.FormPage(formpost2.Implementation()),
-        formpost=formpost.FormPage(),
-        children=children.RootPage(),
-        childrenhtml=childrenhtml.RootPage(),
-        tablehtml=tablehtml.Table(),
         irenderer=irenderer.Page(),
         simple_irenderer=simple_irenderer.Page(),
         formbuilder=formbuilder.FormBuilder(),
-        db=db.DBBrowser(),
-        hellohtml=hellohtml.Page(),
-        hellostan=hellostan.Page(),
         canvas=canvas.createResource(),
-        manualform=manualform.Page(),
-        guarded=guarded.createResource(),
-        guarded2=guarded2.createResource(),
-        xul_nevow=xul_nevow.createResource(),
-        advanced_manualform=advanced_manualform.Page(),
-        liveanimal=liveanimal.createResource(),
-        http_auth=http_auth.AuthorizationRequired(),
-        most_basic=most_basic.root,
+#       liveanimal=liveanimal.createResource(),
         logout_guard=logout_guard.createResource(),
         logout_guard2=logout_guard2.createResource(),
-        objcontainer=objcontainer.createResource(),
-        nestedsequence=nestedsequence.Root(),
         i18n=i18n.createResource(),
         xmli18n=xmli18n.createResource(),
         calendar=cal.Calendar(),
-        tabbed=tabbed.TabbedPage(),
-        progress=progress.createResource(),
-        fragments=fragments.Root(),
-        macros=macros.Root(),
+#       tabbed=tabbed.TabbedPage(),
+#       progress=progress.createResource(),
         typeahead=typeahead.DataEntry(),
-        )
+    )
 
     def child_calculator(self, ctx):
         return calculator.CalculatorParentPage(calc=calculator.Calculator())
@@ -176,4 +165,4 @@ class Examples(rend.Page):
 
 
 application = service.Application("examples")
-strports.service("8080", appserver.NevowSite(Examples())).setServiceParent(application)
+strports.service("tcp:8080", appserver.NevowSite(Examples())).setServiceParent(application)

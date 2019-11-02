@@ -104,12 +104,12 @@ class DBItem(rend.Page):
 
     def render_viewSelector(self, context, data):
         args = inevow.IRequest(context).args
-        view = args.get('view', ['view'])[0]
-        if view == 'view':
-            selector = "View | ", tags.a(href=here.add('view','edit'))[ "Edit" ]
+        view = args.get(b'view', [b'view'])[0]
+        if view == b'view':
+            selector = 'View | ', tags.a(href=here.add('view', 'edit'))['Edit']
             editor = ''
         else:
-            selector = tags.a(href=here.add('view','view'))["View"], " | Edit"
+            selector = tags.a(href=here.add('view', 'view'))['View'], ' | Edit'
             editor = context.onePattern('edit')() # get one copy of the edit pattern
         viewer = context.onePattern('view')() # get one copy of the view pattern
         return selector, viewer, editor
