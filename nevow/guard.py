@@ -44,7 +44,7 @@ from nevow.url import URL
 PortalValue = collections.namedtuple('PortalValue', 'resource logout')
 
 
-def _sessionCookie():
+def _sessionCookie() -> str:
     return \
         hashlib.md5(b"%r_%r" % (
             str(random.random()),

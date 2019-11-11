@@ -8,7 +8,8 @@ A web application server built using twisted.web
 
 import cgi
 import warnings
-from collections import MutableMapping
+import collections
+import io, tempfile
 
 from zope.interface import implementer, classImplements
 
@@ -26,8 +27,7 @@ from nevow import flat
 from nevow import stan
 
 
-
-class _DictHeaders(MutableMapping):
+class _DictHeaders(collections.MutableMapping):
     """
     A C{dict}-like wrapper around L{Headers} to provide backwards compatibility
     for L{twisted.web.http.Request.received_headers} and
@@ -40,7 +40,6 @@ class _DictHeaders(MutableMapping):
     def __init__(self, headers):
         self._headers = headers
 
-
     def __getitem__(self, key):
         """
         Return the last value for header of C{key}.
@@ -49,13 +48,11 @@ class _DictHeaders(MutableMapping):
             return self._headers.getRawHeaders(key)[-1]
         raise KeyError(key)
 
-
     def __setitem__(self, key, value):
         """
         Set the given header.
         """
         self._headers.setRawHeaders(key, [value])
-
 
     def __delitem__(self, key):
         """
@@ -66,14 +63,12 @@ class _DictHeaders(MutableMapping):
         else:
             raise KeyError(key)
 
-
     def __iter__(self):
         """
         Return an iterator of the lowercase name of each header present.
         """
         for k, v in self._headers.getAllRawHeaders():
-            yield k.lower()
-
+            yield k.decode('iso-8859-1').lower()
 
     def __len__(self):
         """
@@ -82,7 +77,6 @@ class _DictHeaders(MutableMapping):
         # XXX Too many _
         return len(self._headers._rawHeaders)
 
-
     # Extra methods that MutableMapping doesn't care about but that we do.
     def copy(self):
         """
@@ -90,7 +84,6 @@ class _DictHeaders(MutableMapping):
         header value.
         """
         return dict(list(self.items()))
-
 
     def has_key(self, key):
         """
@@ -172,6 +165,15 @@ def defaultExceptionHandlerFactory(ctx):
     return DefaultExceptionHandler()
 
 
+class FieldStorage(cgi.FieldStorage):
+    # @note: лимиты по размеру тут не имеют значения, всё уже получено в C{Request.content}
+
+    def make_file(self):
+        if 0 <= self.length <= 65536:
+            return io.BytesIO()
+        return tempfile.TemporaryFile()
+
+
 @implementer(inevow.IRequest)
 class NevowRequest(server.Request, tpc.Componentized):
     """
@@ -201,9 +203,7 @@ class NevowRequest(server.Request, tpc.Componentized):
     def __init__(self, *args, **kw):
         server.Request.__init__(self, *args, **kw)
         tpc.Componentized.__init__(self)
-
         self.notifyFinish().addErrback(self._flagLostConnection)
-
 
     def _flagLostConnection(self, error):
         """
@@ -212,14 +212,13 @@ class NevowRequest(server.Request, tpc.Componentized):
         """
         self._lostConnection = True
 
-
     def process(self):
         # extra request parsing
         if self.method == b'POST':
             # @see: (!!!) L{twisted.web.http.Request.requestReceived} -> C{self.args}
             t = self.content.tell()
             self.content.seek(0)
-            self.fields = cgi.FieldStorage(
+            self.fields = FieldStorage(
                 self.content, _DictHeaders(self.requestHeaders),
                 environ={'REQUEST_METHOD': 'POST'})
             self.content.seek(t)
@@ -363,7 +362,6 @@ class NevowRequest(server.Request, tpc.Componentized):
                 "%(new)s instead." % dict(old=old, new=new)),
             stacklevel=3)
 
-
     @property
     def headers(self):
         """
@@ -372,7 +370,6 @@ class NevowRequest(server.Request, tpc.Componentized):
         """
         self._warnHeaders("headers", "responseHeaders")
         return _DictHeaders(self.responseHeaders)
-
 
     @property
     def received_headers(self):

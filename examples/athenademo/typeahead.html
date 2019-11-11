@@ -26,8 +26,9 @@ function xbAddEvent(obj, evType, fn, useCapture){
 
 function selectRange(ele, start, end)
 {
+/* [bw] ???
     var orig = ele;
-    ele = $(ele);
+    ele = $(ele);*/
     if (ele == null)
     {
         alert("selectRange() can't find an element with id: " + orig + ".");
@@ -49,7 +50,7 @@ function selectRange(ele, start, end)
     ele.focus();
 };
 
-// 
+//
 function replaceDescription(result, node)
 {
     var animal = result[0]; var descr = result[1];
@@ -78,12 +79,14 @@ function loadDescription(ev)
 
     var typehere = ev.target;
     var typed = typehere.value;
-    var d = Nevow.Athena.Widget.get(typehere).callRemote('loadDescription', typed);
-    d.addCallback(replaceDescription, typehere);
+    var d = Nevow.Athena.Widget.get(typehere)
+        .callRemote('loadDescription', typed)
+        .addCallback(replaceDescription, typehere);
 }
 
 Divmod.Base.addToCallStack(window, 'onload', function() {
-    typeheres = MochiKit.DOM.getElementsByTagAndClassName('input', 'typehere');
+//  typeheres = MochiKit.DOM.getElementsByTagAndClassName('input', 'typehere');
+    typeheres = document.querySelectorAll('input.typehere');
     for (n=0; n<typeheres.length; n++) {
       xbAddEvent(typeheres[n], 'keyup', loadDescription, 1);
     }

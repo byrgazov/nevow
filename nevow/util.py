@@ -1,9 +1,13 @@
-# Copyright (c) 2004 Divmod.
+## Copyright (c) 2004 Divmod.
 # See LICENSE for details.
 
-import inspect, os.path
+import os
+import inspect
+import codecs
 
 from twisted.python import compat
+from twisted.python import log
+
 
 class UnexposedMethodError(Exception):
     """
@@ -147,6 +151,29 @@ def getPOSTCharset(ctx):
             return charset
 
     return 'utf-8'
+
+
+def getCodecFromContentType(headers, default='utf-8'):
+    for ct in headers.getRawHeaders(b'content-type', []):
+        for param in ct.lower().split(b';'):
+            if b'=' in param:
+                key, value = map(bytes.strip, param.split(b'=', 1))
+                if key == b'charset':
+                    charset = value.decode('ascii')
+                    break
+        else:
+            continue
+        break
+    else:
+        charset = default
+
+    if charset != default:
+        try:
+            return codecs.lookup(charset)
+        except LookupError:
+            log.err(None, 'Invalid charset "{}", will be used "{}"'.format(charset, default))
+
+    return codecs.lookup(default)
 
 
 from twisted.python.reflect import qual, namedAny

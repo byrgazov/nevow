@@ -210,11 +210,10 @@ class ConfigurableMixin(object):
     """
 
     def getBindingNames(self, ctx):
-        """Expose bind_* methods and attributes on this class.
-        """
+        """Expose bind_* methods and attributes on this class."""
         for name in dir(self):
             if name.startswith('bind_'):
-                yield name[len('bind_'):]
+                yield name[5:]
 
     def getBinding(self, ctx, name):
         """Massage bind_* methods and attributes into an
@@ -605,18 +604,19 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
             if self.afterRender is not None:
                 return util.maybeDeferred(self.afterRender,ctx)
 
+        codec = util.getCodecFromContentType(request.responseHeaders)
+
         if self.buffered:
             io = StringIO()
             writer = io.write
 
             def finisher(result):
                 # @todo: [bw] charset
-                request.write(compat.networkString(io.getvalue()))
+                request.write(codec.encode(io.getvalue())[0])
                 return util.maybeDeferred(finishRequest).addCallback(lambda r: result)
 
         else:
-            # @todo: [bw] charset
-            writer = lambda data: request.write(compat.networkString(data))
+            writer = lambda data: request.write(codec.encode(data)[0])
 
             def finisher(result):
                 return util.maybeDeferred(finishRequest).addCallback(lambda r: result)
@@ -726,7 +726,7 @@ class Page(Fragment, ConfigurableFactory, ChildLookupMixin):
                     refpath = url.URL.fromString(ref)
 
             if hand is not None or aspects.get(iformless.IFormErrors) is not None:
-                magicCookie = '{:f}.{:s}.{:f}'.format(now(), request.getClientIP(), random.random())
+                magicCookie = '{:f}.{:s}.{:f}'.format(now(), compat.nativeString(request.getClientIP()), random.random())
                 refpath = refpath.replace('_nevow_carryover_', magicCookie)
 
                 _CARRYOVER[magicCookie] = C = tpc.Componentized()

@@ -23,38 +23,39 @@ class BuilderCore(configurable.Configurable):
         return ['form']
 
     def bind_form(self, ctx):
-        return annotate.MethodBinding(
-            'action',
-            annotate.Method(arguments=self.formElements))
+        return annotate.MethodBinding('action', annotate.Method(arguments=self.formElements))
 
     def action(self, **kw):
         print("ACTION!", kw)
 
     def addElement(self, name, type):
-        self.formElements.append(
-            annotate.Argument(name, type()))
+        self.formElements.append(annotate.Argument(name, type()))
 
 
 allTypes = [annotate.String, annotate.Text, annotate.Integer, annotate.Real, annotate.Password]
-typeChoice = annotate.Choice(choices=allTypes, valueToKey=reflect.qual, keyToValue=reflect.namedAny, stringify=lambda x: x.__name__)
+
+typeChoice = annotate.Choice(
+    choices   =allTypes,
+    valueToKey=reflect.qual,
+    keyToValue=reflect.namedAny,
+    stringify =lambda x: x.__name__)
 
 
 class IFormBuilder(annotate.TypedInterface):
+    @annotate.autocallable
     def addElement(name=annotate.String(required=True), type=typeChoice):
         """Add Element
-        
+
         Add an element to this form.
         """
-        pass
-    addElement = annotate.autocallable(addElement)
 
+    @annotate.autocallable
     def clearForm():
         """Clear Form
-        
+
         Clear this form.
         """
-    clearForm = annotate.autocallable(clearForm)
-        
+
 
 @implementer(IFormBuilder)
 class FormBuilder(rend.Page):
@@ -88,11 +89,11 @@ class FormBuilder(rend.Page):
         webform.renderForms('dynamicForm')]])
 
 
-## Startup glue
-from nevow import appserver
-from twisted.application import service
-from twisted.application import internet
+if __name__ == '__main__':
+    ## Startup glue
+    from nevow import appserver
+    from twisted.application import service
+    from twisted.application import internet
 
-application = service.Application('formbuilder')
-internet.TCPServer(8080, appserver.NevowSite(FormBuilder())).setServiceParent(application)
-
+    application = service.Application('formbuilder')
+    internet.TCPServer(8080, appserver.NevowSite(FormBuilder())).setServiceParent(application)

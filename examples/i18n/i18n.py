@@ -1,5 +1,6 @@
 import os
 
+from twisted.python import compat
 from twisted.python import util
 
 from nevow import inevow, loaders, rend, tags as T, url
@@ -12,22 +13,23 @@ LOCALE_DIR = util.sibpath(__file__, 'locale')
 langs = [d for d in os.listdir(LOCALE_DIR) if d != '.svn']
 langs.sort()
 
+
 class Common(rend.Page):
-    
     addSlash = True
-    
+
     def renderHTTP(self, ctx):
-        
+
         # We're only overriding renderHTTP to look for a 'lang' query parameter
         # without cluttering up the messages renderer, below.
-        
+
         # If 'lang' is present then we "force" the translation language. This
         # simulates how user preferences from the session might be used to
         # override the browser's language settings.
-        lang = ctx.arg('lang')
+        lang = ctx.arg(b'lang')
         if lang is not None:
+            lang = compat.nativeString(lang)
             ctx.remember([lang], inevow.ILanguages)
-            
+
         # Let the base class handle it, really.
         return rend.Page.renderHTTP(self, ctx)
 
@@ -39,6 +41,7 @@ class Common(rend.Page):
             out.append(T.a(href=url.here.replace('lang', lang))[lang])
             out.append(' | ')
         return out[:-1]
+
 
 class Page(Common):
     def render_message(self, ctx, data):
@@ -73,6 +76,7 @@ def preparePage(pageFactory):
     # Configure the I18N stuff
     root.remember(I18NConfig(domain='test', localeDir=LOCALE_DIR), inevow.II18NConfig)
     return root
+
 
 def createResource():
     return preparePage(Page)

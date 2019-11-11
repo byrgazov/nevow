@@ -4,7 +4,8 @@
 from zope.interface import implementer
 
 from twisted.internet import defer
-from twisted.python import log
+from twisted.python   import compat
+from twisted.python   import log
 
 from nevow import inevow, rend, loaders, static, url, tags, util
 from nevow.flat import flatten
@@ -16,9 +17,8 @@ try:
 except AttributeError:
     cn = count().next
 
-cookie = lambda: str(cn())
-
-_hookup = {}
+cookie  = lambda: str(cn())
+_hookup = {}  # @todo: clear
 
 ## If we need to use Canvas through a CGI which forwards to the appserver,
 ## then we will need to listen with the canvas protocol on another socket
@@ -55,6 +55,7 @@ class _Remoted(object):
 class Text(_Remoted):
     x = 0
     y = 0
+
     def change(self, text):
         self.text = text
         self.canvas.call('changeText', self.cookie, text)
@@ -67,13 +68,16 @@ class Text(_Remoted):
     def listFonts(self):
         if hasattr(self.canvas, '_fontList'):
             return defer.succeed(self.canvas._fontList)
+
         cook = cookie()
         self.canvas.deferreds[cook] = d = defer.Deferred()
         self.canvas.call('listFonts', cook)
+
         def _cb(l):
             L = l.split(',')
             self.canvas._fontList = L
             return L
+
         return d.addCallback(_cb)
 
     def font(self, font):
@@ -294,20 +298,20 @@ class CanvasSocket(GroupBase):
     """
 
     groupName = 'canvas'
+    closed    = False
 
-    closed = False
     def __init__(self):
         self.canvas = self
         self.d = defer.Deferred().addErrback(log.err)
 
     def locateChild(self, ctx, segs):
-        self.cookie = segs[0]
+        self.cookie = compat.nativeString(segs[0])
         return (self, ())
 
     def renderHTTP(self, ctx):
         try:
             self.deferreds = {}
-            self.buffer = ''
+            self.buffer = b''
             ## Don't try this at home kids! You'll blow your arm off!
             self.socket = inevow.IRequest(ctx).transport
             ## We be hijackin'
@@ -316,14 +320,14 @@ class CanvasSocket(GroupBase):
             self.delegate = _hookup[self.cookie]
             self.delegate.onload(self)
             del _hookup[self.cookie]
-        except:
+        except Exception:
             log.err()
         return self.d
 
     def dataReceived(self, data):
         self.buffer += data
-        while '\0' in self.buffer:
-            I = self.buffer.index('\0')
+        while b'\0' in self.buffer:
+            I = self.buffer.index(b'\0')
             message = self.buffer[:I]
             self.buffer = self.buffer[I+1:]
             self.gotMessage(message)
@@ -371,49 +375,67 @@ class CanvasSocket(GroupBase):
     def handle_diagnostic(self, info):
         print("Trace", info)
 
+
 canvasServerMessage = loaders.stan(tags.html["This server dispatches for nevow canvas events."])
 
 
 def canvas(width, height, delegate, useCGI=False):
-    C = cookie()
+    cook = cookie()
+
     if useCGI:
         global _canvasCGIService
+
         if _canvasCGIService is None:
             from nevow import appserver
             # Import reactor here to avoid installing default at startup
             from twisted.internet import reactor
             _canvasCGIService = reactor.listenTCP(0, appserver.NevowSite(Canvas(docFactory=canvasServerMessage)))
             _canvasCGIService.dispatchMap = {}
+
         port = _canvasCGIService.getHost().port
-        prefix = '/'
         movie_url = url.here.click('/').secure(False, port)
+        prefix = '/'
+
     else:
-        movie_url = url.here
         port = lambda c, d: inevow.IRequest(c).transport.server.port
+        movie_url = url.here
+
         def prefix(c, d):
-            pre = inevow.IRequest(c).path
+            pre = compat.nativeString(inevow.IRequest(c).path)
             if pre.endswith('/'):
                 return pre
             return pre + '/'
 
-    _hookup[C] = delegate
-    handlerInfo = []
+    _hookup[cook] = delegate
+    handlerInfo   = []
+
     for handlerName in ['onMouseMove', 'onMouseDown', 'onMouseUp', 'onKeyDown', 'onKeyUp']:
         if getattr(delegate, handlerName, None) is not None:
             handlerInfo.append((handlerName, 1))
 
-    movie_url = movie_url.child('nevow_canvas_movie.swf').add('cookie', C).add('port', port).add('prefix', prefix)
+    movie_url = movie_url\
+        .child('nevow_canvas_movie.swf')\
+        .add('cookie', cook)\
+        .add('port',   port)\
+        .add('prefix', prefix)
+
     for (k, v) in handlerInfo:
         movie_url = movie_url.add(k, v)
 
-    return tags._object(classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000",
-        codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0",
-        width=width, height=height, id=("Canvas-", C), align="middle")[
+    return tags._object(
+            classid ="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000",
+            codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=7,0,0,0",
+            width   =width,
+            height  =height,
+            id      =("Canvas-", cook),
+            align   ="middle")[
+
         tags.param(name="allowScriptAccess", value="sameDomain"),
         tags.param(name="movie", value=movie_url),
         tags.param(name="quality", value="high"),
         tags.param(name="scale", value="noscale"),
         tags.param(name="bgcolor", value="#ffffff"),
+
         Tag('embed')(
             src=movie_url,
             quality="high",
@@ -421,11 +443,12 @@ def canvas(width, height, delegate, useCGI=False):
             bgcolor="#ffffff",
             width=width,
             height=height,
-            name=("Canvas-", C),
+            name=("Canvas-", cook),
             align="middle",
             allowScriptAccess="sameDomain",
             type="application/x-shockwave-flash",
-            pluginspage="http://www.macromedia.com/go/getflashplayer")]
+            pluginspage="http://www.macromedia.com/go/getflashplayer")
+    ]
 
 
 class Canvas(rend.Page):

@@ -6,17 +6,22 @@
 # system imports
 import os
 import stat
+
 try:
 	from urllib.parse import quote, unquote
 except ImportError:
 	# python2 compatibility
 	from urllib import quote, unquote
 
+from twisted.python import compat
+
 # twisted imports
 from nevow import inevow
-from nevow import rend
 from nevow import loaders
+from nevow import rend
 from nevow import tags
+from nevow import util
+
 
 def formatFileSize(size):
     if size < 1024:
@@ -28,6 +33,7 @@ def formatFileSize(size):
     else:
         return '%iG' % (size / (1024**3))
 
+
 class DirectoryLister(rend.Page):
     def __init__(self, pathname, dirs=None,
                  contentTypes={},
@@ -38,11 +44,19 @@ class DirectoryLister(rend.Page):
         self.defaultType = defaultType
         # dirs allows usage of the File to specify what gets listed
         self.dirs = dirs
-        self.path = pathname
+        self.path = pathname if type(pathname) is str else pathname.decode()
         rend.Page.__init__(self)
+
+    def __repr__(self):
+        return '<DirectoryLister of %r>' % self.path
+
+    __str__ = __repr__
 
     def data_listing(self, context, data):
         from nevow.static import getTypeAndEncoding
+
+#       request = inevow.IRequest(context)
+#       codec   = util.getCodecFromContentType(request.responseHeaders)
 
         if self.dirs is None:
             directory = os.listdir(self.path)
@@ -50,23 +64,27 @@ class DirectoryLister(rend.Page):
         else:
             directory = self.dirs
 
-        files = []; dirs = []
+        files = []
+        dirs  = []
 
-        for path in directory:
+        for path in map(bytes.decode, directory):  # @xxx: bytes.decode -- charset???
             url = quote(path, '/')
+
             if os.path.isdir(os.path.join(self.path, path)):
                 url = url + '/'
                 dirs.append({
                     'link': url,
-                    'linktext': path + "/",
+                    'linktext': path + '/',
                     'type': '[Directory]',
                     'filesize': '',
                     'encoding': '',
-                    })
+                })
             else:
-                mimetype, encoding = getTypeAndEncoding(
-                    path,
-                    self.contentTypes, self.contentEncodings, self.defaultType)
+                mimetype, encoding = getTypeAndEncoding(path,
+                    self.contentTypes,
+                    self.contentEncodings,
+                    self.defaultType)
+
                 try:
                     filesize = os.stat(os.path.join(self.path, path))[stat.ST_SIZE]
                 except OSError as x:
@@ -78,22 +96,18 @@ class DirectoryLister(rend.Page):
                         'linktext': path,
                         'type': '[%s]' % mimetype,
                         'filesize': formatFileSize(filesize),
-                        'encoding': (encoding and '[%s]' % encoding or '')})
+                        'encoding': (encoding and '[%s]' % encoding or '')
+                    })
 
         return dirs + files
 
     def data_header(self, context, data):
+        # @todo: tests (@ex: bytes/str -> unquote)
         request = context.locate(inevow.IRequest)
-        return "Directory listing for %s" % unquote(request.uri)
+        return "Directory listing for %s" % unquote(compat.nativeString(request.uri))
 
     def render_tableLink(self, context, data):
         return tags.a(href=data['link'])[data['linktext']]
-
-    def __repr__(self):
-        return '<DirectoryLister of %r>' % self.path
-
-    __str__ = __repr__
-
 
     docFactory = loaders.stan(tags.html[
       tags.head[

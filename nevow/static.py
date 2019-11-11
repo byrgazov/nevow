@@ -84,10 +84,11 @@ def staticHTML(someString):
 
 
 def addSlash(request):
-    return "http%s://%s%s/" % (
-        request.isSecure() and 's' or '',
-        request.getHeader("host"),
-        (request.uri.split(b'?')[0]))
+    # @todo: tests (@ex: bytes/str)
+    url  = b'https://' if request.isSecure() else b'http://'
+    url += compat.networkString(request.getHeader('host')) + request.uri.split(b'?')[0]
+    return url + b'/'
+
 
 class Registry(components.Componentized):
     """
@@ -351,6 +352,7 @@ class File:
         return request.deferred
 
     def redirect(self, request):
+        # @todo: tests (@ex: bytes/str)
         return redirectTo(addSlash(request), request)
 
     def listNames(self):

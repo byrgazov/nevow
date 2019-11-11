@@ -389,11 +389,26 @@ Nevow.Athena.PageWidget.methods(
      * interaction is possible without reloading the page.
      */
     function showDisconnectDialog(self) {
-        var url = (Divmod._location +
-                   '__athena_private__/connection-status-down.png');
+        var baseUrl = Divmod._location;
+
+        if (baseUrl == undefined) {
+            baseUrl = window.location.toString();
+        }
+
+        var queryParamIndex = baseUrl.indexOf('?');
+
+        if (queryParamIndex != -1) {
+            baseUrl = baseUrl.substring(0, queryParamIndex);
+        }
+
+        if (baseUrl.charAt(baseUrl.length - 1) != '/') {
+            baseUrl += '/';
+        }
+
+        var imgUrl = baseUrl + '__athena_private__/connection-status-down.png';
 
         var img = document.createElement('img');
-        img.src = url;
+        img.src = imgUrl;
 
         var div = document.createElement('div');
         div.appendChild(img);

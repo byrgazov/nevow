@@ -60,9 +60,12 @@ class Configurable(object):
     def getBinding(self, context, name: str):
         if self.bindingDict is None:
             self.getBindingNames(context)
+
         if self.bindingDict is None:
             self.bindingDict = {}
+
         binding = getattr(self, 'bind_' + name, getattr(self.boundTo, 'bind_' + name, None))
+
         if binding is not None:
             binding = binding(context)
         else:
@@ -70,7 +73,9 @@ class Configurable(object):
                 binding = self.bindingDict[name]
             except KeyError:
                 raise RuntimeError("%s is not an exposed binding on object %s." % (name, self.boundTo))
+
         binding.boundTo = self.boundTo
+
         return binding
 
     def postForm(self, ctx, bindingName: str, params: typing.Dict[str, typing.Any]):

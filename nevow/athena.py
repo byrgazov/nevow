@@ -101,10 +101,8 @@ class MappingResource(object):
     def __init__(self, mapping):
         self.mapping = mapping
 
-
     def renderHTTP(self, ctx):
         return rend.FourOhFour()
-
 
     def resourceFactory(self, fileName):
         """
@@ -113,15 +111,12 @@ class MappingResource(object):
         """
         return static.File(fileName)
 
-
     def locateChild(self, ctx, segments):
         try:
-            impl = self.mapping[segments[0]]
+            impl = self.mapping[compat.nativeString(segments[0])]
         except KeyError:
             return rend.NotFound
-        else:
-            return self.resourceFactory(impl), []
-
+        return self.resourceFactory(impl), []
 
 
 def _dependencyOrdered(coll, memo):
@@ -133,7 +128,6 @@ def _dependencyOrdered(coll, memo):
     @param memo: A dictionary mapping module names to their dependencies that
                  will be used as a mutable cache.
     """
-
 
 
 class AthenaModule(object):
@@ -345,7 +339,6 @@ class AutoCSSPackage(object):
         self.mapping = _collectPackageBelow(baseDir, 'css')
 
 
-
 def allJavascriptPackages():
     """
     Return a dictionary mapping JavaScript module names to local filenames
@@ -359,7 +352,6 @@ def allJavascriptPackages():
     return d
 
 
-
 def allCSSPackages():
     """
     Like L{allJavascriptPackages}, but for CSS packages.
@@ -368,7 +360,6 @@ def allCSSPackages():
     for p in plugin.getPlugIns(inevow.ICSSPackage, plugins):
         d.update(p.mapping)
     return d
-
 
 
 class JSDependencies(object):
@@ -385,7 +376,6 @@ class JSDependencies(object):
             self._loadPlugins = True
         else:
             self.mapping = mapping
-
 
     def getModuleForName(self, className):
         """
@@ -410,7 +400,6 @@ class JSDependencies(object):
 
 
 jsDeps = JSDependencies()
-
 
 
 class CSSRegistry(object):
@@ -581,7 +570,7 @@ class LivePageFactory:
     def __init__(self):
         self.clients = {}
 
-    def addClient(self, client):
+    def addClient(self, client) -> str:
         clientID = self._newClientID()
         self.clients[clientID] = client
         if self.noisy:
@@ -589,6 +578,7 @@ class LivePageFactory:
         return clientID
 
     def getClient(self, clientID):
+        clientID = compat.nativeString(clientID)
         return self.clients[clientID]
 
     def removeClient(self, clientID):
@@ -596,11 +586,12 @@ class LivePageFactory:
         # 'pop', but it really shouldn't be; if the Page instance with this
         # client ID is already gone, then it should be gone, which means that
         # this method can't be called with that argument.
+        clientID = compat.nativeString(clientID)
         del self.clients[clientID]
         if self.noisy:
             log.msg("Disconnected old LivePage %r" % (clientID,))
 
-    def _newClientID(self):
+    def _newClientID(self) -> str:
         return guard._sessionCookie()
 
 
@@ -881,9 +872,10 @@ class ReliableMessageDelivery(object):
         return d
 
 
-BOOTSTRAP_NODE_ID = 'athena:bootstrap'
-BOOTSTRAP_STATEMENT = ("eval(document.getElementById('" + BOOTSTRAP_NODE_ID +
-                       "').getAttribute('payload'));")
+BOOTSTRAP_NODE_ID   = 'athena:bootstrap'
+BOOTSTRAP_STATEMENT = ('eval(document.getElementById("{}").getAttribute("payload"));'\
+    .format(re.escape(BOOTSTRAP_NODE_ID)))
+
 
 class _HasJSClass(object):
     """
@@ -902,7 +894,6 @@ class _HasJSClass(object):
         """
         return jsDeps.getModuleForClass(self.jsClass)
 
-
     def _getRequiredModules(self, memo):
         """
         Return a list of two-tuples containing module names and URLs at which
@@ -917,7 +908,6 @@ class _HasJSClass(object):
             if self.page._shouldInclude(dep.name)]
 
 
-
 def jsModuleDeclaration(name):
     """
     Generate Javascript for a module declaration.
@@ -926,7 +916,6 @@ def jsModuleDeclaration(name):
     if '.' not in name:
         var = 'var '
     return '%s%s = {"__name__": "%s"};' % (var, name, name)
-
 
 
 class _HasCSSModule(object):
@@ -1011,6 +1000,7 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
     _rendered = False
     _didConnect = False
     _didDisconnect = False
+    _transportResource = None
 
     useActiveChannels = True
 
@@ -1061,20 +1051,27 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
     def __init__(self, iface=None, rootObject=None, jsModules=None,
                  jsModuleRoot=None, transportRoot=None, cssModules=None,
                  cssModuleRoot=None, *a, **kw):
+
         super(LivePage, self).__init__(*a, **kw)
 
         self.iface = iface
         self.rootObject = rootObject
+
         if jsModules is None:
             jsModules = JSPackage(jsDeps.mapping)
-        self.jsModules = jsModules
+
+        self.jsModules    = jsModules
         self.jsModuleRoot = jsModuleRoot
+
         if transportRoot is None:
             transportRoot = here
+
         self.transportRoot = transportRoot
         self.cssModuleRoot = cssModuleRoot
+
         if cssModules is None:
             cssModules = _theCSSRegistry
+
         self.cssModules = cssModules
         self.liveFragmentChildren = []
         self._includedModules = []
@@ -1083,13 +1080,11 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         self._jsDepsMemo = {}
         self._cssDepsMemo = {}
 
-
     def _shouldInclude(self, moduleName):
         if moduleName not in self._includedModules:
             self._includedModules.append(moduleName)
             return True
         return False
-
 
     def _shouldIncludeCSSModule(self, moduleName):
         """
@@ -1104,7 +1099,6 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
             return True
         return False
 
-
     # Child lookup may be dependent on the application state
     # represented by a LivePage.  In this case, it is preferable to
     # dispatch child lookup on the same LivePage instance as performed
@@ -1114,14 +1108,25 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         try:
             client = self.factory.getClient(segments[0])
         except KeyError:
-            return super(LivePage, self).locateChild(ctx, segments)
-        else:
-            return client, segments[1:]
-
+            result = super(LivePage, self).locateChild(ctx, segments)
+            return result
+        return client, segments[1:]
 
     def child___athena_private__(self, ctx):
         return _thePrivateAthenaResource
 
+    def child_jsmodule(self, ctx):
+        return MappingResource(self.jsModules.mapping)
+
+    def child_cssmodule(self, ctx):
+        return MappingResource(self.cssModules.mapping)
+
+    def child_transport(self, ctx):
+        if self._transportResource is None:
+            self._transportResource = LivePageTransport(
+                self._messageDeliverer,
+                self.useActiveChannels)
+        return self._transportResource
 
     # A note on timeout/disconnect logic: whenever a live client goes from some
     # transports to no transports, a timer starts; whenever it goes from no
@@ -1159,6 +1164,7 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
             self.TRANSPORT_IDLE_TIMEOUT,
             self._disconnected,
             connectionMade=self._connectionMade)
+
         self._remoteCalls = {}
         self._localObjects = {}
         try:
@@ -1168,7 +1174,6 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
             self._localObjectIDCounter = itertools.count().__next__
 
         self.addLocalObject(self)
-
 
     def _supportedBrowser(self, request):
         """
@@ -1287,23 +1292,26 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
 
             notifications = self._disconnectNotifications
             self._disconnectNotifications = None
+
             for d in notifications:
                 d.errback(reason)
+
             calls = self._remoteCalls
             self._remoteCalls = {}
+
             for (reqID, resD) in calls.items():
                 resD.errback(reason)
+
             if self._didConnect:
                 for widget in list(self._localObjects.values()):
                     widget.connectionLost(reason)
-            self.factory.removeClient(self.clientID)
 
+            self.factory.removeClient(self.clientID)
 
     def connectionMade(self):
         """
         Callback invoked when the transport is first connected.
         """
-
 
     def connectionLost(self, reason):
         """
@@ -1314,12 +1322,10 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         Override this.
         """
 
-
     def addLocalObject(self, obj):
         objID = self._localObjectIDCounter()
         self._localObjects[objID] = obj
         return objID
-
 
     def removeLocalObject(self, objID):
         """
@@ -1331,7 +1337,6 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         """
         del self._localObjects[objID]
 
-
     def callRemote(self, methodName, *args):
         requestID = 's2c%i' % (self._requestIDCounter(),)
 #       message = ('call', (methodName.encode('ascii'), requestID, args))
@@ -1342,10 +1347,8 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         self.addMessage(message)
         return resultD
 
-
     def addMessage(self, message):
         self._messageDeliverer.addMessage(message)
-
 
     def notifyOnDisconnect(self):
         """
@@ -1361,10 +1364,8 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         self._disconnectNotifications.append(d)
         return d
 
-
     def getJSModuleURL(self, moduleName):
         return self.jsModuleRoot.child(moduleName)
-
 
     def getCSSModuleURL(self, moduleName):
         """
@@ -1377,12 +1378,10 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         """
         return self.cssModuleRoot.child(moduleName)
 
-
     def getImportStan(self, moduleName):
         moduleDef = jsModuleDeclaration(moduleName);
         return [tags.script(type='text/javascript')[tags.raw(moduleDef)],
                 tags.script(type='text/javascript', src=self.getJSModuleURL(moduleName))]
-
 
     def render_liveglue(self, ctx, data):
         bootstrapString = '\n'.join(
@@ -1394,14 +1393,12 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
             # Hit jsDeps.getModuleForName to force it to load some plugins :/
             # This really needs to be redesigned.
             [self.getImportStan(jsDeps.getModuleForName(name).name)
-             for (name, url)
-             in self._getRequiredModules(self._jsDepsMemo)],
+             for (name, url) in self._getRequiredModules(self._jsDepsMemo)],
             tags.script(type='text/javascript',
                         id=BOOTSTRAP_NODE_ID,
                         payload=bootstrapString)[
                 BOOTSTRAP_STATEMENT]
         ]
-
 
     def _bootstraps(self, ctx):
         """
@@ -1418,7 +1415,6 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
             ("Nevow.Athena.bootstrap",
              [self.jsClass, self.clientID])]
 
-
     def _bootstrapCall(self, methodName, args):
         """
         Generate a string to call a 'bootstrap' function in an Athena JavaScript
@@ -1429,35 +1425,12 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         @param args: a list of objects that will be JSON-serialized as
         arguments to the named method.
         """
-        return '%s(%s);' % (
-            methodName, ', '.join([json.serialize(arg) for arg in args]))
-
-
-    def child_jsmodule(self, ctx):
-        return MappingResource(self.jsModules.mapping)
-
-
-    def child_cssmodule(self, ctx):
-        """
-        Return a L{MappingResource} wrapped around L{cssModules}.
-        """
-        return MappingResource(self.cssModules.mapping)
-
-
-    _transportResource = None
-    def child_transport(self, ctx):
-        if self._transportResource is None:
-            self._transportResource = LivePageTransport(
-                self._messageDeliverer,
-                self.useActiveChannels)
-        return self._transportResource
-
+        return '%s(%s);' % (methodName, ', '.join([json.serialize(arg) for arg in args]))
 
     def locateMethod(self, ctx, methodName):
         if methodName in self.iface:
             return getattr(self.rootObject, methodName)
         raise AttributeError(methodName)
-
 
     def liveTransportMessageReceived(self, ctx, xxx_todo_changeme):
         """
@@ -1488,19 +1461,12 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
                 log.err(result)
                 success = False
                 if result.check(LivePageError):
-                    result = (
-                        result.value.jsClass,
-                        result.value.args)
+                    result = (result.value.jsClass, result.value.args)
                 else:
-                    result = (
-                        'Divmod.Error',
-                        ['%s: %s' % (
-                                result.type.__name__.decode('ascii'),
-                                result.getErrorMessage().decode('ascii'))])
+                    result = ('Divmod.Error', ['%s: %s' % (result.type.__name__, result.getErrorMessage())])
             message = ('respond', (str(requestId), success, result))
             self.addMessage(message)
         result.addBoth(_cbCall)
-
 
     def action_respond(self, ctx, responseId, success, result):
         """
@@ -1512,12 +1478,10 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         else:
             callDeferred.errback(getJSFailure(result, self.jsModules.mapping))
 
-
     def action_noop(self, ctx):
         """
         Handle noop, used to initialise and ping the live transport.
         """
-
 
     def action_close(self, ctx):
         """
@@ -1527,9 +1491,9 @@ class LivePage(rend.Page, _HasJSClass, _HasCSSModule):
         self._disconnected(error.ConnectionDone("Connection closed"))
 
 
-
 handler = stan.Proto('athena:handler')
 _handlerFormat = "return Nevow.Athena.Widget.handleEvent(this, %(event)s, %(handler)s);"
+
 
 def _rewriteEventHandlerToAttribute(tag):
     """

@@ -6,8 +6,9 @@ from twisted.python import log, util
 
 from nevow import athena, loaders, static
 
+
 class Clock(athena.LiveFragment):
-    jsClass = "WidgetDemo.Clock"
+    jsClass = 'WidgetDemo.Clock'
 
     docFactory = loaders.xmlstr('''\
 <div xmlns:nevow="http://nevow.com/ns/nevow/0.1"
@@ -49,10 +50,11 @@ class Clock(athena.LiveFragment):
             self.running = False
 
     def updateTime(self):
-        self.callRemote('setTime', str(time.ctime(), 'ascii')).addErrback(self._oops)
+        self.callRemote('setTime', time.ctime()).addErrback(self._oops)
+
 
 class WidgetPage(athena.LivePage):
-    docFactory = loaders.xmlstr("""\
+    docFactory = loaders.xmlstr('''\
 <html xmlns:nevow="http://nevow.com/ns/nevow/0.1">
     <head>
         <nevow:invisible nevow:render="liveglue" />
@@ -67,7 +69,7 @@ class WidgetPage(athena.LivePage):
         <div nevow:render="debug" />
     </body>
 </html>
-""")
+''')
 
     addSlash = True
 

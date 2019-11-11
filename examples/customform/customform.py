@@ -51,17 +51,17 @@ from formless import webform
 FORM_LAYOUT = loaders.xmlstr(
     """<?xml version="1.0"?>
     <form xmlns:n="http://nevow.com/ns/nevow/0.1" n:pattern="freeform-form">
-    
+
       <!-- Replace/fill the form attributes -->
       <n:attr name="action"><n:slot name="form-action"/></n:attr>
       <n:attr name="id"><n:slot name="form-id"/></n:attr>
       <n:attr name="name"><n:slot name="form-name"/></n:attr>
-      
+
       <!-- General form information -->
       <p><strong><n:slot name="form-label"/></strong></p>
       <p><em><n:slot name="form-description"/></em></p>
       <p><strong><em><n:slot name="form-error"/></em></strong></p>
-      
+
       <!-- Start of the form layout table -->
       <table style="background: #eee; border: 1px solid #bbb; padding: 1em;" >
         <!-- Mark location arguments will be added -->
@@ -105,7 +105,7 @@ FORM_LAYOUT = loaders.xmlstr(
 # ISomething and Page are just something to test the form rendering on.
 
 class ISomething(annotate.TypedInterface):
-    
+
     def doSomething(
         ctx = annotate.Context(),
         fee = annotate.String(required=True, description="Wee!"),
@@ -119,25 +119,25 @@ class ISomething(annotate.TypedInterface):
         since the inteface is useless anyway, I cannot think of anything
         useful to say about it. Although ... did I mention it is useless?"""
     doSomething = annotate.autocallable(doSomething)
-    
+
 
 @implementer(ISomething)
 class Root(rend.Page):
     """Render a custom and normal form for an ISomething.
     """
     addSlash = True
-    
+
     child_webform_css = webform.defaultCSS
-    
+
     def render_normalForm(self, ctx, data):
         return webform.renderForms()
-    
+
     def render_customForm(self, ctx, data):
         return webform.renderForms()[FORM_LAYOUT]
-    
+
     def doSomething(self, ctx, **kwargs):
         print('***** doSomething called with:', kwargs)
-    
+
     docFactory = loaders.stan(
         T.html[
             T.head[
